@@ -1,0 +1,181 @@
+# Hypersaline fungal taxa abundance analysis
+# For Lar Vimercati extremophilic fungi review paper
+# by Cliff Bueno de Mesquita, JGI, May 2022
+
+#### Retrieving Data ####
+# To retrieve data from IMG/M, search hypersaline or saltern in all fields
+# Filter out SPAdes duplicates and keep only Domain = *Microbiome
+# Filter out 6 metatranscriptomes too - this is done here, not in IMG
+# Also include 12 saltern metagenomes from Tringe Lab, SF Bay project
+# Data retrieved the Statistical Analysis tools.
+# ^ this requires you to split up the genome set into at least 2 batches, but you can still get the raw data in the output!
+
+#### Setup ####
+suppressWarnings(suppressMessages(library(readxl))) # For read_xlsx
+suppressWarnings(suppressMessages(library(janitor))) # For cleaning
+suppressWarnings(suppressMessages(library(cowplot))) # For multipanel
+suppressWarnings(suppressMessages(library(plyr))) # For data manipulation
+suppressWarnings(suppressMessages(library(tidyverse))) # For data manipulation
+suppressWarnings(suppressMessages(library(reshape2))) # For melting
+suppressWarnings(suppressMessages(library(vegan))) # For analysis
+suppressWarnings(suppressMessages(library(car))) # For leveneTest
+suppressWarnings(suppressMessages(library(PMCMRplus))) # For Nemenyi posthoc test
+suppressWarnings(suppressMessages(library(indicspecies))) # For multipatt
+suppressWarnings(suppressMessages(library(scales))) # For muted
+suppressWarnings(suppressMessages(library(DESeq2))) # For normalization
+suppressWarnings(suppressMessages(library(FSA))) # For se
+suppressWarnings(suppressMessages(library(mctoolsr))) # For taxonomic analysis
+suppressWarnings(suppressMessages(library(cowplot))) # For multipanel
+suppressWarnings(suppressMessages(library(plotly))) # For interactive graphs
+suppressWarnings(suppressMessages(library(RColorBrewer))) # For color palettes
+suppressWarnings(suppressMessages(library(dendextend))) # For dendrogram plots
+suppressWarnings(suppressMessages(library(viridis))) # For viridis palette
+suppressWarnings(suppressMessages(library(gplots))) # For heatmaps
+suppressWarnings(suppressMessages(library(maps))) # For geographic maps
+suppressWarnings(suppressMessages(library(mapproj))) # For geographic maps
+suppressWarnings(suppressMessages(library(magrittr))) # For setting column names
+suppressWarnings(suppressMessages(library(writexl))) # For writing Excel file
+suppressWarnings(suppressMessages(library(plotrix))) # For standard error
+
+setwd("~/Desktop/Fungi/")
+options(max.print = 20000000)
+find_hull <- function(df) df[chull(df$Axis01, df$Axis02),]
+find_hullj <- function(df) df[chull(df$Axis01j, df$Axis02j),]
+`%notin%` <- Negate(`%in%`)
+
+
+
+#### Taxonomic ####
+# Metadata ("mapping file") downloaded from IMG
+
+# Tax table for mctoolsr
+t <- read.delim("Hypersaline_Genus/UI_data_output.txt") %>%
+  dplyr::select(-c(3:9)) %>%
+  dplyr::rename(taxonomy = FeatureName) %>%
+  dplyr::rename(ASV_ID = Feature) %>%
+  select(ASV_ID, 3:ncol(.), taxonomy)
+names(t) <- abbreviate(names(t), minlength = 11)
+table.fp <- "~/Desktop/Fungi"
+out_fp <- paste0(table.fp, "/genus_table_mctoolsr.txt")
+names(t)[1] = "#ASV_ID"
+write("#Exported for mctoolsr", out_fp)
+suppressWarnings(write.table(t, out_fp, sep = "\t", row.names = FALSE, append = TRUE))
+
+# Import
+tax_table_fp <- file.path("~/Desktop/Fungi/genus_table_mctoolsr.txt")
+map_fp <- file.path("~/Desktop/Fungi/metadata.txt")
+input = load_taxa_table(tax_table_fp, map_fp)
+input$map_loaded <- input$map_loaded %>%
+  mutate(sampleID = paste("X", taxon_oid, sep = ""))
+
+# Remove 6 metatranscriptomes
+input = filter_data(input,
+                    filter_cat = "Metatranscriptome",
+                    keep_vals = "No")
+
+# Check sequencing depth 
+sort(colSums(input$data_loaded))
+mean(colSums(input$data_loaded)) # 188308.5
+se(colSums(input$data_loaded)) # 25213.88
+input$map_loaded$count <- colSums(input$data_loaded)
+ggplot(input$map_loaded, aes(reorder(`Specific Ecosystem`, count, mean), count)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(size = 1.5, alpha = 0.25, width = 0.25) +
+  labs(x = "Ecosystem", 
+       y = "# Reads") +
+  theme_bw() +
+  theme(axis.title = element_text(size = 14, face = "bold"),
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
+
+ggplot(input$map_loaded, aes(`Genome Size   * assembled`, count)) +
+  geom_point(size = 1.5, alpha = 0.25) +
+  labs(x = "Assembled genome size", 
+       y = "Assigned genus reads") +
+  theme_bw() +
+  theme(axis.title = element_text(size = 14, face = "bold"),
+        axis.text = element_text(size = 10))
+
+# For all data get rid of samples with less than 1000 genus reads (n = 21)
+count <- as.data.frame(sort(colSums(input$data_loaded))) %>%
+  filter(`sort(colSums(input$data_loaded))` < 1000)
+input <- filter_data(input,
+                     filter_cat = "sampleID",
+                     filter_vals = rownames(count))
+mean(colSums(input$data_loaded)) # 201431.6
+se(colSums(input$data_loaded)) # 26812.28
+min(colSums(input$data_loaded)) # 1004
+max(colSums(input$data_loaded)) # 3800639
+
+# Rename size column
+input$map_loaded$GenomeSize = input$map_loaded$`Genome Size   * assembled`
+
+#### _Relative ####
+# Domain
+tax_sum_domain <- summarize_taxonomy(input, level = 1, report_higher_tax = T, relative = TRUE)
+plot_taxa_bars(tax_sum_domain,
+               input$map_loaded,
+               type_header = "sampleID",
+               num_taxa = 100,
+               data_only = F)
+range(tax_sum_domain[3,])
+euks <- tax_sum_domain[3,]
+plot_taxa_bars(euks,
+               input$map_loaded,
+               type_header = "sampleID",
+               num_taxa = 100,
+               data_only = F)
+
+# Phyla
+tax_sum_phyla <- summarize_taxonomy(input, level = 2, report_higher_tax = T, relative = TRUE)
+fungal_phyla <- tax_sum_phyla[grep("myco", rownames(tax_sum_phyla)),]
+fungal_phyla <- fungal_phyla[!grepl("Plasmid", rownames(fungal_phyla)),]
+plot_taxa_bars(fungal_phyla,
+               input$map_loaded,
+               type_header = "sampleID",
+               num_taxa = 100,
+               data_only = F) +
+  ylim(0, 0.1) +
+  scale_y_continuous(breaks = c(0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1)) +
+  theme_classic() +
+  theme(axis.ticks.x = element_blank(),
+        axis.text.x = element_blank())
+
+fungal_phyla_t <- as.data.frame(t(fungal_phyla)) %>%
+  set_names(str_sub(rownames(fungal_phyla), 12, -1)) %>%
+  mutate(Fungi = rowSums(.)) %>%
+  rownames_to_column(var = "sampleID")
+fungi_df <- input$map_loaded %>%
+  left_join(., fungal_phyla_t, by = "sampleID") %>%
+  arrange(desc(Fungi))
+
+# Genus
+tax_sum_genus <- summarize_taxonomy(input, level = 6, report_higher_tax = T, relative = TRUE)
+fungal_genus <- tax_sum_genus[grep("myco", rownames(tax_sum_genus)),]
+fungal_genus <- fungal_genus[!grepl("Plasmid", rownames(fungal_genus)),]
+fungal_genus <- fungal_genus[!grepl("Bacteria", rownames(fungal_genus)),] # 288 genera
+
+
+
+#### Map ####
+# Sample map with ggplot
+world <- map_data("world")
+input$map_loaded$Latitude <- as.numeric(input$map_loaded$Latitude)
+input$map_loaded$Longitude <- as.numeric(input$map_loaded$Longitude)
+
+# 4 missing
+pdf("Map.pdf", width = 7, height = 5)
+ggplot() +
+  geom_map(data = world, map = world,
+           aes(long, lat, map_id = region),
+           color = "white", fill = "lightgray", size = 0.1) +
+  geom_point(data = input$map_loaded, aes(x = Longitude, y = Latitude),
+             size = 1, color = "red", alpha = 0.5) +
+  theme_void() +
+  labs(x = NULL,
+       y = NULL) +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank())
+dev.off()
+
+
