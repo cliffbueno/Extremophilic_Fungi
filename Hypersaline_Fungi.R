@@ -37,7 +37,7 @@ suppressWarnings(suppressMessages(library(magrittr))) # For setting column names
 suppressWarnings(suppressMessages(library(writexl))) # For writing Excel file
 suppressWarnings(suppressMessages(library(plotrix))) # For standard error
 
-setwd("~/Desktop/Fungi/")
+setwd("~/Documents/GitHub/Extremophilic_Fungi/")
 options(max.print = 20000000)
 find_hull <- function(df) df[chull(df$Axis01, df$Axis02),]
 find_hullj <- function(df) df[chull(df$Axis01j, df$Axis02j),]
@@ -48,22 +48,22 @@ find_hullj <- function(df) df[chull(df$Axis01j, df$Axis02j),]
 #### Taxonomic ####
 # Metadata ("mapping file") downloaded from IMG
 
-# Tax table for mctoolsr
-t <- read.delim("Hypersaline_Genus/UI_data_output.txt") %>%
-  dplyr::select(-c(3:9)) %>%
-  dplyr::rename(taxonomy = FeatureName) %>%
-  dplyr::rename(ASV_ID = Feature) %>%
-  select(ASV_ID, 3:ncol(.), taxonomy)
-names(t) <- abbreviate(names(t), minlength = 11)
-table.fp <- "~/Desktop/Fungi"
-out_fp <- paste0(table.fp, "/genus_table_mctoolsr.txt")
-names(t)[1] = "#ASV_ID"
-write("#Exported for mctoolsr", out_fp)
-suppressWarnings(write.table(t, out_fp, sep = "\t", row.names = FALSE, append = TRUE))
+# Tax table for mctoolsr (only need to do once, skip to Import)
+# t <- read.delim("Hypersaline_Genus/UI_data_output.txt") %>%
+#  dplyr::select(-c(3:9)) %>%
+#  dplyr::rename(taxonomy = FeatureName) %>%
+#  dplyr::rename(ASV_ID = Feature) %>%
+#  select(ASV_ID, 3:ncol(.), taxonomy)
+# names(t) <- abbreviate(names(t), minlength = 11)
+# table.fp <- "~/Desktop/Fungi"
+# out_fp <- paste0(table.fp, "/genus_table_mctoolsr.txt")
+# names(t)[1] = "#ASV_ID"
+# write("#Exported for mctoolsr", out_fp)
+# suppressWarnings(write.table(t, out_fp, sep = "\t", row.names = FALSE, append = TRUE))
 
 # Import
-tax_table_fp <- file.path("~/Desktop/Fungi/genus_table_mctoolsr.txt")
-map_fp <- file.path("~/Desktop/Fungi/metadata.txt")
+tax_table_fp <- file.path("genus_table_mctoolsr.txt")
+map_fp <- file.path("metadata.txt")
 input = load_taxa_table(tax_table_fp, map_fp)
 input$map_loaded <- input$map_loaded %>%
   mutate(sampleID = paste("X", taxon_oid, sep = ""))
@@ -72,6 +72,8 @@ input$map_loaded <- input$map_loaded %>%
 input = filter_data(input,
                     filter_cat = "Metatranscriptome",
                     keep_vals = "No")
+
+# n = 322
 
 # Check sequencing depth 
 sort(colSums(input$data_loaded))
@@ -102,6 +104,9 @@ count <- as.data.frame(sort(colSums(input$data_loaded))) %>%
 input <- filter_data(input,
                      filter_cat = "sampleID",
                      filter_vals = rownames(count))
+
+# n = 301
+
 mean(colSums(input$data_loaded)) # 201431.6
 se(colSums(input$data_loaded)) # 26812.28
 min(colSums(input$data_loaded)) # 1004
@@ -111,6 +116,7 @@ max(colSums(input$data_loaded)) # 3800639
 input$map_loaded$GenomeSize = input$map_loaded$`Genome Size   * assembled`
 
 #### _Relative ####
+# Relative abundance (could also do counts per million assembled metagenomic reads)
 # Domain
 tax_sum_domain <- summarize_taxonomy(input, level = 1, report_higher_tax = T, relative = TRUE)
 plot_taxa_bars(tax_sum_domain,
@@ -141,13 +147,18 @@ plot_taxa_bars(fungal_phyla,
   theme(axis.ticks.x = element_blank(),
         axis.text.x = element_blank())
 
+# Transpose
 fungal_phyla_t <- as.data.frame(t(fungal_phyla)) %>%
   set_names(str_sub(rownames(fungal_phyla), 12, -1)) %>%
   mutate(Fungi = rowSums(.)) %>%
   rownames_to_column(var = "sampleID")
+
+# Sort samples by fungal abundance
 fungi_df <- input$map_loaded %>%
   left_join(., fungal_phyla_t, by = "sampleID") %>%
   arrange(desc(Fungi))
+View(fungi_df)
+# Top ones are Santa Pola, Spain
 
 # Genus
 tax_sum_genus <- summarize_taxonomy(input, level = 6, report_higher_tax = T, relative = TRUE)
