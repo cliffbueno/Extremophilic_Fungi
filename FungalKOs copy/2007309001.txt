@@ -1,2 +1,0 @@
-KO:K01533	2007341503	2007309001|2007323736|Eukaryota;Ascomycota;Sordariomycetes;Hypocreales;Cordycipitaceae;Beauveria;Beauveria_bassiana
-KO:K11269	2007349725	2007309001|2007330252|Eukaryota;Ascomycota;Leotiomycetes;Helotiales;Sclerotiniaceae;Sclerotinia;Sclerotinia_sclerotiorum

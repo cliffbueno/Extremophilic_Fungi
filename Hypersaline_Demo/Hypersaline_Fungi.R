@@ -38,8 +38,7 @@ suppressWarnings(suppressMessages(library(magrittr))) # For setting column names
 suppressWarnings(suppressMessages(library(writexl))) # For writing Excel file
 suppressWarnings(suppressMessages(library(plotrix))) # For standard error
 
-setwd("~/Documents/GitHub/Extremophilic_Fungi/")
-options(max.print = 20000000)
+setwd("~/Documents/GitHub/Extremophilic_Fungi/Hypersaline_Demo/")
 find_hull <- function(df) df[chull(df$Axis01, df$Axis02),]
 find_hullj <- function(df) df[chull(df$Axis01j, df$Axis02j),]
 `%notin%` <- Negate(`%in%`)

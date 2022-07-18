@@ -1,6 +1,16 @@
 # Extremophilic Fungi Metagenome Analysis
-# For Quandt Lab Review Paper
+# For review paper Quandt Mycology Lab, University of Colorado Boulder
 # by Cliff Bueno de Mesquita, JGI, July 2022
+# Click the "Show document outline" button in the top right corner to view document outline
+# Sections are:
+# 1. Retrieving Data
+# 2. Setup
+# 3. Postprocessing
+# 4. Taxonomic analyses
+# 5. Functional analyses
+# 6. Other
+
+
 
 #### Retrieving Data ####
 # Info on assembling the IMG dataset is in the Data Acquisition.text file
@@ -16,7 +26,10 @@
 # -Check that there are no duplicate taxonoids
 # -Make comma separated list of taxonoids to search for in Genome Search
 
+
+
 #### Setup ####
+# Libraries
 suppressWarnings(suppressMessages(library(readxl))) # For read_xlsx
 suppressWarnings(suppressMessages(library(janitor))) # For cleaning
 suppressWarnings(suppressMessages(library(cowplot))) # For multipanel
@@ -29,9 +42,9 @@ suppressWarnings(suppressMessages(library(PMCMRplus))) # For Nemenyi posthoc tes
 suppressWarnings(suppressMessages(library(indicspecies))) # For multipatt
 suppressWarnings(suppressMessages(library(scales))) # For muted
 suppressWarnings(suppressMessages(library(DESeq2))) # For normalization
-suppressWarnings(suppressMessages(library(FSA))) # For se
+suppressWarnings(suppressMessages(library(FSA))) # For standard error
 suppressWarnings(suppressMessages(library(mctoolsr))) # For taxonomic analysis
-suppressWarnings(suppressMessages(library(cowplot))) # For multipanel
+suppressWarnings(suppressMessages(library(cowplot))) # For multipanel graphs
 suppressWarnings(suppressMessages(library(plotly))) # For interactive graphs
 suppressWarnings(suppressMessages(library(RColorBrewer))) # For color palettes
 suppressWarnings(suppressMessages(library(dendextend))) # For dendrogram plots
@@ -46,12 +59,18 @@ suppressWarnings(suppressMessages(library(emmeans))) # For Tukey
 suppressWarnings(suppressMessages(library(multcomp))) # For Tukey
 suppressWarnings(suppressMessages(library(RCurl))) # For KEGG
 suppressWarnings(suppressMessages(library(KEGGREST))) # For KEGG
+suppressWarnings(suppressMessages(library(multcompView))) # For significance letters
+suppressWarnings(suppressMessages(library(rcompanion))) # For significance letters
 
+# Working directory (GitHub repository)
 setwd("~/Documents/GitHub/Extremophilic_Fungi/")
-options(max.print = 20000000)
+
+# Functions
 find_hull <- function(df) df[chull(df$Axis01, df$Axis02),]
 find_hullj <- function(df) df[chull(df$Axis01j, df$Axis02j),]
 `%notin%` <- Negate(`%in%`)
+
+
 
 #### Postprocessing ####
 prefilt <- read.delim2("Extreme_Combined_Prefilt.txt", header = T) %>%
@@ -106,7 +125,7 @@ sum(checkn$Freq) == nrow(postfilt) # Good
 sum(duplicated(postfilt$taxon_oid)) # Good
 
 # Save as metadata file
-write.table(postfilt, "metadata.txt", sep = "\t" , row.names = F)
+# write.table(postfilt, "metadata.txt", sep = "\t" , row.names = F)
 
 # Get list, note that you can only search for 1000 at a time so split up
 # We need to split into 2 anyways for the Statistical Analysis tool
@@ -118,7 +137,7 @@ taxonoid_list1 <- postfilt %>%
   select(list) %>%
   slice_head(n = 1000)
 taxonoid_list1$list[nrow(taxonoid_list1)] <- gsub(",", "", taxonoid_list1$list[nrow(taxonoid_list1)])
-write.csv(taxonoid_list1, "taxonoid_list1.csv", row.names = F)
+# write.csv(taxonoid_list1, "taxonoid_list1.csv", row.names = F)
 
 taxonoid_list2 <- postfilt %>%
   select(taxon_oid) %>%
@@ -127,16 +146,18 @@ taxonoid_list2 <- postfilt %>%
   select(list) %>%
   slice_tail(n = nrow(postfilt) - 1000)
 taxonoid_list2$list[nrow(taxonoid_list2)] <- gsub(",", "", taxonoid_list2$list[nrow(taxonoid_list2)])
-write.csv(taxonoid_list2, "taxonoid_list2.csv", row.names = F)
+# write.csv(taxonoid_list2, "taxonoid_list2.csv", row.names = F)
 
 # Now use Genome Search by taxonoid to get a set of those and download genus taxonomy table
 # Send set to Dongying Wu for fungal function
+
+
 
 #### ..........................####
 #### Taxonomic ####
 # Metadata ("mapping file") downloaded from IMG and processed above
 
-# Tax table for mctoolsr (only need to do once, skip to Import)
+# Tax table for mctoolsr (only need to do once, then skip to Import)
 # t <- read.delim("Extreme_1155/UI_data_output.txt") %>%
 #  dplyr::select(-c(3:9)) %>%
 #  dplyr::rename(taxonomy = FeatureName) %>%
@@ -157,9 +178,9 @@ input = load_taxa_table(tax_table_fp, map_fp)
 
 # Update map_loaded - sampleID, GenomeSize, Environment
 input$map_loaded <- input$map_loaded %>%
-  mutate(sampleID = paste("X", taxon_oid, sep = ""))
-input$map_loaded$GenomeSize <- input$map_loaded$Genome.Size.....assembled
-input$map_loaded$Environment <- as.factor(input$map_loaded$Environment)
+  mutate(sampleID = paste("X", taxon_oid, sep = ""),
+         GenomeSize = `Genome.Size.....assembled`,
+         Environment = as.factor(Environment))
 
 # Check sequencing depth 
 sort(colSums(input$data_loaded))
@@ -192,6 +213,8 @@ input <- filter_data(input,
                      filter_cat = "sampleID",
                      filter_vals = rownames(count))
 
+
+
 #### __Check Euks ####
 # View Domain level taxa
 # This shows that euks are not very relatively abundant in these environments
@@ -209,7 +232,7 @@ plot_taxa_bars(tax_sum_Domain,
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
 
 # Range of % abundance in individual samples
-range(tax_sum_Domain[3,]) # 0 to 0.63, so can be high
+range(tax_sum_Domain[3,]) # 0 to 0.63, so can be high in some samples
 
 # Euks
 euks <- tax_sum_Domain[3,]
@@ -259,8 +282,10 @@ ggplot(topeuk$map_loaded, aes(reorder(sampleID, Euks, mean), Euks, fill = Enviro
         plot.title = element_text(hjust = 0.5))
 dev.off()
 
+
+
 #### __Check Fungi ####
-# First do same as done above for euk but for extracted fungal phyla
+# First do same as done above for euk but extract fungal phyla
 tax_sum_phyla <- summarize_taxonomy(input, level = 2, report_higher_tax = T, relative = TRUE)
 fungal_phyla <- tax_sum_phyla[grep("Ascomycota|Basidiomycota|Blastocladiomycota|Chytridiomycota|
                   Cryptomycota|Microsporidia|Mucoromycota|Nephridiophagidae|Olpidiomycota|
@@ -280,11 +305,8 @@ plot_taxa_bars(fungal_phyla,
   theme(legend.position = "right",
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
 
-# Get sum of fungi
-fungi <- as.data.frame(t(colSums(fungal_phyla)))
-fungi_t <- as.data.frame(t(fungi))
-
-input$map_loaded$Fungi <- fungi_t$V1
+# Get summed relative abundance of fungi and plot by sample and environment
+input$map_loaded$Fungi <- colSums(fungal_phyla)
 ggplot(input$map_loaded, aes(reorder(sampleID, Fungi, mean), Fungi, fill = Environment)) +
   geom_bar(stat = "identity", color = NA) +
   labs(x = NULL, 
@@ -317,24 +339,27 @@ ggplot(topfun$map_loaded, aes(reorder(sampleID, Fungi, mean), Fungi, fill = Envi
         plot.title = element_text(hjust = 0.5))
 dev.off()
 
-# Also plot total fungal relative abundance by environment
-input_fungi_CPM$map_loaded$totalFun <- colSums(input_fungi_CPM$data_loaded)
-View(input_fungi_CPM$map_loaded$totalFun)
-leveneTest(input_fungi_CPM$map_loaded$totalFun ~ input_fungi_CPM$map_loaded$Environment)
-m2 <- aov(totalFun ~ Environment, data = input_fungi_CPM$map_loaded)
-shapiro.test(m2$residuals)
-summary(m2)
-tuk2 <- emmeans(object = m2, specs = "Environment") %>%
-  cld(object = ., adjust = "Tukey", Letters = letters, alpha = 0.05) %>%
-  mutate(name = "totalFun",
-         y = max(input_fungi_CPM$map_loaded$totalFun)+(max(input_fungi_CPM$map_loaded$totalFun)-min(input_fungi_CPM$map_loaded$totalFun))/20)
+# By environment
+leveneTest(input$map_loaded$Fungi ~ input$map_loaded$Environment) # Bad
+m1 <- aov(Fungi ~ Environment, data = input$map_loaded)
+shapiro.test(m1$residuals) # Bad
+summary(m1)
+TukeyHSD(m1)
+kruskal.test(Fungi ~ Environment, data = input$map_loaded)
+nyi1 <- kwAllPairsNemenyiTest(Fungi ~ Environment, data = input$map_loaded)
+nyi_table1 <- fullPTable(nyi$p.value)
+nyi_list1 <- multcompLetters(nyi_table2)
+nyi_let1 <- as.data.frame(nyi_list2$Letters) %>%
+  mutate(label = `nyi_list1$Letters`,
+         y = rep(0.6, nrow(.))) %>%
+  rownames_to_column(var = "Environment")
 pdf("Figs/FungalRel.pdf", width = 5, height = 4)
-ggplot(input_fungi_CPM$map_loaded, aes(reorder(Environment, totalFun, mean), totalFun)) +
+ggplot(input$map_loaded, aes(reorder(Environment, Fungi, mean), Fungi)) +
   # geom_boxplot(outlier.shape = NA) +
-  geom_jitter(size = 0.5, alpha = 0.2, width = 0.4) +
-  geom_text(data = tuk2, aes(Environment, y, label = str_trim(.group)), 
+  geom_jitter(size = 1, alpha = 0.2, width = 0.4) +
+  geom_text(data = nyi_let1, aes(Environment, y, label = label), 
             size = 4, color = "black") +
-  labs(x = NULL, y = "Fungal abundance (CPM)") +
+  labs(x = NULL, y = "Fungal relative abundance") +
   theme_bw() +
   theme(legend.position = "none",
         axis.title = element_text(size = 12),
@@ -342,6 +367,8 @@ ggplot(input_fungi_CPM$map_loaded, aes(reorder(Environment, totalFun, mean), tot
         axis.text.x = element_text(size = 8, angle = 45, hjust = 1),
         strip.text = element_text(size = 10))
 dev.off()
+
+
 
 #### __Filter ####
 # Now filter to euk and then fungi (extract fungal phyla)
@@ -487,20 +514,26 @@ mycolors2 <- colorRampPalette(brewer.pal(8, "Set2"))(ntax)
 
 # Phyla
 tax_sum_Phyla <- summarize_taxonomy(input_fungi_CPM, level = 2, report_higher_tax = F, relative = F)
+barsPhyla <- plot_taxa_bars(tax_sum_Phyla,
+                            input_fungi_CPM$map_loaded,
+                            type_header = "Environment",
+                            num_taxa = ntax,
+                            data_only = T) %>%
+  mutate(taxon = fct_rev(taxon))
+
 pdf("Figs/CPM_Phyla.pdf", width = 7, height = 5)
-plot_taxa_bars(tax_sum_Phyla,
-               input_fungi_CPM$map_loaded,
-               type_header = "Environment",
-               num_taxa = nrow(tax_sum_Phyla),
-               data_only = F) +
-  scale_fill_brewer(palette = "Paired") +
+ggplot(barsPhyla, aes(group_by, mean_value, fill = taxon)) +
+  geom_bar(stat = "identity", colour = NA, size = 0.25) +
+  labs(x = "Environment", y = "Abundance (CPM)", fill = "Phylum") +
+  scale_fill_manual(values = brewer.pal(12, "Paired")[7:1]) +
   theme_classic() +
-  labs(x = "Environment",
-       y = "Abundance (CPM)",
-       fill = "Phylum") +
-  theme(legend.position = "right",
-        axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
+  theme(axis.title = element_text(size = 12), 
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"))
 dev.off()
+taxa_summary_by_sample_type(tax_sum_Phyla, input_fungi_CPM$map_loaded, 'Environment', 0.0001, 'KW')
 
 # Class
 tax_sum_Class <- summarize_taxonomy(input_fungi_CPM, level = 3, report_higher_tax = T, relative = F)
@@ -511,9 +544,7 @@ plot_taxa_bars(tax_sum_Class,
                num_taxa = nrow(tax_sum_Class),
                data_only = F) +
   theme_classic() +
-  labs(x = "Environment",
-       y = "Abundance (CPM)",
-       fill = "Class") +
+  labs(x = "Environment", y = "Abundance (CPM)", fill = "Class") +
   theme(legend.position = "right",
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
 
@@ -621,20 +652,24 @@ taxa_summary_by_sample_type(tax_sum_Genus, input_fungi_CPM$map_loaded, 'Environm
 
 # Also plot total fungal CPM by environment
 input_fungi_CPM$map_loaded$totalFun <- colSums(input_fungi_CPM$data_loaded)
-View(input_fungi_CPM$map_loaded$totalFun)
-leveneTest(input_fungi_CPM$map_loaded$totalFun ~ input_fungi_CPM$map_loaded$Environment)
+leveneTest(input_fungi_CPM$map_loaded$totalFun ~ input_fungi_CPM$map_loaded$Environment) # Bad
 m2 <- aov(totalFun ~ Environment, data = input_fungi_CPM$map_loaded)
-shapiro.test(m2$residuals)
+shapiro.test(m2$residuals) # Bad
 summary(m2)
-tuk2 <- emmeans(object = m2, specs = "Environment") %>%
-  cld(object = ., adjust = "Tukey", Letters = letters, alpha = 0.05) %>%
-  mutate(name = "totalFun",
-         y = max(input_fungi_CPM$map_loaded$totalFun)+(max(input_fungi_CPM$map_loaded$totalFun)-min(input_fungi_CPM$map_loaded$totalFun))/20)
+TukeyHSD(m2)
+kruskal.test(totalFun ~ Environment, data = input_fungi_CPM$map_loaded)
+nyi2 <- kwAllPairsNemenyiTest(totalFun ~ Environment, data = input_fungi_CPM$map_loaded)
+nyi_table2 <- fullPTable(nyi2$p.value)
+nyi_list2 <- multcompLetters(nyi_table2)
+nyi_let2 <- as.data.frame(nyi_list2$Letters) %>%
+  mutate(label = `nyi_list2$Letters`,
+         y = rep(380, nrow(.))) %>%
+  rownames_to_column(var = "Environment")
 pdf("Figs/FungalCPM.pdf", width = 5, height = 4)
 ggplot(input_fungi_CPM$map_loaded, aes(reorder(Environment, totalFun, mean), totalFun)) +
   # geom_boxplot(outlier.shape = NA) +
-  geom_jitter(size = 0.5, alpha = 0.2, width = 0.4) +
-  geom_text(data = tuk2, aes(Environment, y, label = str_trim(.group)), 
+  geom_jitter(size = 1, alpha = 0.2, width = 0.4) +
+  geom_text(data = nyi_let2, aes(Environment, y, label = label), 
             size = 4, color = "black") +
   labs(x = NULL, y = "Fungal abundance (CPM)") +
   theme_bw() +
@@ -645,14 +680,48 @@ ggplot(input_fungi_CPM$map_loaded, aes(reorder(Environment, totalFun, mean), tot
         strip.text = element_text(size = 10))
 dev.off()
 
-sort(colSums(input_fungi_CPM$data_loaded))
-
 # Could also try plot by location with environment facets
+# mctoolsR only accepts one factor, so need to combine then split
+input_fungi_CPM$map_loaded$EnvGeo <- paste(input_fungi_CPM$map_loaded$Environment,
+                                           input_fungi_CPM$map_loaded$Geographic.Location,
+                                           sep = "_")
+tax_sum_Phyla <- summarize_taxonomy(input_fungi_CPM, level = 2, report_higher_tax = F, relative = F)
+barsPhyla <- plot_taxa_bars(tax_sum_Phyla,
+                            input_fungi_CPM$map_loaded,
+                            type_header = c("EnvGeo"),
+                            num_taxa = ntax,
+                            data_only = T) %>%
+  mutate(taxon = fct_rev(taxon)) %>%
+  separate(group_by, into = c("Environment", "Location"), sep = "_")
+
+pdf("Figs/CPM_Phyla_EnvGeo.pdf", width = 12, height = 8)
+ggplot(barsPhyla, aes(Location, mean_value, fill = taxon)) +
+  geom_bar(stat = "identity", colour = NA, size = 0.25) +
+  labs(x = NULL, y = "Abundance (CPM)", fill = "Phylum") +
+  scale_fill_manual(values = brewer.pal(12, "Paired")[7:1]) +
+  scale_y_continuous(expand = c(0, 0)) +
+  facet_grid(~ Environment, scales = "free_x", space = "free") +
+  theme_classic() +
+  theme(axis.title = element_text(size = 12), 
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 2, angle = 45, hjust = 1, vjust = 1,
+                                   margin = unit(c(-1,0,0,0), "pt")),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        legend.position = c(0.9, 0.5),
+        strip.text = element_text(size = 8, angle = 90, hjust = 0),
+        strip.background = element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.line.x = element_blank(),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.5), "cm"))
+dev.off()
 
 
 
 #### _Relative ####
-# Calculate relative abundance of fungi, for only samples with fungi (n = 925)
+# Calculate relative abundance of fungi, only for samples with fungi (n = 925)
 # Make relative abundance stacked bar plots by taxonomic level
 # Re-sort so unassigned and other are on the top
 # Use "Paired" palette from RColorBrewer
@@ -799,34 +868,6 @@ ggplot(barsGenus, aes(group_by, mean_value, fill = taxon)) +
 dev.off()
 
 taxa_summary_by_sample_type(tax_sum_Genus, input_fungi_nz$map_loaded, 'Environment', 0.0001, 'KW')
-
-# Also plot total fungal relative abundance by environment
-input_fungi_nz$map_loaded$totalFun <- colSums(input_fungi_nz$data_loaded)
-View(input_fungi_nz$map_loaded$totalFun)
-leveneTest(input_fungi_nz$map_loaded$totalFun ~ input_fungi_nz$map_loaded$Environment)
-m2 <- aov(totalFun ~ Environment, data = input_fungi_nz$map_loaded)
-shapiro.test(m2$residuals)
-summary(m2)
-tuk2 <- emmeans(object = m2, specs = "Environment") %>%
-  cld(object = ., adjust = "Tukey", Letters = letters, alpha = 0.05) %>%
-  mutate(name = "totalFun",
-         y = max(input_fungi_nz$map_loaded$totalFun)+(max(input_fungi_nz$map_loaded$totalFun)-min(input_fungi_nz$map_loaded$totalFun))/20)
-pdf("Figs/FungalCPM.pdf", width = 5, height = 4)
-ggplot(input_fungi$map_loaded, aes(reorder(Environment, totalFun, mean), totalFun)) +
-  # geom_boxplot(outlier.shape = NA) +
-  geom_jitter(size = 0.5, alpha = 0.2, width = 0.4) +
-  geom_text(data = tuk2, aes(Environment, y, label = str_trim(.group)), 
-            size = 4, color = "black") +
-  labs(x = NULL, y = "Fungal Relative abundance") +
-  theme_bw() +
-  theme(legend.position = "none",
-        axis.title = element_text(size = 12),
-        axis.text.y = element_text(size = 10),
-        axis.text.x = element_text(size = 8, angle = 45, hjust = 1),
-        strip.text = element_text(size = 10))
-dev.off()
-
-sort(colSums(input_fungi$data_loaded))
 
 
 
@@ -1015,6 +1056,8 @@ pdf("Figs/PCoA_AllLevels.pdf", width = 8, height = 5)
 plot_grid(g,g1,g2,g3,g4,g_leg, ncol = 3, hjust = "hv")
 dev.off()
 
+
+
 #### __Prok ####
 # Now that we've seen not much clustering of the fungal communities, I'm curious to see how archaeal and bacterial communities look, just for the sake of comparison.
 
@@ -1131,6 +1174,7 @@ plot_grid(g_arc,g_bac,g,g_leg, ncol = 2, hjust = "hv")
 dev.off()
 
 
+
 #### _by Ecosystem ####
 # Subset the data into each environment
 # Make pie charts of taxa
@@ -1171,6 +1215,7 @@ length(levels(env[[8]]$map_loaded$Study.Name))
 # Probably best to show some of the variability within environment type
 # For example, Shu and Huang 2022 have 4-5 sites for each environment
 # Here let's do 1-6, for env. with more than 6 studies, take 6 with greatest sample size
+# Could also decide to show sites with most fungi instead of most samples
 for (i in 1:length(env)) {
   studyN[[i]] <- as.data.frame(table(env[[i]]$map_loaded$Study.Name)) %>%
     arrange(desc(Freq)) %>%
@@ -1193,7 +1238,7 @@ for (i in 1:length(env)) {
   }
 }
 
-# Location and n (for plot titles), do manually
+# Location and n (for plot titles), do manually (hard to automate this part)
 df[[1]]$map_loaded$Location <- "Richmond Mine\nUSA\n(n = 17)"
 df[[2]]$map_loaded$Location <- "Malanjkhand copper mine\nIndia\n(n = 10)"
 df[[3]]$map_loaded$Location <- "Los Rueldos mercury mine\nSpain\n(n = 3)"
@@ -1460,7 +1505,7 @@ ko_table_MGcount[is.na(ko_table_MGcount) == TRUE] <- 0
 
 # Export KO list to upload to KEGG and get classifications
 # For Definitions, can also use the keggFind function below
-write.csv(ko_table$KO, file = "KOlist.csv", row.names = F)
+# write.csv(ko_table$KO, file = "KOlist.csv", row.names = F)
 
 # List of KOs sorted by overall abundance
 ko_list <- ko_input %>%
@@ -1470,15 +1515,17 @@ ko_list <- ko_input %>%
   summarise(n = n()) %>%
   arrange(desc(n)) %>%
   mutate(Definition = "NA") %>%
-  separate(V1, into = c("Junk", "KO"), sep = ":", remove = F)
+  separate(V1, into = c("Junk", "KO"), sep = ":", remove = F) %>%
+  dplyr::select(-Junk)
 
-# Add definitions to list
-for (i in 1:nrow(ko_list)) {
-  def <- keggFind(database = "ko", query = ko_list$KO[i])
-  if (length(def) != 0) {
-    ko_list$Definition[i] <- def
-  }
-}
+# Add definitions to list (takes several hours, do once and write file)
+#for (i in 1:nrow(ko_list)) {
+#  def <- keggFind(database = "ko", query = ko_list$KO[i])
+#  if (length(def) != 0) {
+#    ko_list$Definition[i] <- def
+#  }
+#}
+#write.csv(ko_list, file = "KOlist_wDefinitions.csv", row.names = F)
 
 # Make community style table and metadata, match IDs
 ko_comm <- ko_table_MGcount %>%
@@ -1522,6 +1569,8 @@ dev.off()
 # Save so you don't have to redo the DESeq (takes a while)
 # saveRDS(ko_comm_DESeq, "ko_comm_DESeq.rds")
 ko_comm_DESeq <- readRDS("ko_comm_DESeq.rds")
+
+
 
 #### _KO Richness ####
 leveneTest(richness_KO ~ Environment, data = ko_meta)
@@ -1760,16 +1809,17 @@ mp <- multipatt(ko_comm_DESeq,
                 control = how(nperm=999))
 summary(mp) # None!!
 
-#### _ Specific KOs ####
+#### _KO Individual ####
 # Extract and analyze list of KOs of interest
-# Need to get list of KOs from Lara
-# For now make barplot and heatmap of top KOs
+# Need to get list of KOs from Lara/Quandt Lab
+# For now make barplot and heatmap of top KOs to develop script
  
 
 #### ..........................####
 #### Other ####
 #### _Map ####
-# Sample map with ggplot
+# Sample map with ggplot, color by environment
+# Need to adjust color scheme here and throughout
 world <- map_data("world")
 input$map_loaded$Latitude <- as.numeric(input$map_loaded$Latitude)
 input$map_loaded$Longitude <- as.numeric(input$map_loaded$Longitude)
@@ -1792,3 +1842,5 @@ ggplot() +
 dev.off()
 
 
+
+#### End Script ####
