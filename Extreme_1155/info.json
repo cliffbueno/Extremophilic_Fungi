@@ -1,0 +1,19 @@
+{
+   "method" : "default",
+   "jobname" : "Extreme_1155",
+   "function" : "genus",
+   "program" : "analysisStats",
+   "files" : [
+      "Extreme_Combined_Postfilt1",
+      "Extreme_Combined_Postfilt2"
+   ],
+   "comparison" : "absolute",
+   "analysis_save_mode" : "save",
+   "display" : "all",
+   "contact_oid" : "123426",
+   "comment" : "",
+   "analysis_selected_job_name" : "Extreme_1155",
+   "measurement" : "geneCount",
+   "currDateTime" : "2022/07/07 01:28:50",
+   "files3" : ""
+}

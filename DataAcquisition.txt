@@ -1,0 +1,59 @@
+IMG Search 6/16/2022
+-Search all terms for the keywords
+-retain Domain *Microbiome
+-remove metatranscriptomes
+-desert removed camel feces
+
+Searches and results
+"acid mine" = 62
+
+"desert" = 385
+-a mix of environments, sand, soil, rock, mat, grassland, halite
+
+In IMG:
+Find Genomes -> Genome Browser -> Genomes by Ecosystem
+-filter down to ecosystem of interest, click to get list
+-add columns to metadata
+-Filter Domain = *Microbiome, GOLD Analysis Project Type = "Metagenome Analysis"
+-Save as genome set ("Extreme_EcosystemName_N")
+
+Environmental - Aquatic - Marine - Hydrothermal vents, n = 360
+Environmental - Aquatic - Thermal springs - Hot (42-90C), n = 418
+Environmental - Aquatic - Non-marine Saline and Alkaline - Hypersaline, n = 324
+Environmental - Aquatic - Non-marine Saline and Alkaline - Salt crystallizer ponds, n = 27 + 12 SF Bay = 39
+	12 unrestored salterns from Tringe Lab are also Salt crystallizer ponds but not classified as such, so appended manually
+Environmental - Aquatic - Non-marine Saline and Alkaline - Alkaline, n = 27
+Environmental - Terrestrial - Deep subsurface - Oil well, 72, all restricted, would need to contact Sean Crowe sean.crowe@ubc.ca
+Environmental - Aquatic - Freshwater - Ice, n = 79 (10 Tibet restricted)
+Environmental - Terrestrial - Soil - Glacier, n = 68
+Environmental - Terrestrial - Soil - Desert, n = 94 (many restricted)
+Environmental - Terrestrial - Soil: Filter to Elevation > 3500 m, n = 0. Lots of unreported. Highest reported elevation is 988 m.
+
+Find Genomes -> Genome Search -> All fields
+
+"Acid mine drainage", n = 58
+"Heavy metal" 1, "arsenic" 2, "cadmium" 0, "chromium" 0, "copper" 24, "lead" 0, "mercury" 3, "nickel" 4 (but overlap with copper), "selenium" 0, "zinc" 0, n = 30
+"High elevation", n = 0; "High alpine", n = 0; "subnival", n = 0.
+
+Make new set ("Extreme_Combined_Prefilt") and append all to it. Export table.
+
+In R
+-Filter Sequence center != DOE Joint Genome Institute (JGI) and Is Public = Yes
+-Filter Sequence center = DOE Joint Genome Institute (JGI) and JGI Data Utilization Status = Unrestricted
+-Filter out duplicates
+-Filter out duplicates that were reassembled with SPAdes and contain (SPAdes) at the end of the Genome Name/ Sample Name
+-Make comma separated list of taxonoids to search for in Genome Search
+
+Search for taxonoids save as 1 table
+
+Split into two tables
+
+Statistical Analysis
+Taxonomy - Genus
+
+
+
+
+
+
+
