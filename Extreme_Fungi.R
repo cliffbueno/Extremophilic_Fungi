@@ -61,6 +61,7 @@ suppressWarnings(suppressMessages(library(RCurl))) # For KEGG
 suppressWarnings(suppressMessages(library(KEGGREST))) # For KEGG
 suppressWarnings(suppressMessages(library(multcompView))) # For significance letters
 suppressWarnings(suppressMessages(library(rcompanion))) # For significance letters
+suppressWarnings(suppressMessages(library(pheatmap))) # For heatmaps
 
 # Working directory (GitHub repository)
 setwd("~/Documents/GitHub/Extremophilic_Fungi/")
@@ -69,6 +70,23 @@ setwd("~/Documents/GitHub/Extremophilic_Fungi/")
 find_hull <- function(df) df[chull(df$Axis01, df$Axis02),]
 find_hullj <- function(df) df[chull(df$Axis01j, df$Axis02j),]
 `%notin%` <- Negate(`%in%`)
+save_pheatmap_pdf <- function(x, filename, width = 7, height = 5) {
+  stopifnot(!missing(x))
+  stopifnot(!missing(filename))
+  pdf(filename, width=width, height=height)
+  grid::grid.newpage()
+  grid::grid.draw(x$gtable)
+  dev.off()
+}
+
+# So far used Krusal-Wallis + Nemenyi posthoc
+# May want to update some stats to zero-inflated negative binomial regression instead
+# If using ANOVA and Tukey, can use this code to get sig. letters
+# Example from genus richness
+#tuk <- emmeans(object = m, specs = "Environment") %>%
+#  cld(object = ., adjust = "Tukey", Letters = letters, alpha = 0.05) %>%
+#  mutate(name = "rich",
+#         y = max(input_fungi$map_loaded$rich)+(max(input_fungi$map_loaded$rich)-min(input_fungi$map_loaded$rich))/20)
 
 
 
@@ -347,9 +365,9 @@ summary(m1)
 TukeyHSD(m1)
 kruskal.test(Fungi ~ Environment, data = input$map_loaded)
 nyi1 <- kwAllPairsNemenyiTest(Fungi ~ Environment, data = input$map_loaded)
-nyi_table1 <- fullPTable(nyi$p.value)
-nyi_list1 <- multcompLetters(nyi_table2)
-nyi_let1 <- as.data.frame(nyi_list2$Letters) %>%
+nyi_table1 <- fullPTable(nyi1$p.value)
+nyi_list1 <- multcompLetters(nyi_table1)
+nyi_let1 <- as.data.frame(nyi_list1$Letters) %>%
   mutate(label = `nyi_list1$Letters`,
          y = rep(0.6, nrow(.))) %>%
   rownames_to_column(var = "Environment")
@@ -695,7 +713,7 @@ barsPhyla <- plot_taxa_bars(tax_sum_Phyla,
   separate(group_by, into = c("Environment", "Location"), sep = "_")
 
 pdf("Figs/CPM_Phyla_EnvGeo.pdf", width = 12, height = 8)
-ggplot(barsPhyla, aes(Location, mean_value, fill = taxon)) +
+ggplot(barsPhyla, aes(reorder(Location, -mean_value, mean), mean_value, fill = taxon)) +
   geom_bar(stat = "identity", colour = NA, size = 0.25) +
   labs(x = NULL, y = "Abundance (CPM)", fill = "Phylum") +
   scale_fill_manual(values = brewer.pal(12, "Paired")[7:1]) +
@@ -715,6 +733,7 @@ ggplot(barsPhyla, aes(Location, mean_value, fill = taxon)) +
         panel.grid.minor = element_blank(),
         axis.ticks.x = element_blank(),
         axis.line.x = element_blank(),
+        axis.line.y = element_blank(),
         plot.margin = unit(c(0.1, 0.1, 0.1, 0.5), "cm"))
 dev.off()
 
@@ -1420,24 +1439,38 @@ input_fungi$map_loaded$shannon <- diversity(input_fungi$data_loaded,
                                             MARGIN = 2)
 
 # Stats and graphs
-leveneTest(input_fungi$map_loaded$rich ~ input_fungi$map_loaded$Environment)
-m <- aov(rich ~ Environment, data = input_fungi$map_loaded)
-summary(m)
-shapiro.test(m$residuals)
-tuk <- emmeans(object = m, specs = "Environment") %>%
-  cld(object = ., adjust = "Tukey", Letters = letters, alpha = 0.05) %>%
-  mutate(name = "rich",
-         y = max(input_fungi$map_loaded$rich)+(max(input_fungi$map_loaded$rich)-min(input_fungi$map_loaded$rich))/20)
+leveneTest(input_fungi$map_loaded$rich ~ input_fungi$map_loaded$Environment) # Bad
+m3 <- aov(rich ~ Environment, data = input_fungi$map_loaded)
+summary(m3)
+TukeyHSD(m3)
+shapiro.test(m3$residuals) # Bad
+kruskal.test(rich ~ Environment, data = input_fungi$map_loaded)
+nyi3 <- kwAllPairsNemenyiTest(rich ~ Environment, data = input_fungi$map_loaded)
+nyi_table3 <- fullPTable(nyi3$p.value)
+nyi_list3 <- multcompLetters(nyi_table3)
+nyi_let3 <- as.data.frame(nyi_list3$Letters) %>%
+  mutate(label = `nyi_list3$Letters`,
+         y = rep(300, nrow(.)),
+         name = "rich") %>%
+  dplyr::select(-`nyi_list3$Letters`) %>%
+  rownames_to_column(var = "Environment")
 
-leveneTest(input_fungi$map_loaded$shannon ~ input_fungi$map_loaded$Environment)
-m1 <- aov(shannon ~ Environment, data = input_fungi$map_loaded)
-shapiro.test(m1$residuals)
-summary(m1)
-tuk1 <- emmeans(object = m1, specs = "Environment") %>%
-  cld(object = ., adjust = "Tukey", Letters = letters, alpha = 0.05) %>%
-  mutate(name = "shannon",
-         y = max(input_fungi$map_loaded$shannon)+(max(input_fungi$map_loaded$shannon)-min(input_fungi$map_loaded$shannon))/20)
-label_df <- rbind(tuk, tuk1)
+leveneTest(input_fungi$map_loaded$shannon ~ input_fungi$map_loaded$Environment) # Bad
+m4 <- aov(shannon ~ Environment, data = input_fungi$map_loaded)
+shapiro.test(m4$residuals) # Bad
+summary(m4)
+TukeyHSD(m4)
+nyi4 <- kwAllPairsNemenyiTest(shannon ~ Environment, data = input_fungi$map_loaded)
+nyi_table4 <- fullPTable(nyi4$p.value)
+nyi_list4 <- multcompLetters(nyi_table4)
+nyi_let4 <- as.data.frame(nyi_list4$Letters) %>%
+  mutate(label = `nyi_list4$Letters`,
+         y = rep(5.5, nrow(.)),
+         name = "shannon") %>%
+  dplyr::select(-`nyi_list4$Letters`) %>%
+  rownames_to_column(var = "Environment")
+
+label_df <- rbind(nyi_let3, nyi_let4)
 facet_df <- c("rich" = "(a) Genus richness",
               "shannon" = "(b) Genus Shannon")
 alpha_long <- input_fungi$map_loaded %>%
@@ -1446,7 +1479,7 @@ pdf("Figs/Alpha.pdf", width = 6, height = 3)
 ggplot(alpha_long, aes(reorder(Environment, value, mean), value)) +
   geom_boxplot(outlier.shape = NA) +
   geom_jitter(size = 0.5, alpha = 0.2, width = 0.3) +
-  geom_text(data = label_df, aes(Environment, y, label = str_trim(.group)), 
+  geom_text(data = label_df, aes(Environment, y, label = label), 
             size = 4, color = "black") +
   labs(x = NULL, y = NULL) +
   facet_wrap(~ name, ncol = 2, scales = "free_y", labeller = as_labeller(facet_df)) +
@@ -1526,6 +1559,7 @@ ko_list <- ko_input %>%
 #  }
 #}
 #write.csv(ko_list, file = "KOlist_wDefinitions.csv", row.names = F)
+ko_list$KO_def <- paste(ko_list$KO, ko_list$Definition, sep = " ")
 
 # Make community style table and metadata, match IDs
 ko_comm <- ko_table_MGcount %>%
@@ -1544,9 +1578,12 @@ sum(rownames(ko_comm) != ko_meta$taxon_oid)
 # Check environment sample size
 table(ko_meta$Environment)
 
-# Get richness
+# Get richness and Shannon
 ko_meta$richness_KO = specnumber(ko_comm)
+ko_meta$shannon_KO = diversity(ko_comm, index = "shannon")
 range(ko_meta$richness_KO)
+range(ko_meta$shannon_KO)
+
 pdf("Figs/KO_Genus_richness.pdf", width = 6, height = 4)
 ggplot(ko_meta, aes(rich, richness_KO)) +
   geom_point(size = 1.5, alpha = 0.25, aes(colour = Environment)) +
@@ -1572,24 +1609,55 @@ ko_comm_DESeq <- readRDS("ko_comm_DESeq.rds")
 
 
 
-#### _KO Richness ####
-leveneTest(richness_KO ~ Environment, data = ko_meta)
-m <- aov(richness_KO ~ Environment, data = ko_meta)
-summary(m)
-shapiro.test(m$residuals)
-TukeyHSD(m)
+#### _KO Alpha ####
+leveneTest(richness_KO ~ Environment, data = ko_meta) # Bad
+m5 <- aov(richness_KO ~ Environment, data = ko_meta)
+summary(m5)
+shapiro.test(m5$residuals) # Bad
+TukeyHSD(m5)
 kruskal.test(richness_KO ~ Environment, data = ko_meta)
-kwAllPairsNemenyiTest(richness_KO ~ Environment, data = ko_meta)
-pdf("Figs/KO_richness.pdf", width = 6, height = 3)
-ggplot(ko_meta, aes(reorder(Environment, richness_KO, mean), richness_KO)) +
+nyi5 <- kwAllPairsNemenyiTest(richness_KO ~ Environment, data = ko_meta)
+nyi_table5 <- fullPTable(nyi5$p.value)
+nyi_list5 <- multcompLetters(nyi_table5)
+nyi_let5 <- as.data.frame(nyi_list5$Letters) %>%
+  mutate(label = `nyi_list5$Letters`,
+         y = rep(2510, nrow(.)),
+         name = "richness_KO") %>%
+  dplyr::select(-`nyi_list5$Letters`) %>%
+  rownames_to_column(var = "Environment")
+
+leveneTest(shannon_KO ~ Environment, data = ko_meta) # Bad
+m6 <- aov(shannon_KO ~ Environment, data = ko_meta)
+summary(m6)
+shapiro.test(m6$residuals) # Bad
+TukeyHSD(m6)
+kruskal.test(shannon_KO ~ Environment, data = ko_meta)
+nyi6 <- kwAllPairsNemenyiTest(shannon_KO ~ Environment, data = ko_meta)
+nyi_table6 <- fullPTable(nyi6$p.value)
+nyi_list6 <- multcompLetters(nyi_table6)
+nyi_let6 <- as.data.frame(nyi_list6$Letters) %>%
+  mutate(label = `nyi_list6$Letters`,
+         y = rep(8, nrow(.)),
+         name = "shannon_KO") %>%
+  dplyr::select(-`nyi_list6$Letters`) %>%
+  rownames_to_column(var = "Environment")
+
+label_df_ko <- rbind(nyi_let5, nyi_let6)
+facet_df_ko <- c("richness_KO" = "(a) KO richness",
+                 "shannon_KO" = "(b) KO Shannon")
+alpha_long_ko <- ko_meta %>%
+  pivot_longer(cols = c("richness_KO", "shannon_KO"))
+pdf("Figs/KO_Alpha.pdf", width = 6, height = 3)
+ggplot(alpha_long_ko, aes(reorder(Environment, value, mean), value)) +
   geom_boxplot(outlier.shape = NA) +
-  geom_jitter(size = 1, alpha = 0.2, width = 0.3) +
-  labs(x = "Environment", 
-       y = "# KOs") +
+  geom_jitter(size = 0.5, alpha = 0.2, width = 0.3) +
+  geom_text(data = label_df_ko, aes(Environment, y, label = label), 
+            size = 4, color = "black") +
+  labs(x = NULL, y = NULL) +
+  facet_wrap(~ name, ncol = 2, scales = "free_y", labeller = as_labeller(facet_df_ko)) +
   theme_bw() +
   theme(legend.position = "none",
-        axis.title.y = element_text(size = 12),
-        axis.title.x = element_blank(),
+        axis.title = element_blank(),
         axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 8, angle = 45, hjust = 1),
         strip.text = element_text(size = 10))
@@ -1597,7 +1665,7 @@ dev.off()
 
 
 
-#### _KO Community ####
+#### _KO Beta ####
 #### __KO PCoAs ####
 bc_ko <- vegdist(ko_comm_DESeq, method = "bray")
 pcoa_ko <- cmdscale(bc_ko, k = nrow(ko_meta) - 1, eig = T)
@@ -1809,11 +1877,127 @@ mp <- multipatt(ko_comm_DESeq,
                 control = how(nperm=999))
 summary(mp) # None!!
 
+
+
 #### _KO Individual ####
 # Extract and analyze list of KOs of interest
 # Need to get list of KOs from Lara/Quandt Lab
 # For now make barplot and heatmap of top KOs to develop script
- 
+# Data frame
+gene_plot <- data.frame("Environment" = as.factor(ko_meta$Environment),
+                        K03164 = ko_comm_DESeq$K03164,
+                        K10955 = ko_comm_DESeq$K10955,
+                        K00777 = ko_comm_DESeq$K00777,
+                        K06867 = ko_comm_DESeq$K06867,
+                        K03006 = ko_comm_DESeq$K03006,
+                        K03010 = ko_comm_DESeq$K03010,
+                        K05658 = ko_comm_DESeq$K05658,
+                        K00698 = ko_comm_DESeq$K00698,
+                        K15503 = ko_comm_DESeq$K15503,
+                        K12811 = ko_comm_DESeq$K12811)
+
+#### __ (I) Stats ####
+# Run a loop 
+kruskal_results_genes <- as.data.frame(matrix(data = NA, 11, 3)) %>%
+  set_names(c("Gene", "X2", "P"))
+for (i in 2:11) {
+  k <- kruskal.test(gene_plot[[i]] ~ gene_plot$Environment)
+  kruskal_results_genes$Gene[i] <- names(gene_plot)[i]
+  kruskal_results_genes$X2[i] <- round(k$statistic, digits = 2)
+  kruskal_results_genes$P[i] <- k$p.value
+}
+kruskal_results_genes <- kruskal_results_genes %>%
+  filter(is.na(Gene) == F) %>%
+  mutate(Pfdr = p.adjust(P, method = "fdr"))
+# All significant
+
+
+
+#### __ (II) Graphs ####
+# Barplot
+table(ko_meta$Environment)
+gene_plot_long <- gene_plot %>%
+  pivot_longer(c("K03164", "K10955", "K00777", "K06867", "K03006",
+                 "K03010", "K05658", "K00698", "K15503", "K12811"), 
+               names_to = "Gene", values_to = "Abundance") %>%
+  mutate(Gene = factor(Gene,
+                       levels = c("K03164", "K10955", "K00777", "K06867", "K03006",
+                                  "K03010", "K05658", "K00698", "K15503", "K12811"))) %>%
+  droplevels() %>%
+  mutate(Environment = dplyr::recode_factor(Environment,
+                                     "Acid mine drainage" = "Acid mine drainage (n = 33)",
+                                     "Cryosphere" = "Cryosphere (n = 47)",
+                                     "Desert" = "Desert (n = 33)",
+                                     "Glacial forefield" = "Glacial forefield (n = 60)",
+                                     "Hot spring" = "Hot spring (n = 167)",
+                                     "Hydrothermal vent" = "Hydrothermal vent (n = 237)",
+                                     "Hypersaline" = "Hypersaline (n = 225)",
+                                     "Soda lake" = "Soda lake (n = 25)"))
+
+gene_plot_summary <- gene_plot_long %>%
+  group_by(Environment, Gene) %>%
+  summarise(mean = mean(Abundance),
+            se = std.error(Abundance))
+
+pdf("Figs/KO_Barplot_Top.pdf", width = 8, height = 5)
+ggplot(gene_plot_summary, aes(Environment, mean, fill = Gene, group = Gene)) +
+  geom_bar(stat = "identity", position = position_dodge(0.75)) +
+  geom_linerange(aes(x = Environment, ymin = mean - se, ymax = mean + se, 
+                     group = Gene),
+                 position = position_dodge(0.75)) +
+  labs(x = NULL, 
+       y = "Abundance (DESeq2 normalized)",
+       fill = "KO") +
+  scale_fill_manual(values = brewer.pal(10, "Paired"),
+                    labels = ko_list$KO_def[1:10]) +
+  theme_classic() +
+  theme(axis.title = element_text(size = 12),
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1, vjust = 1),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        legend.position = c(1,1),
+        legend.justification = c(1,1),
+        legend.background = element_blank(),
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.7), "cm"))
+dev.off()
+
+# Heatmap
+# Use pheatmap (pretty heatmap) package
+gene_hm <- data.frame("sampleID" = ko_meta$sampleID,
+                       K03164 = ko_comm_DESeq$K03164,
+                       K10955 = ko_comm_DESeq$K10955,
+                       K00777 = ko_comm_DESeq$K00777,
+                       K06867 = ko_comm_DESeq$K06867,
+                       K03006 = ko_comm_DESeq$K03006,
+                       K03010 = ko_comm_DESeq$K03010,
+                       K05658 = ko_comm_DESeq$K05658,
+                       K00698 = ko_comm_DESeq$K00698,
+                       K15503 = ko_comm_DESeq$K15503,
+                       K12811 = ko_comm_DESeq$K12811) %>%
+  column_to_rownames(var = "sampleID") %>%
+  t() %>%
+  as.matrix()
+
+ann_cols <- data.frame(row.names = colnames(gene_hm), 
+                       Environment = ko_meta$Environment)
+ann_colors <- list(Environment = c("Acid mine drainage" = hue_pal()(8)[1],
+                                   "Cryosphere" = hue_pal()(8)[2],
+                                   "Desert" = hue_pal()(8)[3],
+                                   "Glacial forefield" = hue_pal()(8)[4],
+                                   "Hot spring" = hue_pal()(8)[5],
+                                   "Hydrothermal vent" = hue_pal()(8)[6],
+                                   "Hypersaline" = hue_pal()(8)[7],
+                                   "Soda lake" = hue_pal()(8)[8]))
+phm1 <- pheatmap(gene_hm,
+         scale = "row",
+         show_colnames = F,
+         cluster_rows = F,
+         annotation_col = ann_cols,
+         annotation_colors = ann_colors)
+save_pheatmap_pdf(phm1, "Figs/KO_heatmap_Top.pdf")
+
+
 
 #### ..........................####
 #### Other ####
