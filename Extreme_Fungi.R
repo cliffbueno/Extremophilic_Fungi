@@ -1503,6 +1503,16 @@ plot_grid(g_year, g_assem, align = "hv", ncol = 2)
 dev.off()
 
 # Given that these factors have higher R2 than environment, we will likely want to remove some of the older data and perhaps keep only a subset of assembly methods
+# Check environment sizes by Year and Assembler subsets
+# Soda Lake had least n, all 26 were after 2012 though
+n_test <- input_fungi_CPM_nz$map_loaded %>%
+  mutate(Year = as.integer(as.character(Year))) %>%
+  filter(Year > 2011) %>%
+  droplevels()
+table(n_test$Environment)
+levels(n_test$Assembler)
+table(n_test$Assembler)
+# Still 19 different assemblers though!
 
 
 
