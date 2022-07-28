@@ -1,5 +1,5 @@
 # Extremophilic Fungi Metagenome Analysis
-# For review paper Quandt Mycology Lab, University of Colorado Boulder
+# For review paper with Quandt Mycology Lab, University of Colorado Boulder
 # by Cliff Bueno de Mesquita, JGI, July 2022
 # Click the "Show document outline" button in the top right corner to view document outline
 # Sections are:
@@ -419,6 +419,7 @@ sort(colSums(input_fungi$data_loaded))
 # Note lots of samples with 0 or very few fungi
 # Purposefully not filtering those out those as 0's are interesting in this analysis
 # These are extreme envrionments, some may have few to no fungi
+# Further below, however, some analyses will be done with zeroes removed
 mean(colSums(input_fungi$data_loaded)) # 408
 se(colSums(input_fungi$data_loaded)) # 51
 input_fungi$map_loaded$fung_count <- colSums(input_fungi$data_loaded)
@@ -513,7 +514,7 @@ input_fungi_CPM <- input_fungi
 # Replace counts in "data_loaded" with CPM transformed counts
 # This is CPM assembled metagenomic reads
 # Do (count*1000000)/GenomeSize
-# i is samples 1 to 1145
+# i is samples 1 to 1131
 # j is taxa 1 to 303
 for (i in 1:ncol(input_fungi$data_loaded)) {
   for (j in 1:nrow(input_fungi$data_loaded)) {
@@ -524,11 +525,12 @@ for (i in 1:ncol(input_fungi$data_loaded)) {
 # Make stacked bar plots by taxonomic level
 # Resort so unassigned and other are on the top
 # Use "Paired" palette from RColorBrewer
+# "Set2" palette could be another option
 # Unassigned gets grey75, Other gets grey90
 # Show all phyla; for others show top 15
+# Can update this later if people want a different number of taxa shown
 ntax <- 15
 mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(ntax)
-mycolors2 <- colorRampPalette(brewer.pal(8, "Set2"))(ntax)
 
 # Phyla
 tax_sum_Phyla <- summarize_taxonomy(input_fungi_CPM, level = 2, report_higher_tax = F, relative = F)
@@ -740,6 +742,13 @@ dev.off()
 
 
 #### _Relative ####
+# Remove zeroes (206 removed, 925 remaining)
+input_fungi_nz <- filter_data(input_fungi,
+                              filter_cat = "sampleID",
+                              filter_vals = rownames(countFun))
+input_fungi_nz$map_loaded$Study.Name <- as.factor(input_fungi_nz$map_loaded$Study.Name)
+levels(input_fungi_nz$map_loaded$Environment)
+
 # Calculate relative abundance of fungi, only for samples with fungi (n = 925)
 # Make relative abundance stacked bar plots by taxonomic level
 # Re-sort so unassigned and other are on the top
@@ -893,12 +902,14 @@ taxa_summary_by_sample_type(tax_sum_Genus, input_fungi_nz$map_loaded, 'Environme
 #### _PCoAs ####
 # PCoA and PERMANOVA by Environment
 # Also check Habitat, Ecosystem.Category, Ecosystem.Subtype, Ecosystem.Type, Specific.Ecosystem
-# Filter out fungal zeroes (filters 206 samples, 925 remaining)
+
+# Filter out fungal zeroes from CPM data (filters 206 samples, 925 remaining)
 countFun <- as.data.frame(sort(colSums(input_fungi_CPM$data_loaded))) %>%
   filter(`sort(colSums(input_fungi_CPM$data_loaded))` == 0)
 input_fungi_CPM_nz <- filter_data(input_fungi_CPM,
                                   filter_cat = "sampleID",
                                   filter_vals = rownames(countFun))
+
 Phylum_nz <- summarize_taxonomy(input_fungi_CPM_nz, level = 2, report_higher_tax = F, relative = F)
 Class_nz <- summarize_taxonomy(input_fungi_CPM_nz, level = 3, report_higher_tax = F, relative = F)
 Order_nz <- summarize_taxonomy(input_fungi_CPM_nz, level = 4, report_higher_tax = F, relative = F)
@@ -907,13 +918,15 @@ Family_nz <- summarize_taxonomy(input_fungi_CPM_nz, level = 5, report_higher_tax
 # Do at each taxonomic level
 # Genus (lowest level)
 bc <- calc_dm(input_fungi_CPM_nz$data_loaded)
+
+# Check some PERMANOVA models to get a sense of R2 values
 set.seed(1150)
 adonis2(bc ~ Environment, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.074, p = 0.001
 adonis2(bc ~ Habitat, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.338, p = 0.001
-adonis2(bc ~ Ecosystem.Category, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.077
-adonis2(bc ~ Ecosystem.Subtype, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.077
-adonis2(bc ~ Ecosystem.Type, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.077
-adonis2(bc ~ Specific.Ecosystem, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.077
+adonis2(bc ~ Ecosystem.Category, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.015, p = 0.001
+adonis2(bc ~ Ecosystem.Subtype, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.09, p = 0.001
+adonis2(bc ~ Ecosystem.Type, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.06, p = 0.001
+adonis2(bc ~ Specific.Ecosystem, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.07, p = 0.001
 anova(betadisper(bc, input_fungi_CPM_nz$map_loaded$Environment)) # Dispersion not homogeneous
 pcoa <- cmdscale(bc, k = nrow(input_fungi_CPM_nz$map_loaded) - 1, eig = T)
 eigenvals(pcoa)/sum(eigenvals(pcoa)) # 12.1, 9.2 % variation explained
@@ -935,7 +948,10 @@ g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
         axis.text = element_text(size = 10))
 g
 dev.off()
+
+# Interactive plot (can hover mouse over points)
 ggplotly(g)
+
 # There's basically no clustering of fungal composition by environment at genus level, lots of overlap!
 # Extract legend to plot separately as its own panel later
 g_leg <- get_legend(g)
@@ -1093,30 +1109,30 @@ for (i in 1:ncol(input_arc$data_loaded)) {
 }
 
 # Remove zeroes
-countArc <- as.data.frame(sort(colSums(input_arc$data_loaded))) %>%
-  filter(`sort(colSums(input_arc$data_loaded))` == 0)
-input_arc_nz <- filter_data(input_arc,
-                            filter_cat = "sampleID",
-                            filter_vals = rownames(countArc))
+countArc <- as.data.frame(sort(colSums(input_arc_CPM$data_loaded))) %>%
+  filter(`sort(colSums(input_arc_CPM$data_loaded))` == 0)
+input_arc_CPM_nz <- filter_data(input_arc_CPM,
+                                filter_cat = "sampleID",
+                                filter_vals = rownames(countArc))
 
 # BC, PERMANOVA, PERMDISP, PCoA
-bc_arc <- calc_dm(input_arc_nz$data_loaded)
+bc_arc <- calc_dm(input_arc_CPM_nz$data_loaded)
 set.seed(1150)
-adonis2(bc_arc ~ Environment, data = input_arc_nz$map_loaded) # R2 = 0.16, p = 0.001
-anova(betadisper(bc_arc, input_arc_nz$map_loaded$Environment)) # Dispersion not homogeneous
-pcoa_arc <- cmdscale(bc_arc, k = nrow(input_arc_nz$map_loaded) - 1, eig = T)
-eigenvals(pcoa_arc)/sum(eigenvals(pcoa_arc)) # 21.6, 13.7 % variation explained
-input_arc_nz$map_loaded$Axis01 <- scores(pcoa_arc)[,1]
-input_arc_nz$map_loaded$Axis02 <- scores(pcoa_arc)[,2]
-micro.hulls <- ddply(input_arc_nz$map_loaded, c("Environment"), find_hull)
-g_arc <- ggplot(input_arc_nz$map_loaded, aes(Axis01, Axis02)) +
+adonis2(bc_arc ~ Environment, data = input_arc_CPM_nz$map_loaded) # R2 = 0.16, p = 0.001
+anova(betadisper(bc_arc, input_arc_CPM_nz$map_loaded$Environment)) # Dispersion not homogeneous
+pcoa_arc <- cmdscale(bc_arc, k = nrow(input_arc_CPM_nz$map_loaded) - 1, eig = T)
+eigenvals(pcoa_arc)/sum(eigenvals(pcoa_arc)) # 20.0, 14.7 % variation explained
+input_arc_CPM_nz$map_loaded$Axis01 <- scores(pcoa_arc)[,1]
+input_arc_CPM_nz$map_loaded$Axis02 <- scores(pcoa_arc)[,2]
+micro.hulls <- ddply(input_arc_CPM_nz$map_loaded, c("Environment"), find_hull)
+g_arc <- ggplot(input_arc_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F, size = 0.25) +
   geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
              show.legend = T) +
-  labs(x = "PC1: 21.6%", 
-       y = "PC2: 13.7%") +
+  labs(x = "PC1: 20.0%", 
+       y = "PC2: 14.7%") +
   ggtitle("Archaea") +
   theme_bw() +  
   theme(legend.position = "none",
@@ -1138,27 +1154,27 @@ for (i in 1:ncol(input_bac$data_loaded)) {
 }
 
 # Check zeroes - none, all samples had bacteria
-countbac <- as.data.frame(sort(colSums(input_bac$data_loaded))) %>%
-  filter(`sort(colSums(input_bac$data_loaded))` == 0)
+countbac <- as.data.frame(sort(colSums(input_bac_CPM$data_loaded))) %>%
+  filter(`sort(colSums(input_bac_CPM$data_loaded))` == 0)
 
 # BC, PERMANOVA, PERMDISP, PCoA
-bc_bac <- calc_dm(input_bac$data_loaded)
+bc_bac <- calc_dm(input_bac_CPM$data_loaded)
 set.seed(1150)
-adonis2(bc_bac ~ Environment, data = input_bac$map_loaded) # R2 = 0.14, p = 0.001
-anova(betadisper(bc_bac, input_bac$map_loaded$Environment)) # Dispersion not homogeneous
-pcoa_bac <- cmdscale(bc_bac, k = nrow(input_bac$map_loaded) - 1, eig = T)
-eigenvals(pcoa_bac)/sum(eigenvals(pcoa_bac)) # 25.6, 14.7 % variation explained
-input_bac$map_loaded$Axis01 <- scores(pcoa_bac)[,1]
-input_bac$map_loaded$Axis02 <- scores(pcoa_bac)[,2]
-micro.hulls <- ddply(input_bac$map_loaded, c("Environment"), find_hull)
-g_bac <- ggplot(input_bac$map_loaded, aes(Axis01, Axis02)) +
+adonis2(bc_bac ~ Environment, data = input_bac_CPM$map_loaded) # R2 = 0.14, p = 0.001
+anova(betadisper(bc_bac, input_bac_CPM$map_loaded$Environment)) # Dispersion not homogeneous
+pcoa_bac <- cmdscale(bc_bac, k = nrow(input_bac_CPM$map_loaded) - 1, eig = T)
+eigenvals(pcoa_bac)/sum(eigenvals(pcoa_bac)) # 23.6, 6.5 % variation explained
+input_bac_CPM$map_loaded$Axis01 <- scores(pcoa_bac)[,1]
+input_bac_CPM$map_loaded$Axis02 <- scores(pcoa_bac)[,2]
+micro.hulls <- ddply(input_bac_CPM$map_loaded, c("Environment"), find_hull)
+g_bac <- ggplot(input_bac_CPM$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F, size = 0.25) +
   geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
              show.legend = T) +
-  labs(x = "PC1: 25.6%", 
-       y = "PC2: 14.7%") +
+  labs(x = "PC1: 23.6%", 
+       y = "PC2: 6.5%") +
   ggtitle("Bacteria") +
   theme_bw() +  
   theme(legend.position = "none",
@@ -1192,6 +1208,302 @@ pdf("Figs/PCoA_ArcBacFun.pdf", width = 8, height = 5)
 plot_grid(g_arc,g_bac,g,g_leg, ncol = 2, hjust = "hv")
 dev.off()
 
+#### _Subset ####
+# Lopsided sample sizes may be throwing things off
+# Randombly sample 26 samples from each environment and redo
+table(input_fungi_CPM_nz$map_loaded$Environment)
+table(input_bac_CPM$map_loaded$Environment)
+table(input_arc_CPM$map_loaded$Environment)
+
+setseed(1210)
+subset26 <- input_fungi_CPM_nz$map_loaded %>%
+  group_by(Environment) %>%
+  slice_sample(n = 26)
+table(subset26$Environment)
+sum(table(subset26$Environment)) # 208
+
+sub_arc <- filter_data(input_arc_CPM_nz,
+                       filter_cat = "sampleID",
+                       keep_vals = subset26$sampleID) # 206 (2 had zero Archaea)
+sub_bac <- filter_data(input_bac_CPM,
+                       filter_cat = "sampleID",
+                       keep_vals = subset26$sampleID) # 208, good
+sub_fun <- filter_data(input_fungi_CPM_nz,
+                       filter_cat = "sampleID",
+                       keep_vals = subset26$sampleID) # 208, good
+
+bc_arc2 <- calc_dm(sub_arc$data_loaded)
+pcoa_arc2 <- cmdscale(bc_arc2, k = nrow(sub_arc$map_loaded) - 1, eig = T)
+eigenvals(pcoa_arc2)/sum(eigenvals(pcoa_arc2)) # 23.6, 13.3 % variation explained
+sub_arc$map_loaded$Axis01 <- scores(pcoa_arc2)[,1]
+sub_arc$map_loaded$Axis02 <- scores(pcoa_arc2)[,2]
+micro.hulls <- ddply(sub_arc$map_loaded, c("Environment"), find_hull)
+g_arc2 <- ggplot(sub_arc$map_loaded, aes(Axis01, Axis02)) +
+  geom_polygon(data = micro.hulls, 
+               aes(colour = Environment, fill = Environment),
+               alpha = 0.1, show.legend = F, size = 0.25) +
+  geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
+             show.legend = T) +
+  labs(x = "PC1: 23.6%", 
+       y = "PC2: 13.3%") +
+  ggtitle("Archaea") +
+  theme_bw() +  
+  theme(legend.position = "none",
+        axis.title = element_text(face = "bold", size = 12), 
+        axis.text = element_text(size = 10),
+        plot.title = element_text(hjust = 0.5, vjust = -1))
+g_arc2
+
+bc_arc2 <- calc_dm(sub_arc$data_loaded)
+pcoa_arc2 <- cmdscale(bc_arc2, k = nrow(sub_arc$map_loaded) - 1, eig = T)
+eigenvals(pcoa_arc2)/sum(eigenvals(pcoa_arc2)) # 23.6, 13.3 % variation explained
+sub_arc$map_loaded$Axis01 <- scores(pcoa_arc2)[,1]
+sub_arc$map_loaded$Axis02 <- scores(pcoa_arc2)[,2]
+micro.hulls <- ddply(sub_arc$map_loaded, c("Environment"), find_hull)
+g_arc2 <- ggplot(sub_arc$map_loaded, aes(Axis01, Axis02)) +
+  geom_polygon(data = micro.hulls, 
+               aes(colour = Environment, fill = Environment),
+               alpha = 0.1, show.legend = F, size = 0.25) +
+  geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
+             show.legend = T) +
+  labs(x = "PC1: 23.6%", 
+       y = "PC2: 13.3%") +
+  ggtitle("Archaea") +
+  theme_bw() +  
+  theme(legend.position = "none",
+        axis.title = element_text(face = "bold", size = 12), 
+        axis.text = element_text(size = 10),
+        plot.title = element_text(hjust = 0.5, vjust = -1))
+g_arc2
+
+bc_bac2 <- calc_dm(sub_bac$data_loaded)
+pcoa_bac2 <- cmdscale(bc_bac2, k = nrow(sub_bac$map_loaded) - 1, eig = T)
+eigenvals(pcoa_bac2)/sum(eigenvals(pcoa_bac2)) # 22.4, 9.3 % variation explained
+sub_bac$map_loaded$Axis01 <- scores(pcoa_bac2)[,1]
+sub_bac$map_loaded$Axis02 <- scores(pcoa_bac2)[,2]
+micro.hulls <- ddply(sub_bac$map_loaded, c("Environment"), find_hull)
+g_bac2 <- ggplot(sub_bac$map_loaded, aes(Axis01, Axis02)) +
+  geom_polygon(data = micro.hulls, 
+               aes(colour = Environment, fill = Environment),
+               alpha = 0.1, show.legend = F, size = 0.25) +
+  geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
+             show.legend = T) +
+  labs(x = "PC1: 22.4%", 
+       y = "PC2: 9.3%") +
+  ggtitle("Bacteria") +
+  theme_bw() +  
+  theme(legend.position = "none",
+        axis.title = element_text(face = "bold", size = 12), 
+        axis.text = element_text(size = 10),
+        plot.title = element_text(hjust = 0.5, vjust = -1))
+g_bac2
+
+bc_fun2 <- calc_dm(sub_fun$data_loaded)
+pcoa_fun2 <- cmdscale(bc_fun2, k = nrow(sub_fun$map_loaded) - 1, eig = T)
+eigenvals(pcoa_fun2)/sum(eigenvals(pcoa_fun2)) # 15.4, 10.7 % variation explained
+sub_fun$map_loaded$Axis01 <- scores(pcoa_fun2)[,1]
+sub_fun$map_loaded$Axis02 <- scores(pcoa_fun2)[,2]
+micro.hulls <- ddply(sub_fun$map_loaded, c("Environment"), find_hull)
+g_fun2 <- ggplot(sub_fun$map_loaded, aes(Axis01, Axis02)) +
+  geom_polygon(data = micro.hulls, 
+               aes(colour = Environment, fill = Environment),
+               alpha = 0.1, show.legend = F, size = 0.25) +
+  geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
+             show.legend = T) +
+  labs(x = "PC1: 15.4%", 
+       y = "PC2: 10.7%") +
+  ggtitle("Fungi") +
+  theme_bw() +  
+  theme(legend.position = "none",
+        axis.title = element_text(face = "bold", size = 12), 
+        axis.text = element_text(size = 10),
+        plot.title = element_text(hjust = 0.5, vjust = -1))
+g_fun2
+
+pdf("Figs/PCoA_ArcBacFun_n26.pdf", width = 8, height = 5)
+plot_grid(g_arc2,g_bac2,g_fun2,g_leg, ncol = 2, hjust = "hv")
+dev.off()
+
+
+
+#### _Methods ####
+# Check to see if methods differences are obscuring beta-diversity patterns
+# Key metadata columns are Add.Date, Assembly.Method
+bc <- calc_dm(input_fungi_CPM_nz$data_loaded)
+pcoa <- cmdscale(bc, k = nrow(input_fungi_CPM_nz$map_loaded) - 1, eig = T)
+eigenvals(pcoa)/sum(eigenvals(pcoa)) # 12.1, 9.2 % variation explained
+input_fungi_CPM_nz$map_loaded$Axis01 <- scores(pcoa)[,1]
+input_fungi_CPM_nz$map_loaded$Axis02 <- scores(pcoa)[,2]
+
+# Year
+# Need to make new column for year or time periods
+# Also fix blank cells in assembly method
+input_fungi_CPM_nz$map_loaded$Assembly.Method[input_fungi_CPM_nz$map_loaded$Assembly.Method==""] <- "Unknown"
+input_fungi_CPM_nz$map_loaded <- input_fungi_CPM_nz$map_loaded %>%
+  separate(Add.Date, into = c("Year", "Month", "Day"), sep = "-", remove = F) %>%
+  mutate_if(is.character, as.factor)
+table(input_fungi_CPM_nz$map_loaded$Year)
+set.seed(1150)
+adonis2(bc ~ Year, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.13, p = 0.001
+anova(betadisper(bc, input_fungi_CPM_nz$map_loaded$Year)) # Dispersion not homogeneous
+micro.hulls <- ddply(input_fungi_CPM_nz$map_loaded, c("Year"), find_hull)
+g_year <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
+  geom_polygon(data = micro.hulls, 
+               aes(colour = Year, fill = Year),
+               alpha = 0.1, show.legend = F) +
+  geom_point(size = 2, alpha = 0.5, aes(colour = Year),
+             show.legend = T) +
+  labs(x = "PC1: 12.1%", 
+       y = "PC2: 9.2%") +
+  ggtitle("Year: R2 = 0.13") +
+  theme_bw() +  
+  theme(legend.position = "right",
+        legend.key.size = unit(0.3, "cm"),
+        axis.title = element_text(face = "bold", size = 12), 
+        axis.text = element_text(size = 10),
+        plot.title = element_text(vjust = -1))
+g_year
+
+# Assembly method
+# Need to make new column for method type or multiple or unknown
+input_fungi_CPM_nz$map_loaded$Assembler <- dplyr::recode_factor(input_fungi_CPM_nz$map_loaded$Assembly.Method,
+                                   "AbySS v1.5.0" = "AbySS",
+                                   "canu v. 1.7" = "Canu",
+                                   "canu v. 1.9" = "Canu",
+                                   "Celera WGS Assembler v5.3" = "Celera",
+                                   "Celera, Phrap" = "Multiple",
+                                   "CLC Bio package" = "CLC",
+                                   "CLC Genomics" = "CLC",
+                                   "CLC genomics wb7" = "CLC",
+                                   "CLC genomics workbench" = "CLC",
+                                   "CLC genomics workbench, v. 7.0" = "CLC",
+                                   "Custom JGI assembly, Nielsen et. al." = "Custom JGI",
+                                   "Custom JGI assembly." = "Custom JGI",
+                                   "IDBA" = "IDBA",
+                                   "IDBA 1.1.1 PRE correction" = "IDBA",
+                                   "idba v. 1.1.1" = "IDBA",
+                                   "IDBA v. 1.1.1" = "IDBA",
+                                   "IDBA_1.1.1 PRE_correction" = "IDBA",
+                                   "IDBA_UD" = "IDBA_UD",
+                                   "idba_ud 1.1.1" = "IDBA_UD",
+                                   "IDBA_UD k52-k92 step10" = "IDBA_UD",
+                                   "IDBA_UD k52-k92 step10 - contigs greater than or equal to 1kb and less than 4kb" = "IDBA_UD",
+                                   "IDBA_UD k52-k92 step10 - contigs greater than or equal to 4kb" = "IDBA_UD",
+                                   "IDBA_UD k52-k92 step10 - contigs less than 1kb" = "IDBA_UD",
+                                   "idba_ud v 1.1.1" = "IDBA_UD",
+                                   "idba_ud v. 1.1.1" = "IDBA_UD",
+                                   "IDBA_UD v. 1.1.1" = "IDBA_UD",
+                                   "IDBA-UD" = "IDBA_UD",
+                                   "IDBA-UD 1.1.3" = "IDBA_UD",
+                                   "IDBA-ud v. 1.1.1" = "IDBA_UD",
+                                   "IDBA-UD v. 1.1.1" = "IDBA_UD",
+                                   "idba.1.1.1" = "IDBA",
+                                   "lucy / pga" = "Multiple",
+                                   "Megahit" = "MEGAHIT",
+                                   "MEGAHit" = "MEGAHIT",
+                                   "MegaHit v. 1.02" = "MEGAHIT",
+                                   "MEGAHIT v. 1.1.1" = "MEGAHIT",
+                                   "megahit v. 1.1.3" = "MEGAHIT",
+                                   "Megahit v. 1.1.3" = "MEGAHIT",
+                                   "MegaHIT v. 1.2.9" = "MEGAHIT",
+                                   "MEGAHIT v. MEGAHIT v0.2.0" = "MEGAHIT",
+                                   "MEGAHIT v. MEGAHIT v1.0.3" = "MEGAHIT",
+                                   "MEGAHIT v. MEGAHIT v1.0.6" = "MEGAHIT",
+                                   "MEGAHIT v.1.0.3" = "MEGAHIT",
+                                   "MEGAN" = "MEGAN",
+                                   "metaSPAdes" = "metaSPAdes",
+                                   "metaSPAdes v. 3.10.0" = "metaSPAdes",
+                                   "metaspades v. 3.13.0" = "metaSPAdes",
+                                   "metaspades v. 3.14.1" = "metaSPAdes",
+                                   "metaSPAdes v. 3.7.1" = "metaSPAdes",
+                                   "metaSPAdes v3.10, CLC genomic workbench v7.5.1" = "metaSPAdes",
+                                   "metaSPAdes v3.10.1" = "metaSPAdes",
+                                   "Metavelvet" = "MetaVelvet",
+                                   "MetaVelvet - v1.2.01" = "MetaVelvet",
+                                   "MetaVelvet 1.2.02" = "MetaVelvet",
+                                   "metavelvet v. 1.2.02" = "MetaVelvet",
+                                   "Metavelvet v. 1.2.02" = "MetaVelvet",
+                                   "mira 3.0.4" = "MIRA",
+                                   "MIRA 4.9.5_2" = "MIRA",
+                                   "Newbler" = "Newbler",
+                                   "Newbler and/or Velvet" = "Multiple",
+                                   "Newbler v. 2.5" = "Newbler",
+                                   "Newbler v. 2.5.3" = "Newbler",
+                                   "Newbler v2.7" = "Newbler",
+                                   "pga" = "PGA",
+                                   "Ray 2.3.1" = "Ray",
+                                   "Ray 2.3.1 (no min length)" = "Ray",
+                                   "reassembled with IDBA_UD" = "IDBA_UD",
+                                   "reassembly by IDBA-UD" = "IDBA_UD",
+                                   "reassembly with IDBA_UD" = "IDBA_UD",
+                                   "reassembly with IDBA-UD" = "IDBA_UD",
+                                   "SAPDES" = "SPAdes",
+                                   "Soap denovo and minimus" = "Multiple",
+                                   "SOAPdenovo v2.04" = "SOAPdenovo",
+                                   "SOAPdenovo,newbler,minimus2 v. Version 1.05: testing... 2010,(v2.8 (20120726_1306)),AMOS/3.1.0" = "SOAPdenovo",
+                                   "Spades" = "SPAdes",
+                                   "SPADES" = "SPAdes",
+                                   "spades 3.0" = "SPAdes",
+                                   "Spades 3.6.1" = "SPAdes",
+                                   "SPAdes 3.7.1" = "SPAdes",
+                                   "SPAdes 3.8.0" = "SPAdes",
+                                   "Spades v. 3.10" = "SPAdes",
+                                   "SPAdes v. 3.11.0" = "SPAdes",
+                                   "spades v. 3.11.1" = "SPAdes",
+                                   "Spades v. 3.11.1" = "SPAdes",
+                                   "SPAdes v. 3.11.1" = "SPAdes",
+                                   "spades v. 3.12.0" = "SPAdes",
+                                   "Spades v. 3.12.0" = "SPAdes",
+                                   "spades v. 3.13.0" = "SPAdes",
+                                   "SPades v. 3.13.0" = "SPAdes",
+                                   "SPAdes v. 3.6.0" = "SPAdes",
+                                   "SPAdes v. 3.9.0" = "SPAdes",
+                                   "spades v. SPAdes version: 3.10.1" = "SPAdes",
+                                   "spades v. SPAdes version: 3.11.1-check" = "SPAdes",
+                                   "SPADES v3.6.1" = "SPAdes",
+                                   "Spades_3.6" = "SPAdes",
+                                   "SPAdes3.1.0" = "SPAdes",
+                                   "Unknown" = "Unknown",
+                                   "Unkown" = "Unknown",
+                                   "Velvet" = "Velvet",
+                                   "Velvet + MetaVelvet at multiple Kmers" = "Multiple",
+                                   "Velvet + MetaVelvet at multiple Kmers followed by Minimus2 on all assemblies" = "Multiple",
+                                   "Velvet, MetaVelvet, Minimus" = "Multiple")
+
+levels(input_fungi_CPM_nz$map_loaded$Assembler)
+table(input_fungi_CPM_nz$map_loaded$Assembler)
+
+# Get these columns and sample ID to add to any metadata
+methods <- input_fungi_CPM_nz$map_loaded %>%
+  dplyr::select(sampleID, Year, Assembler)
+
+set.seed(1150)
+adonis2(bc ~ Assembler, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.12, p = 0.001
+anova(betadisper(bc, input_fungi_CPM_nz$map_loaded$Assembler)) # Dispersion not homogeneous
+micro.hulls <- ddply(input_fungi_CPM_nz$map_loaded, c("Assembler"), find_hull)
+g_assem <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
+  geom_polygon(data = micro.hulls, 
+               aes(colour = Assembler, fill = Assembler),
+               alpha = 0.1, show.legend = F) +
+  geom_point(size = 2, alpha = 0.5, aes(colour = Assembler),
+             show.legend = T) +
+  labs(x = "PC1: 12.1%", 
+       y = "PC2: 9.2%") +
+  ggtitle("Assembler: R2 = 0.12") +
+  theme_bw() +  
+  theme(legend.position = "right",
+        legend.key.size = unit(0.3, "cm"),
+        axis.title = element_text(face = "bold", size = 12), 
+        axis.text = element_text(size = 10),
+        plot.title = element_text(vjust = -1))
+g_assem
+
+pdf("Figs/PCoA_Year_Assembler.pdf", width = 9, height = 4)
+plot_grid(g_year, g_assem, align = "hv", ncol = 2)
+dev.off()
+
+# Given that these factors have higher R2 than environment, we will likely want to remove some of the older data and perhaps keep only a subset of assembly methods
+
 
 
 #### _by Ecosystem ####
@@ -1199,11 +1511,6 @@ dev.off()
 # Make pie charts of taxa
 # Use fungi only input data - get relative abundances of fungal phyla out of just fungi
 # Use samples with at least 1 fungal count
-input_fungi_nz <- filter_data(input_fungi,
-                              filter_cat = "sampleID",
-                              filter_vals = rownames(countFun))
-input_fungi_nz$map_loaded$Study.Name <- as.factor(input_fungi_nz$map_loaded$Study.Name)
-levels(input_fungi_nz$map_loaded$Environment)
 
 # Need to do several for loops
 # For subseting, summarizing, plotting, store dfs in a list to enable for loop/indexing
@@ -1250,9 +1557,9 @@ counter <- 1
 for (i in 1:length(env)) {
   k <- nrow(studyN[[i]])
   for (l in 1:k) {
-  df[[c]] <- filter_data(env[[i]],
-                         filter_cat = "Study.Name",
-                         keep_vals = studyN[[i]]$Var1[l])
+  df[[counter]] <- filter_data(env[[i]],
+                               filter_cat = "Study.Name",
+                               keep_vals = studyN[[i]]$Var1[l])
   counter <- counter + 1
   }
 }
@@ -1500,12 +1807,16 @@ dev.off()
 # Folder FungalKOs has a file for each metagenome with the KO hits of the fungal phyla scaffolds
 # Already deleted 318 blank files (no fungal KOs); 837 had at least 1 KO
 # Note that there is bias in eukaryote gene calling/KO assignment
+# We could also get COG or Pfam profiles if we want
+
 # Run a for loop to read in the file for each metagenome and combine into 1
 setwd("FungalKOs/")
+list.files()
 ko <- list()
 ko_input <- data.frame(V1 = "NA",
                        V2 = "NA",
                        V3 = "NA")
+ko_table <- ko_input
 for (i in 1:length(list.files())) {
   ko[[i]] <- read.delim(list.files()[i], header = F)
   ko_table <- ko_table %>%
@@ -1515,7 +1826,7 @@ for (i in 1:length(list.files())) {
 setwd("~/Documents/GitHub/Extremophilic_Fungi/")
 
 # Clean up table
-ko_table_wTax <- ko_input %>%
+ko_table_wTax <- ko_table %>%
   filter(V1 != "NA") %>%
   separate(V1, into = c("Junk", "KO"), sep = ":") %>%
   dplyr::select(-Junk, -V2) %>%
@@ -1559,7 +1870,9 @@ ko_list <- ko_input %>%
 #  }
 #}
 #write.csv(ko_list, file = "KOlist_wDefinitions.csv", row.names = F)
+ko_list <- read.csv("KOlist_wDefinitions.csv")
 ko_list$KO_def <- paste(ko_list$KO, ko_list$Definition, sep = " ")
+
 
 # Make community style table and metadata, match IDs
 ko_comm <- ko_table_MGcount %>%
@@ -1570,7 +1883,10 @@ ko_comm <- ko_table_MGcount %>%
 
 ko_meta <- input_fungi$map_loaded %>%
   filter(taxon_oid %in% rownames(ko_comm)) %>%
-  arrange(taxon_oid)
+  arrange(taxon_oid) %>%
+  left_join(., methods, by = "sampleID") %>%
+  mutate(rn = sampleID) %>%
+  column_to_rownames(var = "rn")
 
 # Check match (should be zero)
 sum(rownames(ko_comm) != ko_meta$taxon_oid)
@@ -1719,7 +2035,7 @@ plot_grid(g1_ko, g2_ko, align = "hv", ncol = 2, rel_widths = c(1,1.515))
 ko_richness <- ko_meta %>%
   dplyr::select(richness_KO) %>%
   arrange(desc(richness_KO)) %>%
-  mutate(index = seq(1:nrow(ko_richness)))
+  mutate(index = seq(1:nrow(.)))
 plot(rownames(ko_list), ko_list$n)
 plot(ko_richness$index, ko_richness$richness_KO)
 sum(ko_richness$richness_KO == 1) # 77 with just 1 KO
@@ -1856,8 +2172,66 @@ pdf("Figs/KO_PCoA.pdf", width = 8.5, height = 3.5)
 plot_grid(g5_ko, g6_ko, ko_pcoa_leg, align = "hv", ncol = 3, rel_widths = c(2.5,2.5,1))
 dev.off()
 
+# Also do with the same subset of the data as taxonomy (26 samples from each env)
+# Note numbers are slightly different here because of 0 fungal KOs in some samples
+ko_meta_subset26 <- ko_meta %>%
+  filter(sampleID %in% subset26$sampleID)
+ko_comm_DESeq_subset26 <- ko_comm_DESeq %>%
+  filter(rownames(.) %in% rownames(ko_meta_subset26))
+sum(rownames(ko_comm_DESeq_subset26) != rownames(ko_meta_subset26))
+table(ko_meta_subset26$Environment)
+
+bc_ko <- vegdist(ko_comm_DESeq_subset26, method = "bray")
+pcoa_ko <- cmdscale(bc_ko, k = nrow(ko_meta_subset26) - 1, eig = T)
+pcoaA1 <- round((eigenvals(pcoa_ko)/sum(eigenvals(pcoa_ko)))[1]*100, digits = 1)
+pcoaA2 <- round((eigenvals(pcoa_ko)/sum(eigenvals(pcoa_ko)))[2]*100, digits = 1)
+ko_meta_subset26$Axis01 <- scores(pcoa_ko)[,1]
+ko_meta_subset26$Axis02 <- scores(pcoa_ko)[,2]
+micro.hulls <- ddply(ko_meta_subset26, c("Environment"), find_hull)
+g7_ko <- ggplot(ko_meta_subset26, aes(Axis01, Axis02, colour = Environment)) +
+  geom_polygon(data = micro.hulls, aes(colour = Environment, fill = Environment),
+               alpha = 0.1, show.legend = F) +
+  geom_point(size = 3, alpha = 0.5) +
+  labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
+       y = paste("PC2: ", pcoaA2, "%", sep = ""),
+       colour = "Site",
+       title = "KO Bray-Curtis") +
+  theme_bw() +  
+  theme(legend.position = "none",
+        axis.title = element_text(face = "bold", size = 14), 
+        axis.text = element_text(size = 12),
+        plot.title = element_text(vjust = 0))
+g7_ko
+
+jac_ko <- vegdist(ko_comm_DESeq_subset26, method = "jaccard")
+pcoa1_ko <- cmdscale(jac_ko, k = nrow(ko_meta_subset26) - 1, eig = T)
+pcoa1A1 <- round((eigenvals(pcoa1_ko)/sum(eigenvals(pcoa1_ko)))[1]*100, digits = 1)
+pcoa1A2 <- round((eigenvals(pcoa1_ko)/sum(eigenvals(pcoa1_ko)))[2]*100, digits = 1)
+ko_meta_subset26$Axis01j <- scores(pcoa1_ko)[,1]
+ko_meta_subset26$Axis02j <- scores(pcoa1_ko)[,2]
+micro.hullsj <- ddply(ko_meta_subset26, c("Environment"), find_hullj)
+g8_ko <- ggplot(ko_meta_subset26, aes(Axis01j, Axis02j, colour = Environment)) +
+  geom_polygon(data = micro.hullsj, aes(colour = Environment, fill = Environment),
+               alpha = 0.1, show.legend = F) +
+  geom_point(size = 3, alpha = 0.5) +
+  labs(x = paste("PC1: ", pcoa1A1, "%", sep = ""), 
+       y = paste("PC2: ", pcoa1A2, "%", sep = ""),
+       colour = "Environment",
+       title = "KO Jaccard") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1))) +
+  theme_bw() +  
+  theme(legend.position = "none",
+        axis.title = element_text(face = "bold", size = 14), 
+        axis.text = element_text(size = 12),
+        plot.title = element_text(vjust = 0))
+g8_ko
+
+pdf("Figs/KO_PCoA_n26.pdf", width = 8.5, height = 3.5)
+plot_grid(g7_ko, g8_ko, ko_pcoa_leg, align = "hv", ncol = 3, rel_widths = c(2.5,2.5,1))
+dev.off()
 
 #### __Stats ####
+# Rerun whichever richness filter you want, then run this
 set.seed(308)
 adonis2(bc_ko ~ Environment, data = ko_meta_filt) # R2 = 0.18, p = 0.001
 anova(betadisper(bc_ko, ko_meta_filt$Environment)) # Dispersion not homogeneous
@@ -1865,6 +2239,23 @@ anova(betadisper(bc_ko, ko_meta_filt$Environment)) # Dispersion not homogeneous
 set.seed(308)
 adonis2(jac_ko ~ ko_meta_filt$Environment) # R2 = 0.17, p = 0.001
 anova(betadisper(jac_ko, ko_meta_filt$Environment)) # Dispersion not homogeneous
+
+# Subset 26 (rerun that section first)
+set.seed(308)
+adonis2(bc_ko ~ Environment, data = ko_meta_subset26) # R2 = 0.13, p = 0.002
+anova(betadisper(bc_ko, ko_meta_subset26$Environment)) # Dispersion not homogeneous
+
+set.seed(308)
+adonis2(jac_ko ~ ko_meta_subset26$Environment) # R2 = 0.12, p = 0.002
+anova(betadisper(jac_ko, ko_meta_subset26$Environment)) # Dispersion not homogeneous
+
+set.seed(308)
+adonis2(bc_ko ~ ko_meta_subset26$Assembler) # R2 = 0.14, p = 0.084
+anova(betadisper(bc_ko, ko_meta_subset26$Assembler)) # Dispersion not homogeneous
+
+set.seed(308)
+adonis2(bc_ko ~ ko_meta_subset26$Year) # R2 = 0.07, p = 0.312
+anova(betadisper(bc_ko, ko_meta_subset26$Year)) # Dispersion homogeneous
 
 
 
@@ -1883,6 +2274,7 @@ summary(mp) # None!!
 # Extract and analyze list of KOs of interest
 # Need to get list of KOs from Lara/Quandt Lab
 # For now make barplot and heatmap of top KOs to develop script
+# To rerun with another list of KOs, just update the lines below
 # Data frame
 gene_plot <- data.frame("Environment" = as.factor(ko_meta$Environment),
                         K03164 = ko_comm_DESeq$K03164,
