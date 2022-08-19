@@ -292,7 +292,7 @@ pdf("Figs/EukTopSamples.pdf", width = 7, height = 5)
 ggplot(topeuk$map_loaded, aes(reorder(sampleID, Euks, mean), Euks, fill = Environment)) +
   geom_bar(stat = "identity", color = NA) +
   geom_hline(yintercept = 0.05, linetype = "dashed") +
-  scale_y_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0.01, 0.01)) +
   labs(x = NULL, 
        y = "Relative abundance") +
   ggtitle("Samples with Eukaryota > 5% (n = 30)") +
@@ -351,7 +351,7 @@ pdf("Figs/FungalTopSamples.pdf", width = 7, height = 5)
 ggplot(topfun$map_loaded, aes(reorder(sampleID, Fungi, mean), Fungi, fill = Environment)) +
   geom_bar(stat = "identity", color = NA) +
   geom_hline(yintercept = 0.01, linetype = "dashed") +
-  scale_y_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0.01, 0.01)) +
   labs(x = NULL, 
        y = "Relative abundance") +
   ggtitle("Samples with Fungi > 1% (n = 22)") +
@@ -548,7 +548,8 @@ ggplot(barsPhyla, aes(group_by, mean_value, fill = taxon)) +
         axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
         legend.text = element_text(size = 8),
-        legend.key.size = unit(0.5, "cm"))
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"))
 dev.off()
 taxa_summary_by_sample_type(tax_sum_Phyla, input_fungi_CPM$map_loaded, 'Environment', 0.0001, 'KW')
 
@@ -585,7 +586,8 @@ ggplot(barsClass, aes(group_by, mean_value, fill = taxon)) +
         axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
         legend.text = element_text(size = 8),
-        legend.key.size = unit(0.5, "cm"))
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"))
 dev.off()
 
 taxa_summary_by_sample_type(tax_sum_Class, input_fungi_CPM$map_loaded, 'Environment', 0.0001, 'KW')
@@ -612,7 +614,8 @@ ggplot(barsOrder, aes(group_by, mean_value, fill = taxon)) +
         axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
         legend.text = element_text(size = 8),
-        legend.key.size = unit(0.5, "cm"))
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"))
 dev.off()
 
 taxa_summary_by_sample_type(tax_sum_Order, input_fungi_CPM$map_loaded, 'Environment', 0.0001, 'KW')
@@ -639,7 +642,8 @@ ggplot(barsFamily, aes(group_by, mean_value, fill = taxon)) +
         axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
         legend.text = element_text(size = 8),
-        legend.key.size = unit(0.5, "cm"))
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"))
 dev.off()
 
 taxa_summary_by_sample_type(tax_sum_Family, input_fungi_CPM$map_loaded, 'Environment', 0.0001, 'KW')
@@ -666,7 +670,8 @@ ggplot(barsGenus, aes(group_by, mean_value, fill = taxon)) +
         axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
         legend.text = element_text(size = 8),
-        legend.key.size = unit(0.5, "cm"))
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"))
 dev.off()
 
 taxa_summary_by_sample_type(tax_sum_Genus, input_fungi_CPM$map_loaded, 'Environment', 0.0001, 'KW')
@@ -1230,6 +1235,8 @@ g
 pdf("Figs/PCoA_ArcBacFun.pdf", width = 8, height = 5)
 plot_grid(g_arc,g_bac,g,g_leg, ncol = 2, hjust = "hv")
 dev.off()
+
+
 
 #### _Subset ####
 # Lopsided sample sizes may be throwing things off
@@ -2399,6 +2406,8 @@ gene_plot <- data.frame("Environment" = as.factor(ko_meta$Environment),
                         K00698 = ko_comm_DESeq$K00698,
                         K15503 = ko_comm_DESeq$K15503,
                         K12811 = ko_comm_DESeq$K12811)
+
+
 
 #### __ (I) Stats ####
 # Run a loop 
