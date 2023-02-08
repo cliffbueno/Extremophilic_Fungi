@@ -1,0 +1,248 @@
+
+R version 3.6.3 (2020-02-29) -- "Holding the Windsock"
+Copyright (C) 2020 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> methodology2 <- function(inputtable, type, outfile, mytest){
++   A <- read.table(inputtable, header=FALSE, sep="	", as.is=TRUE)
++   
++   rownamesA   = A[,1]
++   A           = A[,-c(1)]
++   rownames(A) = rownamesA
++ 
++   uniqueids = A[1,] 
++   groups    = as.factor(as.character(A[2,]))
++   vals      = A[3:nrow(A),]
++   colnames(vals) = paste(uniqueids,groups,sep=".")
++   ncols     = ncol(vals)
++   nrows     = nrow(vals)
++   
++   ngroups     = length(levels(groups))
++   grouplevels = levels(groups)
++   groupsizes  = c()
++   
++   for (g in grouplevels){
++   	ng = sum(groups==g)
++   	groupsizes = c(groupsizes,ng)
++   }
++   
++   if (1==1){
++     C <- array(0, dim=c(nrows,ncols))
++     for (j in 1:ncols){   
++       for (i in 1:nrows){ 
++         C[i,j] = as.numeric(vals[i,j])
++       }
++     }   		
++     colnames(C) = colnames(vals)
++     rownames(C) = rownames(vals)
++     vals = C
++     counts = vals
++   }
++ 
++   if (type == "relative"){
++     totals <- array(0, dim=c(ncols))
++     for (i in 1:ncols){
++       totals[i] = sum(vals[,i])    
++     }
++     
++     Ptable = vals
++     for (j in 1:ncols){   
++       for (i in 1:nrows){ 
++         Ptable[i,j] = 100*vals[i,j]/totals[j]
++       }
++     }
++     vals = Ptable     	
++   }
++   
++   results  = c()  
++   if (ngroups == 2){ 
++     if ( (mytest=="default" & (groupsizes[1] < 5 | groupsizes[2] < 5)) | mytest == "fisher"){	
++       # merge samples for Fisher's exact test, back to counts for pvalues
++       sorted_by_group = cbind(counts[,groups==grouplevels[1]], counts[,groups==grouplevels[2]])
++       Totals          = colSums(sorted_by_group)
++       FishersPvals <- array(0, dim=c(nrow(sorted_by_group),1))
++       for (i in 1:nrow(sorted_by_group)){     
++         f11 = sum(sorted_by_group[i,1:groupsizes[1]])
++         f12 = sum(sorted_by_group[i,(groupsizes[1]+1):(groupsizes[1]+groupsizes[2])])
++         f21 = sum(Totals[1:groupsizes[1]]) - f11
++         f22 = sum(Totals[(groupsizes[1]+1):(groupsizes[1]+groupsizes[2])]) - f12 
++         # f11  f12
++         # f21  f22  <- contigency table format
++         contingencytable <- array(0, dim=c(2,2)) 
++         contingencytable[1,1] = f11
++         contingencytable[1,2] = f12
++         contingencytable[2,1] = f21
++         contingencytable[2,2] = f22
++     
++         if (f11 > 100 && f22 > 100){ # then punt to chisq
++           csqt <- chisq.test(contingencytable)
++           FishersPvals[i] = csqt$p.value
++         }else{
++           ft <- fisher.test(contingencytable, workspace = 8e6, alternative = "two.sided", conf.int = FALSE)
++           FishersPvals[i] = ft$p.value
++         }
++       } # end of Fisher's loop
++       
++       for (r in 1:nrows){    	      
++         # Compute means to add to results
++         dfr = data.frame(rvals = vals[r,], groups = groups)
++         g1  = dfr[groups==grouplevels[1],]$rvals
++         g2  = dfr[groups==grouplevels[2],]$rvals
++         
++         groupavgs    = c() 
++         groupstderrs = c()
++         for (g in grouplevels){
++           groupavgs    = c(groupavgs, mean(dfr[groups==g,]$rvals))
++           groupstderrs = c(groupstderrs, sd(dfr[groups==g,]$rvals)/sqrt(length(dfr[groups==g,]$rvals)))  
++         }
++         
++         r_res = c(rownames(vals)[r], groupavgs, groupstderrs, FishersPvals[r])    
++         names(r_res) = c("Feature", paste("Mean.", grouplevels, "(n=", groupsizes, ")", sep=""), paste("StdErr.", grouplevels, "(n=", groupsizes, ")", sep=""), "FishersTest.Pval")
++         results = rbind(results, r_res)      
++       }	
++ 
++       # Pvalue adjustment
++       pvals                = as.numeric(as.character(results[,ncol(results)]))
++       pvals[pvals >= 0.97] = NA
++       FishersTest.adjPval  = p.adjust(as.numeric(pvals), method="fdr")
++       FishersTest.adjPval[is.na(FishersTest.adjPval)] <- 1
++       results              = cbind(results, FishersTest.adjPval)        	
++     
++     }else{ # not Fisher's for two groups, something else	
++       
++       if (mytest=="default" | mytest == "mannwhitney"){ 
++        
++         for (r in 1:nrows){    	
++           # Perform and annotate Mann-Whitney test
++           dfr = data.frame(rvals = vals[r,], groups = groups)
++           g1  = dfr[groups==grouplevels[1],]$rvals
++           g2  = dfr[groups==grouplevels[2],]$rvals
++           mwt <- wilcox.test(g1, g2)
++         
++           groupavgs    = c() 
++           groupstderrs = c()
++           for (g in grouplevels){
++             groupavgs    = c(groupavgs, mean(dfr[groups==g,]$rvals))
++             groupstderrs = c(groupstderrs, sd(dfr[groups==g,]$rvals)/sqrt(length(dfr[groups==g,]$rvals)))  
++           }
++      
++           r_res = c(rownames(vals)[r], groupavgs, groupstderrs, mwt$statistic, mwt$p.value)    
++           names(r_res) = c("Feature", paste("Mean.", grouplevels, "(n=", groupsizes, ")", sep=""), paste("StdErr.", grouplevels, "(n=", groupsizes, ")", sep=""), "MWTest.UStat", "MWTest.Pval")
++           results = rbind(results, r_res)      
++         }	
++ 
++         # Pvalue adjustment
++         pvals                = as.numeric(as.character(results[,ncol(results)]))
++         pvals[pvals >= 0.97] = NA
++         MWTest.adjPval       = p.adjust(pvals, method="fdr")
++         MWTest.adjPval[is.na(MWTest.adjPval)] <- 1
++         results              = cbind(results, MWTest.adjPval)
++       }
++       
++       if (mytest == "ttest"){
++         # perform TTEST
++         for (r in 1:nrows){    	
++           # Perform and annotate Mann-Whitney test
++           dfr = data.frame(rvals = vals[r,], groups = groups)
++           g1  = dfr[groups==grouplevels[1],]$rvals
++           g2  = dfr[groups==grouplevels[2],]$rvals
++           tt <- t.test(g1, g2)
++         
++           groupavgs    = c() 
++           groupstderrs = c()
++           for (g in grouplevels){
++             groupavgs    = c(groupavgs, mean(dfr[groups==g,]$rvals))
++             groupstderrs = c(groupstderrs, sd(dfr[groups==g,]$rvals)/sqrt(length(dfr[groups==g,]$rvals)))  
++           }
++      
++           r_res = c(rownames(vals)[r], groupavgs, groupstderrs, tt$statistic, tt$p.value)    
++           names(r_res) = c("Feature", paste("Mean.", grouplevels, "(n=", groupsizes, ")", sep=""), paste("StdErr.", grouplevels, "(n=", groupsizes, ")", sep=""), "TTest.Stat", "TTest.Pval")
++           results = rbind(results, r_res)
++         }	
++         # Pvalue adjustment
++         pvals                = as.numeric(as.character(results[,ncol(results)]))
++         pvals[pvals >= 0.97] = NA
++         TTest.adjPval       = p.adjust(pvals, method="fdr")
++         TTest.adjPval[is.na(TTest.adjPval)] <- 1
++         results              = cbind(results, TTest.adjPval)     	
++       }
++     }   
++   }else{ # NOT 2 GROUPS BEGIN 3+ GROUP WORK
++     if ((mytest=="default" & max(groupsizes) < 10) | mytest=="anova"){
++       # perform ANOVA one way
++       for (r in 1:nrows){    	
++         dfr = data.frame(rvals = vals[r,], groups = groups)
++         at<-aov(rvals ~ groups, data = dfr)
++         atpval  = summary(at)[[1]][["Pr(>F)"]][1]
++         atfstat = unlist(summary(at)[[1]]["F value"][1])[1]
++         
++         groupavgs    = c() 
++         groupstderrs = c()
++         for (g in grouplevels){
++           groupavgs    = c(groupavgs, mean(dfr[groups==g,]$rvals))
++           groupstderrs = c(groupstderrs, sd(dfr[groups==g,]$rvals)/sqrt(length(dfr[groups==g,]$rvals)))  
++         }
++ 
++         r_res = c(rownames(vals)[r], groupavgs, groupstderrs, atfstat, atpval)    
++         names(r_res) = c("Feature", paste("Mean.", grouplevels, "(n=", groupsizes, ")", sep=""), paste("StdErr.", grouplevels, "(n=", groupsizes, ")", sep=""), "ANOVA.FStat", "ANOVA.Pval")
++         results = rbind(results, r_res)      
++       }	
++       # Pvalue adjustment
++       pvals                = as.numeric(results[,ncol(results)])
++       pvals[pvals >= 0.97] = NA
++       pvals[is.nan(pvals)] = NA 
++       ANOVA.adjPval        = p.adjust(pvals, method="fdr")
++       ANOVA.adjPval[is.na(ANOVA.adjPval)] <- 1
++       results              = cbind(results, ANOVA.adjPval)
++     }else{
++       for (r in 1:nrows){    	
++         # Perform and annotate Krukal-Wallis test
++         dfr = data.frame(rvals = vals[r,], groups = groups)
++         kt<-kruskal.test(rvals ~ groups, data = dfr)
++       
++         groupavgs    = c() 
++         groupstderrs = c()
++         for (g in grouplevels){
++           groupavgs    = c(groupavgs, mean(dfr[groups==g,]$rvals))
++           groupstderrs = c(groupstderrs, sd(dfr[groups==g,]$rvals)/sqrt(length(dfr[groups==g,]$rvals)))  
++         }
++      
++         r_res = c(rownames(vals)[r], groupavgs, groupstderrs, kt$statistic, kt$p.value)    
++         names(r_res) = c("Feature", paste("Mean.", grouplevels, "(n=", groupsizes, ")", sep=""), paste("StdErr.", grouplevels, "(n=", groupsizes, ")", sep=""), "KWTest.ChiSq", "KWTest.Pval")
++         results = rbind(results, r_res)      
++       }	
++       # Pvalue adjustment
++       pvals                = as.numeric(as.character(results[,ncol(results)]))
++       pvals[pvals >= 0.97] = NA
++       KWTest.adjPval       = p.adjust(pvals, method="fdr")
++       KWTest.adjPval[is.na(KWTest.adjPval)] <- 1
++       results              = cbind(results, KWTest.adjPval)
++     }
++   }
++   
++   if (type == "relative"){  
++     results = cbind(results, vals, counts)
++   }else{
++     results = cbind(results, vals)
++   }
++   write.table(results, outfile, col.names=TRUE, row.names=FALSE, sep="	")
++ }
+> methodology2("/webfs/web_data/workspace/123426/job/Extreme_Updated_1149/stats_input", "absolute", outfile="/webfs/web_data/workspace/123426/job/Extreme_Updated_1149/tmp/data.methodology2.txt", mytest="default")
+> 
+> proc.time()
+   user  system elapsed 
+170.087   0.315 171.527 

@@ -2541,4 +2541,70 @@ dev.off()
 
 
 
+#### _Update ####
+# Quandt Lab added and deleted some metagenomes
+# Check the file
+# Need to send Dongying list of any sampleIDs that we don't already have fungal KO profiles for
+md <- read.table("metadata.txt", header = T)
+
+# New Table has 1168 samples
+du <- read_excel("Extremophilic_fungi_dataset_final.xlsx",
+                      sheet = 1) %>%
+  filter(Use == "Don't use")
+new_tab <- read_excel("Extremophilic_fungi_dataset_final.xlsx",
+                      sheet = 1) %>%
+  filter(taxon_oid %notin% du$taxon_oid)
+
+# Initial analysis had 1131 samples
+nrow(input_fungi$map_loaded)
+
+# How many same? Check. 1009
+sum(new_tab$taxon_oid %in% input_fungi$map_loaded$taxon_oid)
+new_tab_same <- subset(new_tab, taxon_oid %in% input_fungi$map_loaded$taxon_oid)
+table(new_tab_same$Environment)
+
+# How many new? Check.
+sum(new_tab$taxon_oid %notin% input_fungi$map_loaded$taxon_oid)
+new_tab_new <- subset(new_tab, taxon_oid %notin% input_fungi$map_loaded$taxon_oid)
+
+# Select new and not in original and 2013 and newer. 140 desert
+sum(new_tab_new$taxon_oid %in% md$taxon_oid)
+new_tab_new2 <- subset(new_tab_new, taxon_oid %notin% md$taxon_oid) %>%
+  separate(Add.Date, into = c("Year", "Month", "Day"), sep = "-", remove = F) %>%
+  mutate(Year = as.integer(Year)) %>%
+  filter(Year > 2012)
+table(new_tab_new2$Environment)
+table(new_tab_new2$`Checked By`)
+
+# How many deleted? Check.
+sum(input_fungi$map_loaded$taxon_oid %notin% new_tab$taxon_oid)
+new_tab_del <- subset(input_fungi$map_loaded, taxon_oid %notin% new_tab$taxon_oid)
+table(new_tab_del$Environment)
+
+# Get list of new taxonoids to send to Dongying for KOs
+write.table(new_tab_new2$taxon_oid, "taxonoid_140desert.list", row.names = F, col.names = F)
+
+# Get taxonoid set for metadata and same 1009 + new 140 = 1149. Divide into 1000 and 149
+new_set <- data.frame("taxon_oid" = c(new_tab_same$taxon_oid, new_tab_new2$taxon_oid))
+
+taxonoid_list1 <- new_set %>%
+  dplyr::select(taxon_oid) %>%
+  mutate(comma = ",") %>%
+  mutate(list = paste(taxon_oid, comma, sep = "")) %>%
+  dplyr::select(list) %>%
+  slice_head(n = 1000)
+taxonoid_list1$list[nrow(taxonoid_list1)] <- gsub(",", "", taxonoid_list1$list[nrow(taxonoid_list1)])
+write.csv(taxonoid_list1, "taxonoid_list1_updated.csv", row.names = F)
+
+taxonoid_list2 <- new_set %>%
+  dplyr::select(taxon_oid) %>%
+  mutate(comma = ",") %>%
+  mutate(list = paste(taxon_oid, comma, sep = "")) %>%
+  dplyr::select(list) %>%
+  slice_tail(n = nrow(new_set) - 1000)
+taxonoid_list2$list[nrow(taxonoid_list2)] <- gsub(",", "", taxonoid_list2$list[nrow(taxonoid_list2)])
+write.csv(taxonoid_list2, "taxonoid_list2_updated.csv", row.names = F)
+
+
+
 #### End Script ####

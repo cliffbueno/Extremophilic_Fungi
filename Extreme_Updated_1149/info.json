@@ -1,0 +1,19 @@
+{
+   "comment" : "",
+   "program" : "analysisStats",
+   "files" : [
+      "Extreme_Updated1",
+      "Extreme_Updated2"
+   ],
+   "contact_oid" : "123426",
+   "measurement" : "geneCount",
+   "analysis_save_mode" : "save",
+   "function" : "genus",
+   "method" : "default",
+   "jobname" : "Extreme_Updated_1149",
+   "comparison" : "absolute",
+   "files3" : "",
+   "display" : "all",
+   "currDateTime" : "2023/02/06 11:30:33",
+   "analysis_selected_job_name" : "Extreme_Updated_1149"
+}
