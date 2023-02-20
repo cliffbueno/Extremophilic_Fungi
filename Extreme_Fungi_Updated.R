@@ -1200,21 +1200,21 @@ table(input_bac_CPM$map_loaded$Environment)
 table(input_arc_CPM$map_loaded$Environment)
 
 set.seed(1210)
-subset22 <- input_fungi_CPM_nz$map_loaded %>%
+subset20 <- input_fungi_CPM_nz$map_loaded %>%
   group_by(Environment) %>%
   slice_sample(n = 20)
-table(subset22$Environment)
-sum(table(subset22$Environment)) # 180
+table(subset20$Environment)
+sum(table(subset20$Environment)) # 180
 
 sub_arc <- filter_data(input_arc_CPM_nz,
                        filter_cat = "sampleID",
-                       keep_vals = subset22$sampleID) # 177 (3 had zero Archaea)
+                       keep_vals = subset20$sampleID) # 177 (3 had zero Archaea)
 sub_bac <- filter_data(input_bac_CPM,
                        filter_cat = "sampleID",
-                       keep_vals = subset22$sampleID) # 180, good
+                       keep_vals = subset20$sampleID) # 180, good
 sub_fun <- filter_data(input_fungi_CPM_nz,
                        filter_cat = "sampleID",
-                       keep_vals = subset22$sampleID) # 180, good
+                       keep_vals = subset20$sampleID) # 180, good
 
 bc_arc2 <- calc_dm(sub_arc$data_loaded)
 set.seed(1150)
@@ -2185,6 +2185,9 @@ ko_comm_DESeq_filt <- ko_comm_DESeq %>%
   filter(rownames(.) %in% rownames(ko_meta_filt))
 sum(rownames(ko_comm_DESeq_filt) != rownames(ko_meta_filt))
 table(ko_meta_filt$Environment)
+sort(colSums(ko_comm_DESeq_filt))
+sort(rowSums(ko_comm_DESeq_filt))
+sort(ko_meta_filt$richness_KO)
 
 bc_ko <- vegdist(ko_comm_DESeq_filt, method = "bray")
 pcoa_ko <- cmdscale(bc_ko, k = nrow(ko_meta_filt) - 1, eig = T)
@@ -2196,17 +2199,23 @@ micro.hulls <- ddply(ko_meta_filt, c("Environment"), find_hull)
 g5_ko <- ggplot(ko_meta_filt, aes(Axis01, Axis02, colour = Environment)) +
   geom_polygon(data = micro.hulls, aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F) +
-  geom_point(size = 3, alpha = 0.5) +
+  geom_point(aes(size = richness_KO), alpha = 0.5) +
+  scale_size(range = c(1, 10)) +
   labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
        y = paste("PC2: ", pcoaA2, "%", sep = ""),
-       colour = "Site",
+       colour = "Environment",
+       size = "Number of KOs",
        title = "KO Bray-Curtis") +
-  theme_bw() +  
-  theme(legend.position = "none",
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
+  theme_bw() +
+  theme(legend.position = "right",
         axis.title = element_text(face = "bold", size = 14), 
         axis.text = element_text(size = 12),
         plot.title = element_text(vjust = 0))
 g5_ko
+ko_pcoa_leg <- get_legend(g5_ko)
+g5_ko <- g5_ko +
+  theme(legend.position = "none")
 
 jac_ko <- vegdist(ko_comm_DESeq_filt, method = "jaccard")
 pcoa1_ko <- cmdscale(jac_ko, k = nrow(ko_meta_filt) - 1, eig = T)
@@ -2218,46 +2227,37 @@ micro.hullsj <- ddply(ko_meta_filt, c("Environment"), find_hullj)
 g6_ko <- ggplot(ko_meta_filt, aes(Axis01j, Axis02j, colour = Environment)) +
   geom_polygon(data = micro.hullsj, aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F) +
-  geom_point(size = 3, alpha = 0.5) +
-  labs(x = paste("PC1: ", pcoa1A1, "%", sep = ""), 
-       y = paste("PC2: ", pcoa1A2, "%", sep = ""),
+  geom_point(aes(size = richness_KO), alpha = 0.5) +
+  scale_size(range = c(1, 10)) +
+  labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
+       y = paste("PC2: ", pcoaA2, "%", sep = ""),
        colour = "Environment",
+       size = "Number of KOs",
        title = "KO Jaccard") +
-  guides(colour = guide_legend(override.aes = list(alpha = 1))) +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
   theme_bw() +  
   theme(legend.position = "none",
         axis.title = element_text(face = "bold", size = 14), 
         axis.text = element_text(size = 12),
         plot.title = element_text(vjust = 0))
 g6_ko
-ko_pcoa_leg <- get_legend(ggplot(ko_meta_filt, aes(Axis01j, Axis02j, colour = Environment)) +
-  geom_polygon(data = micro.hullsj, aes(colour = Environment, fill = Environment),
-               alpha = 0.1, show.legend = F) +
-  geom_point(size = 3, alpha = 0.5) +
-  labs(x = paste("PC1: ", pcoa1A1, "%", sep = ""), 
-       y = paste("PC2: ", pcoa1A2, "%", sep = ""),
-       colour = "Environment",
-       title = "KO Jaccard") +
-  guides(colour = guide_legend(override.aes = list(alpha = 1))) +
-  theme_bw() +  
-  theme(legend.position = "right",
-        axis.title = element_text(face = "bold", size = 14), 
-        axis.text = element_text(size = 12),
-        plot.title = element_text(vjust = 0)))
 
-pdf("FigsUpdated/KO_PCoA_min100KOs.pdf", width = 8.5, height = 3.5)
-plot_grid(g5_ko, g6_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1))
+pdf("FigsUpdated/KO_PCoA_min100KOs.pdf", width = 8.5, height = 5)
+plot_grid(g5_ko, g6_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1.1))
 dev.off()
 
 # Also do with the same subset of the data as taxonomy (20 samples from each env)
 # Note numbers are slightly different here because of 0 fungal KOs in some samples
 table(ko_meta$Environment)
 ko_meta_subset20 <- ko_meta %>%
-  filter(sampleID %in% subset22$sampleID)
+  filter(sampleID %in% subset20$sampleID)
 ko_comm_DESeq_subset20 <- ko_comm_DESeq %>%
   filter(rownames(.) %in% rownames(ko_meta_subset20))
 sum(rownames(ko_comm_DESeq_subset20) != rownames(ko_meta_subset20))
 table(ko_meta_subset20$Environment)
+sort(colSums(ko_comm_DESeq_subset20))
+sort(rowSums(ko_comm_DESeq_subset20))
+sort(ko_meta_subset20$richness_KO)
 
 bc_ko <- vegdist(ko_comm_DESeq_subset20, method = "bray")
 pcoa_ko <- cmdscale(bc_ko, k = nrow(ko_meta_subset20) - 1, eig = T)
