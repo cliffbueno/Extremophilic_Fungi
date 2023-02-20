@@ -121,7 +121,9 @@ tax_table_fp <- file.path("genus_table_mctoolsr_updated.txt")
 map_fp <- file.path("metadata_updated.txt")
 input = load_taxa_table(tax_table_fp, map_fp)
 new_tab <- read_excel("Extremophilic_fungi_dataset_final.xlsx", sheet = 1) %>%
-  dplyr::select(taxon_oid, Environment)
+  mutate(Location2 = Geographic.Location) %>%
+  dplyr::select(taxon_oid, Study.Name2, Location2, Environment)
+table(new_tab$Environment)
 
 # Update map_loaded - sampleID, GenomeSize, Environment, Assembly Method, Year
 # Filter out samples from before 2012. 1116 remaining
@@ -133,11 +135,19 @@ input$map_loaded <- input$map_loaded %>%
   separate(`Add Date`, into = c("Day", "Month", "Year"), sep = "/", remove = F) %>%
   mutate(Year = as.integer(Year)) %>%
   filter(Year > 11) %>%
-  mutate_if(is.character, as.factor) %>%
   mutate(sampleID2 = sampleID) %>%
   column_to_rownames(var = "sampleID2")
 dim(input$map_loaded)
-input$map_loaded$`Assembly Method`[input$map_loaded$`Assembly Method` == ""] <- "Unknown"
+for (i in 1:nrow(input$map_loaded)) {
+  if (input$map_loaded$`Assembly Method`[1] == "") {
+    input$map_loaded$`Assembly Method`[i] <- "Unknown"
+  }
+  if (input$map_loaded$`Sequencing Method`[i] == "") {
+    input$map_loaded$`Sequencing Method`[i] <- "Unknown"
+  }
+}
+input$map_loaded <- input$map_loaded %>%
+  mutate_if(is.character, as.factor)
 
 # Filter out samples with no genus level reads (removes 7 samples, 1109 remaining)
 # Note: This filters 5 unassembled samples, taxonoids 3300002080-84
@@ -147,10 +157,22 @@ input <- filter_data(input,
                      filter_cat = "sampleID",
                      filter_vals = rownames(count))
 
+# Filter out non-Illumina datasets (removes 71 samples. 1038 remaining)
+table(input$map_loaded$`Sequencing Method`)
+input <- filter_data(input,
+                     filter_cat = "Sequencing Method",
+                     filter_vals = c("454", "454 GS FLX", "454 GS FLX Titanium",
+                                     "454 GS FLX Titanium, Illumina GAIIx",
+                                     "454 GS FLX Titanium, Illumina HiSeq 2000",
+                                     "Illumina HiSeq 2000, 454 GS FLX Titanium"))
+
+# Filter by Assembly method? For now now. Also many unknowns...
+table(input$map_loaded$`Assembly Method`)
+
 # Check sequencing depth 
 sort(colSums(input$data_loaded))
-mean(colSums(input$data_loaded)) # 333051.3
-se(colSums(input$data_loaded)) # 16129.89
+mean(colSums(input$data_loaded)) # 352691.7
+se(colSums(input$data_loaded)) # 17049.82
 input$map_loaded$count <- colSums(input$data_loaded)
 ggplot(input$map_loaded, aes(reorder(`Environment`, count, mean), count)) +
   geom_boxplot(outlier.shape = NA) +
@@ -172,8 +194,6 @@ ggplot(input$map_loaded, aes(GenomeSize, count)) +
   theme(axis.title = element_text(size = 14, face = "bold"),
         axis.text = element_text(size = 10))
 dev.off()
-
-
 
 
 
@@ -237,7 +257,7 @@ ggplot(topeuk$map_loaded, aes(reorder(sampleID, Euks, mean), Euks, fill = Enviro
   scale_y_continuous(expand = c(0.01, 0.01)) +
   labs(x = NULL, 
        y = "Relative abundance") +
-  ggtitle("Samples with Eukaryota > 5% (n = 30)") +
+  ggtitle("Samples with Eukaryota > 5% (n = 33)") +
   theme_classic() +
   theme(axis.title = element_text(size = 14, face = "bold"),
         axis.text.y = element_text(size = 10),
@@ -368,8 +388,8 @@ sort(colSums(input_fungi$data_loaded))
 # Purposefully not filtering those out those as 0's are interesting in this analysis
 # These are extreme environments, some may have few to no fungi
 # Further below, however, some analyses will be done with zeroes removed
-mean(colSums(input_fungi$data_loaded)) # 505
-se(colSums(input_fungi$data_loaded)) # 50
+mean(colSums(input_fungi$data_loaded)) # 538.5231
+se(colSums(input_fungi$data_loaded)) # 53.2774
 input_fungi$map_loaded$fung_count <- colSums(input_fungi$data_loaded)
 input_fungi$map_loaded$present <- ifelse(input_fungi$map_loaded$fung_count > 0,
                                          1,
@@ -405,6 +425,7 @@ env_prev <- input_fungi$map_loaded %>%
             num_samples = n(),
             prevalence = round(num_present/num_samples * 100, digits = 2)) %>%
   mutate(num_absent = num_samples - num_present)
+sum(env_prev$num_samples)
 sum(env_prev$num_present)
 
 # Melt for stacked bar
@@ -436,7 +457,7 @@ ggplot(env_prev_long, aes(reorder(Environment, value, mean), value,
   labs(x = NULL, 
        y = "Sample size",
        fill = "Fungi") +
-  ggtitle("Total sample size = 1109\nSamples with Fungi = 921") +
+  ggtitle("Total sample size = 1038\nSamples with Fungi = 864") +
   theme_bw() +
   theme(legend.position = c(0,1),
         legend.justification = c(0,1),
@@ -687,7 +708,7 @@ dev.off()
 
 
 #### _Relative ####
-# Remove zeroes (188 removed, 921 remaining)
+# Remove zeroes (174 removed, 864 remaining)
 countFun <- as.data.frame(sort(colSums(input_fungi_CPM$data_loaded))) %>%
   filter(`sort(colSums(input_fungi_CPM$data_loaded))` == 0)
 input_fungi_nz <- filter_data(input_fungi,
@@ -866,12 +887,12 @@ bc <- calc_dm(input_fungi_CPM_nz$data_loaded)
 
 # Check some PERMANOVA models to get a sense of R2 values
 set.seed(1150)
-adonis2(bc ~ Environment, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.088, p = 0.001
-adonis2(bc ~ Habitat, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.38, p = 0.001
-adonis2(bc ~ `Ecosystem Category`, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.016, p = 0.001
-adonis2(bc ~ `Ecosystem Subtype`, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.138, p = 0.001
-adonis2(bc ~ `Ecosystem Type`, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.064, p = 0.001
-adonis2(bc ~ `Specific Ecosystem`, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.097, p = 0.001
+adonis2(bc ~ Environment, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.10, p = 0.001
+adonis2(bc ~ Habitat, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.39, p = 0.001
+adonis2(bc ~ `Ecosystem Category`, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.02, p = 0.001
+adonis2(bc ~ `Ecosystem Subtype`, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.15, p = 0.001
+adonis2(bc ~ `Ecosystem Type`, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.07, p = 0.001
+adonis2(bc ~ `Specific Ecosystem`, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.11, p = 0.001
 anova(betadisper(bc, input_fungi_CPM_nz$map_loaded$Environment)) # Dispersion not homogeneous
 pcoa <- cmdscale(bc, k = nrow(input_fungi_CPM_nz$map_loaded) - 1, eig = T)
 pcoaA1 <- round((eigenvals(pcoa)/sum(eigenvals(pcoa)))[1]*100, digits = 1)
@@ -906,7 +927,7 @@ g_leg <- get_legend(g)
 # Family
 bc_Family <- calc_dm(Family_nz)
 set.seed(1150)
-adonis2(bc_Family ~ Environment, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.096 , p = 0.001
+adonis2(bc_Family ~ Environment, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.11 , p = 0.001
 anova(betadisper(bc_Family, input_fungi_CPM_nz$map_loaded$Environment)) # Dispersion not homogeneous
 pcoa_Family <- cmdscale(bc_Family, k = nrow(input_fungi_CPM_nz$map_loaded) - 1, eig = T)
 pcoaA1F <- round((eigenvals(pcoa_Family)/sum(eigenvals(pcoa_Family)))[1]*100, digits = 1)
@@ -935,7 +956,7 @@ g1
 # Order
 bc_Order <- calc_dm(Order_nz)
 set.seed(1150)
-adonis2(bc_Order ~ Environment, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.105, p = 0.001 
+adonis2(bc_Order ~ Environment, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.12, p = 0.001 
 anova(betadisper(bc_Order, input_fungi_CPM_nz$map_loaded$Environment)) # Dispersion not homogeneous
 pcoa_Order <- cmdscale(bc_Order, k = nrow(input_fungi_CPM_nz$map_loaded) - 1, eig = T)
 pcoaA1O <- round((eigenvals(pcoa_Order)/sum(eigenvals(pcoa_Order)))[1]*100, digits = 1)
@@ -964,7 +985,7 @@ g2
 # Class
 bc_Class <- calc_dm(Class_nz)
 set.seed(1150)
-adonis2(bc_Class ~ Environment, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.108, p = 0.001 
+adonis2(bc_Class ~ Environment, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.13, p = 0.001 
 anova(betadisper(bc_Class, input_fungi_CPM_nz$map_loaded$Environment)) # Dispersion not homogeneous
 pcoa_Class <- cmdscale(bc_Class, k = nrow(input_fungi_CPM_nz$map_loaded) - 1, eig = T)
 pcoaA1C <- round((eigenvals(pcoa_Class)/sum(eigenvals(pcoa_Class)))[1]*100, digits = 1)
@@ -993,7 +1014,7 @@ g3
 # Phylum
 bc_Phylum <- calc_dm(Phylum_nz)
 set.seed(1150)
-adonis2(bc_Phylum ~ Environment, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.128, p = 0.001 
+adonis2(bc_Phylum ~ Environment, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.15, p = 0.001 
 anova(betadisper(bc_Phylum, input_fungi_CPM_nz$map_loaded$Environment)) # Dispersion not homogeneous
 pcoa_Phylum <- cmdscale(bc_Phylum, k = nrow(input_fungi_CPM_nz$map_loaded) - 1, eig = T)
 pcoaA1P <- round((eigenvals(pcoa_Phylum)/sum(eigenvals(pcoa_Phylum)))[1]*100, digits = 1)
@@ -1064,7 +1085,7 @@ for (i in 1:ncol(input_arc$data_loaded)) {
   }
 }
 
-# Remove zeroes (55 removed, 1054 remaining)
+# Remove zeroes (51 removed, 987 remaining)
 countArc <- as.data.frame(sort(colSums(input_arc_CPM$data_loaded))) %>%
   filter(`sort(colSums(input_arc_CPM$data_loaded))` == 0)
 input_arc_CPM_nz <- filter_data(input_arc_CPM,
@@ -1074,7 +1095,7 @@ input_arc_CPM_nz <- filter_data(input_arc_CPM,
 # BC, PERMANOVA, PERMDISP, PCoA
 bc_arc <- calc_dm(input_arc_CPM_nz$data_loaded)
 set.seed(1150)
-adonis2(bc_arc ~ Environment, data = input_arc_CPM_nz$map_loaded) # R2 = 0.19, p = 0.001
+adonis2(bc_arc ~ Environment, data = input_arc_CPM_nz$map_loaded) # R2 = 0.21, p = 0.001
 anova(betadisper(bc_arc, input_arc_CPM_nz$map_loaded$Environment)) # Dispersion not homogeneous
 pcoa_arc <- cmdscale(bc_arc, k = nrow(input_arc_CPM_nz$map_loaded) - 1, eig = T)
 pcoaA1arc <- round((eigenvals(pcoa_arc)/sum(eigenvals(pcoa_arc)))[1]*100, digits = 1)
@@ -1118,7 +1139,7 @@ countbac <- as.data.frame(sort(colSums(input_bac_CPM$data_loaded))) %>%
 # BC, PERMANOVA, PERMDISP, PCoA
 bc_bac <- calc_dm(input_bac_CPM$data_loaded)
 set.seed(1150)
-adonis2(bc_bac ~ Environment, data = input_bac_CPM$map_loaded) # R2 = 0.17, p = 0.001
+adonis2(bc_bac ~ Environment, data = input_bac_CPM$map_loaded) # R2 = 0.18, p = 0.001
 anova(betadisper(bc_bac, input_bac_CPM$map_loaded$Environment)) # Dispersion not homogeneous
 pcoa_bac <- cmdscale(bc_bac, k = nrow(input_bac_CPM$map_loaded) - 1, eig = T)
 pcoaA1bac <- round((eigenvals(pcoa_bac)/sum(eigenvals(pcoa_bac)))[1]*100, digits = 1)
@@ -1173,7 +1194,7 @@ dev.off()
 
 #### _Subset ####
 # Lopsided sample sizes may be throwing things off
-# Randomly sample 22 samples from each environment and redo
+# Randomly sample 20 samples from each environment and redo
 table(input_fungi_CPM_nz$map_loaded$Environment)
 table(input_bac_CPM$map_loaded$Environment)
 table(input_arc_CPM$map_loaded$Environment)
@@ -1181,23 +1202,23 @@ table(input_arc_CPM$map_loaded$Environment)
 set.seed(1210)
 subset22 <- input_fungi_CPM_nz$map_loaded %>%
   group_by(Environment) %>%
-  slice_sample(n = 22)
+  slice_sample(n = 20)
 table(subset22$Environment)
-sum(table(subset22$Environment)) # 176
+sum(table(subset22$Environment)) # 180
 
 sub_arc <- filter_data(input_arc_CPM_nz,
                        filter_cat = "sampleID",
-                       keep_vals = subset22$sampleID) # 173 (3 had zero Archaea)
+                       keep_vals = subset22$sampleID) # 177 (3 had zero Archaea)
 sub_bac <- filter_data(input_bac_CPM,
                        filter_cat = "sampleID",
-                       keep_vals = subset22$sampleID) # 176, good
+                       keep_vals = subset22$sampleID) # 180, good
 sub_fun <- filter_data(input_fungi_CPM_nz,
                        filter_cat = "sampleID",
-                       keep_vals = subset22$sampleID) # 176, good
+                       keep_vals = subset22$sampleID) # 180, good
 
 bc_arc2 <- calc_dm(sub_arc$data_loaded)
 set.seed(1150)
-adonis2(bc_arc2 ~ Environment, data = sub_arc$map_loaded) # R2 = 0.28, p = 0.001
+adonis2(bc_arc2 ~ Environment, data = sub_arc$map_loaded) # R2 = 0.36, p = 0.001
 anova(betadisper(bc_arc2, sub_arc$map_loaded$Environment)) # Dispersion not homogeneous
 pcoa_arc2 <- cmdscale(bc_arc2, k = nrow(sub_arc$map_loaded) - 1, eig = T)
 pcoaA1arc2 <- round((eigenvals(pcoa_arc2)/sum(eigenvals(pcoa_arc2)))[1]*100, digits = 1)
@@ -1223,7 +1244,7 @@ g_arc2
 
 bc_bac2 <- calc_dm(sub_bac$data_loaded)
 set.seed(1150)
-adonis2(bc_bac2 ~ Environment, data = sub_bac$map_loaded) # R2 = 0.28, p = 0.001
+adonis2(bc_bac2 ~ Environment, data = sub_bac$map_loaded) # R2 = 0.36, p = 0.001
 anova(betadisper(bc_bac2, sub_bac$map_loaded$Environment)) # Dispersion not homogeneous
 pcoa_bac2 <- cmdscale(bc_bac2, k = nrow(sub_bac$map_loaded) - 1, eig = T)
 pcoaA1bac2 <- round((eigenvals(pcoa_bac2)/sum(eigenvals(pcoa_bac2)))[1]*100, digits = 1)
@@ -1249,7 +1270,7 @@ g_bac2
 
 bc_fun2 <- calc_dm(sub_fun$data_loaded)
 set.seed(1150)
-adonis2(bc_fun2 ~ Environment, data = sub_fun$map_loaded) # R2 = 0.13, p = 0.001
+adonis2(bc_fun2 ~ Environment, data = sub_fun$map_loaded) # R2 = 0.15, p = 0.001
 anova(betadisper(bc_fun2, sub_fun$map_loaded$Environment)) # Dispersion not homogeneous
 pcoa_fun2 <- cmdscale(bc_fun2, k = nrow(sub_fun$map_loaded) - 1, eig = T)
 pcoaA1fun2 <- round((eigenvals(pcoa_fun2)/sum(eigenvals(pcoa_fun2)))[1]*100, digits = 1)
@@ -1273,7 +1294,7 @@ g_fun2 <- ggplot(sub_fun$map_loaded, aes(Axis01, Axis02)) +
         plot.title = element_text(hjust = 0.5, vjust = -1))
 g_fun2
 
-pdf("FigsUpdated/PCoA_ArcBacFun_n22.pdf", width = 8, height = 5)
+pdf("FigsUpdated/PCoA_ArcBacFun_n20.pdf", width = 8, height = 5)
 plot_grid(g_arc2,g_bac2,g_fun2,g_leg, ncol = 2, hjust = "hv")
 dev.off()
 
@@ -1293,7 +1314,7 @@ input_fungi_CPM_nz$map_loaded$Axis02 <- scores(pcoa)[,2]
 input_fungi_CPM_nz$map_loaded$Year <- as.factor(as.character(input_fungi_CPM_nz$map_loaded$Year))
 table(input_fungi_CPM_nz$map_loaded$Year)
 set.seed(1150)
-adonis2(bc ~ Year, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.15, p = 0.001
+adonis2(bc ~ Year, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.16, p = 0.001
 anova(betadisper(bc, input_fungi_CPM_nz$map_loaded$Year)) # Dispersion not homogeneous
 micro.hulls <- ddply(input_fungi_CPM_nz$map_loaded, c("Year"), find_hull)
 g_year <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
@@ -1304,7 +1325,7 @@ g_year <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
        y = paste("PC2: ", pcoaA2, "%", sep = "")) +
-  ggtitle("Year: R2 = 0.15") +
+  ggtitle("Year: R2 = 0.16") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
   theme_bw() +  
   theme(legend.position = "right",
@@ -1492,7 +1513,8 @@ dev.off()
 
 
 #### _by Ecosystem ####
-# Subset the data into each environment
+# Subset the data into each environment and study
+# For glacier forefield, it's one study but 4 locations so separate by location
 # Make pie charts of taxa
 # Use fungi only input data - get relative abundances of fungal phyla out of just fungi
 # Use samples with at least 1 fungal count
@@ -1506,7 +1528,7 @@ phy <- list()
 p_colors <- list()
 p <- list()
 
-# Subset by Environment (8 data frames)
+# Subset by Environment (9 data frames)
 for (i in 1:length(levels(input_fungi_nz$map_loaded$Environment))) {
   env[[i]] <- filter_data(input_fungi_nz,
                           filter_cat = "Environment",
@@ -1514,27 +1536,29 @@ for (i in 1:length(levels(input_fungi_nz$map_loaded$Environment))) {
 }
 
 # Do one for each, or by individual studies? How many studies in each env?
-length(levels(env[[1]]$map_loaded$`Study Name`)) # 5
-length(levels(env[[2]]$map_loaded$`Study Name`)) # 13
-length(levels(env[[3]]$map_loaded$`Study Name`)) # 7
-length(levels(env[[4]]$map_loaded$`Study Name`)) # 1
-length(levels(env[[5]]$map_loaded$`Study Name`)) # 26
-length(levels(env[[6]]$map_loaded$`Study Name`)) # 44
-length(levels(env[[7]]$map_loaded$`Study Name`)) # 31
-length(levels(env[[8]]$map_loaded$`Study Name`)) # 5
+length(levels(env[[1]]$map_loaded$`Study.Name2`)) # 4
+length(levels(env[[2]]$map_loaded$`Study.Name2`)) # 10
+length(levels(env[[3]]$map_loaded$`Study.Name2`)) # 3
+length(levels(env[[4]]$map_loaded$`Study.Name2`)) # 7
+length(levels(env[[5]]$map_loaded$`Study.Name2`)) # 4
+length(levels(env[[6]]$map_loaded$`Study.Name2`)) # 24
+length(levels(env[[7]]$map_loaded$`Study.Name2`)) # 41
+length(levels(env[[8]]$map_loaded$`Study.Name2`)) # 27
+length(levels(env[[9]]$map_loaded$`Study.Name2`)) # 4
 
 # Probably best to show some of the variability within environment type
 # For example, Shu and Huang 2022 have 4-5 sites for each environment
-# Here let's do 1-6, for env. with more than 6 studies, take 6 with greatest sample size
+# Here let's do 1-4, for env. with more than 4 studies, take 4 with greatest sample size
 # Could also decide to show sites with most fungi instead of most samples
 for (i in 1:length(env)) {
-  studyN[[i]] <- as.data.frame(table(env[[i]]$map_loaded$`Study Name`)) %>%
+  studyN[[i]] <- as.data.frame(table(env[[i]]$map_loaded$`Study.Name2`)) %>%
     arrange(desc(Freq)) %>%
-    slice_head(n = 6)
+    slice_head(n = 4)
 }
 
 studies <- rbind(studyN[[1]], studyN[[2]], studyN[[3]], studyN[[4]],
-                 studyN[[5]], studyN[[6]], studyN[[7]], studyN[[8]]) %>%
+                 studyN[[5]], studyN[[6]], studyN[[7]], studyN[[8]],
+                 studyN[[9]]) %>%
   mutate(Var1 = as.character(Var1))
 
 # Subset Environments by Studies
@@ -1543,62 +1567,27 @@ for (i in 1:length(env)) {
   k <- nrow(studyN[[i]])
   for (l in 1:k) {
   df[[counter]] <- filter_data(env[[i]],
-                               filter_cat = "Study Name",
+                               filter_cat = "Study.Name2",
                                keep_vals = studyN[[i]]$Var1[l])
   counter <- counter + 1
   }
 }
 
-# Location and n (for plot titles), do manually (hard to automate this part)
+# Location and n (for plot titles)
 loc_n <- as.data.frame(matrix(NA, nrow = length(df), ncol = 3)) %>%
   set_names(c("Location", "n", "Environment"))
 for (i in 1:length(df)) {
-  loc_n$Location[i] <- levels(df[[i]]$map_loaded$`Geographic Location`)[1]
+  loc_n$Location[i] <- levels(df[[i]]$map_loaded$`Location2`)[1]
   loc_n$n[i] <- nrow(df[[i]]$map_loaded)
   loc_n$Environment[i] <- levels(df[[i]]$map_loaded$Environment)[1]
 }
+for (i in 1:length(df)) {
+  df[[i]]$map_loaded$Location <- paste(loc_n$Location[i],"\n", "(n = ", loc_n$n[i], ")", sep = "")
+}
+# Manually update some long ones
+df[[28]]$map_loaded$Location <- "Garden Lake, Australia\n(n = 117)"
+df[[30]]$map_loaded$Location <- "Eisfeld solar saltern, Namibia\n(n = 7)"
 
-df[[1]]$map_loaded$Location <- "Richmond Mine\nUSA\n(n = 17)"
-df[[2]]$map_loaded$Location <- "Malanjkhand copper mine\nIndia\n(n = 10)"
-df[[3]]$map_loaded$Location <- "Los Rueldos mercury mine\nSpain\n(n = 3)"
-df[[4]]$map_loaded$Location <- "Fankou Mines\nChina\n(n = 1)"
-df[[5]]$map_loaded$Location <- "Akron\nUSA\n(n = 1)"
-df[[6]]$map_loaded$Location <- "Glacial meltwater/mats\nAntarctica\n(n = 17)"
-df[[7]]$map_loaded$Location <- "Cryoconites\nGreenland\n(n = 12)"
-df[[8]]$map_loaded$Location <- "Glacier sediment\nAntarctica\n(n = 6)"
-df[[9]]$map_loaded$Location <- "Glacial ice\nCanada\n(n = 4)"
-df[[10]]$map_loaded$Location <- "Glacial sediment\nCanada/Iceland\n(n = 3)"
-df[[11]]$map_loaded$Location <- "Cryoconite\nItaly\n(n = 2)"
-df[[12]]$map_loaded$Location <- "Temperate Desert soil\nCalifornia\n(n = 56)"
-df[[13]]$map_loaded$Location <- "Polar Desert soil\nAntarctica\n(n = 32)"
-df[[14]]$map_loaded$Location <- "Temperate Desert soil\nUtah\n(n = 25)"
-df[[15]]$map_loaded$Location <- "Temperate Desert soil\nNew Mexico\n(n = 18)"
-df[[16]]$map_loaded$Location <- "Temperate Desert soil\nUtah\n(n = 8)"
-df[[17]]$map_loaded$Location <- "Temperate Desert soil\nUtah\n(n = 6)"
-df[[18]]$map_loaded$Location <- "Glacial forefield soil\nSweden/Norway/Greenland\n(n = 49)"
-df[[19]]$map_loaded$Location <- "Yellowstone hot springs\nUSA\n(n = 34)"
-df[[20]]$map_loaded$Location <- "Various hot springs\nUSA/Canada/China/South Africa\n(n = 33)"
-df[[21]]$map_loaded$Location <- "Waikite Valley hot spring mats\nNew Zealand\n(n = 18)"
-df[[22]]$map_loaded$Location <- "Yellowstone hot spring mats\nUSA\n(n = 33)"
-df[[23]]$map_loaded$Location <- "Great Boiling Spring sediment\nUSA\n(n = 7)"
-df[[24]]$map_loaded$Location <- "Yellowstone hot spring sediment\nUSA\n(n = 7)"
-df[[25]]$map_loaded$Location <- "Guaymas Basin sediment/mats\nMexico\n(n = 47)"
-df[[26]]$map_loaded$Location <- "Mid Cayman Rise\n(n = 27)"
-df[[27]]$map_loaded$Location <- "Various vents\nPacific/Atlantic\n(n = 21)"
-df[[28]]$map_loaded$Location <- "Mid Cayman Rise plume\n(n = 14)"
-df[[29]]$map_loaded$Location <- "Various vents\nPacific\n(n = 13)"
-df[[30]]$map_loaded$Location <- "Axial seamount\n(n = 12)"
-df[[31]]$map_loaded$Location <- "Various lakes\nAustralia\n(n = 117)"
-df[[32]]$map_loaded$Location <- "Organic Lake\nAntarctica\n(n = 34)"
-df[[33]]$map_loaded$Location <- "Salton Sea\nUSA\n(n = 10)"
-df[[34]]$map_loaded$Location <- "Salterns\nNamibia\n(n = 7)"
-df[[35]]$map_loaded$Location <- "Bras del Port saltern\nSpain\n(n = 6)"
-df[[36]]$map_loaded$Location <- "Bras del Port saltern\nSpain\n(n = 6)"
-df[[37]]$map_loaded$Location <- "Alkaline sediment\nRussia/Germany\n(n = 11)"
-df[[38]]$map_loaded$Location <- "Alkaline water\nItaly/Philippines/Costa Rica\n(n = 8)"
-df[[39]]$map_loaded$Location <- "Bras del Port saltern\nSpain\n(n = 1)"
-df[[40]]$map_loaded$Location <- "Tuz Lake\nTurkey\n(n = 1)"
-df[[41]]$map_loaded$Location <- "Diamante Lake biofilm\nAgrgentina\n(n = 1)"
 
 # Phyla
 for (i in 1:nrow(studies)) {
@@ -1617,7 +1606,7 @@ for (i in 1:length(df)) {
 # Pies
 for (i in 1:nrow(studies)) {
   t <- df[[i]]$map_loaded$Location
-  p[[i]] <- plot_taxa_bars(phy[[i]], df[[i]]$map_loaded, "Study Name", 20) +
+  p[[i]] <- plot_taxa_bars(phy[[i]], df[[i]]$map_loaded, "Study.Name2", 20) +
     # geom_bar(stat = "identity", width = 1, color = "white") +
     coord_polar("y", start=0) +
     scale_fill_manual(values = p_colors[[i]]) +
@@ -1629,11 +1618,11 @@ for (i in 1:nrow(studies)) {
 }
 
 # Get legend - use one with all 7 phyla
-t <- df[[7]]$map_loaded$Location
-p_forleg <- plot_taxa_bars(phy[[7]], df[[7]]$map_loaded, "Study Name", 20) +
+t <- df[[5]]$map_loaded$Location
+p_forleg <- plot_taxa_bars(phy[[5]], df[[5]]$map_loaded, "Study.Name2", 20) +
   geom_bar(stat = "identity", width = 1, color = "white") +
   coord_polar("y", start=0) +
-  scale_fill_manual(values = p_colors[[7]]) +
+  scale_fill_manual(values = p_colors[[5]]) +
   labs(fill = "Phylum") +
   theme_void() +
   ggtitle(t) +
@@ -1645,20 +1634,22 @@ p_forleg
 pie_leg <- get_legend(p_forleg)
 
 # Make huge multipanel
-# 5, 6, 6, 1, 6, 6, 6, 5
-pies <- plot_grid(p[[1]], p[[2]], p[[3]], p[[4]], p[[5]], NULL,
-                  p[[6]], p[[7]], p[[8]], p[[9]], p[[10]], p[[11]],
-                  p[[12]], p[[13]], p[[14]], p[[15]], p[[16]], p[[17]],
-                  p[[18]], NULL, NULL, NULL, NULL, NULL,
-                  p[[19]], p[[20]], p[[21]], p[[22]], p[[23]], p[[24]],
-                  p[[25]], p[[26]], p[[27]], p[[28]], p[[29]], p[[30]],
-                  p[[31]], p[[32]], p[[33]], p[[34]], p[[35]], p[[36]],
-                  p[[37]], p[[38]], p[[39]], p[[40]], p[[41]], NULL,
-                  ncol = 6)
+table(loc_n$Environment)
+# 4, 4, 3, 4, 4, 4, 4, 4, 4
+pies <- plot_grid(p[[1]], p[[2]], p[[3]], p[[4]],
+                  p[[5]], p[[6]], p[[7]], p[[8]],
+                  p[[9]], p[[10]], p[[11]], NULL,
+                  p[[12]], p[[13]], p[[14]], p[[15]],
+                  p[[16]], p[[17]], p[[18]], p[[19]],
+                  p[[20]], p[[21]], p[[22]], p[[23]],
+                  p[[24]], p[[25]], p[[26]], p[[27]],
+                  p[[28]], p[[29]], p[[30]], p[[31]],
+                  p[[32]], p[[33]], p[[34]], p[[35]],
+                  ncol = 4)
 pies
 
 # Add legend
-pdf("FigsUpdated/Pies_Phyla.pdf", width = 8.5, height = 6.5)
+pdf("FigsUpdated/Pies_Phyla.pdf", width = 9, height = 7)
 plot_grid(pies, pie_leg, rel_widths = c(4, 1))
 dev.off()
 
@@ -1676,7 +1667,7 @@ for (i in 1:nrow(studies)) {
 classes_present <- as.data.frame(table(input_fungi_nz$taxonomy_loaded$taxonomy3)) %>%
   mutate(Var1 = as.character(Var1))
 for (i in 1:length(df)) {
-  c_colors[[i]] <- colorRampPalette(brewer.pal(12, "Paired"))(37)
+  c_colors[[i]] <- colorRampPalette(brewer.pal(12, "Paired"))(nrow(classes_present))
   c_colors[[i]] <- subset(c_colors[[i]],
                           classes_present$Var1 %in% df[[i]]$taxonomy_loaded$taxonomy3)
 }
@@ -1684,7 +1675,7 @@ for (i in 1:length(df)) {
 # Pies
 for (i in 1:nrow(studies)) {
   t <- df[[i]]$map_loaded$Location
-  c[[i]] <- plot_taxa_bars(cla[[i]], df[[i]]$map_loaded, "Study Name", 20) +
+  c[[i]] <- plot_taxa_bars(cla[[i]], df[[i]]$map_loaded, "Study.Name2", 20) +
     # geom_bar(stat = "identity", width = 1, color = "white") +
     coord_polar("y", start=0) +
     scale_fill_manual(values = c_colors[[i]]) +
@@ -1696,11 +1687,11 @@ for (i in 1:nrow(studies)) {
 }
 
 # Get legend - use one with all 37 classes
-t <- df[[7]]$map_loaded$Location
-c_forleg <- plot_taxa_bars(cla[[7]], df[[7]]$map_loaded, "Study Name", 37) +
+t <- df[[5]]$map_loaded$Location
+c_forleg <- plot_taxa_bars(cla[[5]], df[[5]]$map_loaded, "Study.Name2", 37) +
   geom_bar(stat = "identity", width = 1, color = "white") +
   coord_polar("y", start=0) +
-  scale_fill_manual(values = c_colors[[7]]) +
+  scale_fill_manual(values = c_colors[[5]]) +
   labs(fill = "Classes") +
   theme_void() +
   ggtitle(t) +
@@ -1713,19 +1704,20 @@ c_forleg
 pie_leg_c <- get_legend(c_forleg)
 
 # Make huge multipanel
-pies_c <- plot_grid(c[[1]], c[[2]], c[[3]], c[[4]], c[[5]], NULL,
-                    c[[6]], c[[7]], c[[8]], c[[9]], c[[10]], c[[11]],
-                    c[[12]], c[[13]], c[[14]], c[[15]], c[[16]], c[[17]],
-                    c[[18]], NULL, NULL, NULL, NULL, NULL,
-                    c[[19]], c[[20]], c[[21]], c[[22]], c[[23]], c[[24]],
-                    c[[25]], c[[26]], c[[27]], c[[28]], c[[29]], c[[30]],
-                    c[[31]], c[[32]], c[[33]], c[[34]], c[[35]], c[[36]],
-                    c[[37]], c[[38]], c[[39]], c[[40]], c[[41]], NULL,
-                    ncol = 6)
+pies_c <- plot_grid(c[[1]], c[[2]], c[[3]], c[[4]],
+                    c[[5]], c[[6]], c[[7]], c[[8]],
+                    c[[9]], c[[10]], c[[11]], NULL,
+                    c[[12]], c[[13]], c[[14]], c[[15]],
+                    c[[16]], c[[17]], c[[18]], c[[19]],
+                    c[[20]], c[[21]], c[[22]], c[[23]],
+                    c[[24]], c[[25]], c[[26]], c[[27]],
+                    c[[28]], c[[29]], c[[30]], c[[31]],
+                    c[[32]], c[[33]], c[[34]], c[[35]],
+                    ncol = 4)
 pies_c
 
 # Add legend
-pdf("FigsUpdated/Pies_Classes.pdf", width = 8.5, height = 6.5)
+pdf("FigsUpdated/Pies_Classes.pdf", width = 9, height = 7)
 plot_grid(pies_c, pie_leg_c, rel_widths = c(4, 1))
 dev.off()
 
@@ -1822,7 +1814,7 @@ mp_class <- multipatt(t(tax_sum_class),
                       input_fungi_CPM$map_loaded$Environment, 
                       func = "r.g", 
                       control = how(nperm=999))
-summary(mp_class) # 23 soda lake
+summary(mp_class) # 1 cryo soil, 20 soda lake
 pdf("FigsUpdated/mp_Class.pdf", width = 5, height = 5)
 plot_multipatt(mp_obj = mp_class, 
                input = input_fungi_CPM,
@@ -1837,7 +1829,7 @@ mp_order <- multipatt(t(tax_sum_order),
                       input_fungi_CPM$map_loaded$Environment, 
                       func = "r.g", 
                       control = how(nperm=999))
-summary(mp_order) # Acid mine 4, Cyrosphere 12, Soda lake 41, 
+summary(mp_order) # Acid mine 3, Cyro soil 13, Soda lake 36, 
 pdf("FigsUpdated/mp_Order.pdf", width = 5, height = 7)
 plot_multipatt(mp_obj = mp_order, 
                input = input_fungi_CPM,
@@ -1852,7 +1844,7 @@ mp_family <- multipatt(t(tax_sum_family),
                       input_fungi_CPM$map_loaded$Environment, 
                       func = "r.g", 
                       control = how(nperm=999))
-summary(mp_family) # Acid mine 4, crysosphere 31, desert 2, glacial forefield 1, soda lake 69
+summary(mp_family) # Acid mine 3, cryo soil 13, soda lake 36, 
 pdf("FigsUpdated/mp_Family.pdf", width = 5, height = 10)
 plot_multipatt(mp_obj = mp_family, 
                input = input_fungi_CPM,
@@ -1867,7 +1859,7 @@ mp_genus <- multipatt(t(input_fungi_CPM$data_loaded),
                       input_fungi_CPM$map_loaded$Environment, 
                       func = "r.g", 
                       control = how(nperm=999))
-summary(mp_genus) # Acid mine 8, cyrosphere 44, desert 7, glacial forefield 1, hot spring 2, soda lake 112
+summary(mp_genus) # Acid mine 4, cryo soil 60, cryo water 1, desert 5, glacial forefield 1, hot spring 2, soda lake 101
 pdf("FigsUpdated/mp_Genus.pdf", width = 5, height = 12)
 plot_multipatt(mp_obj = mp_genus, 
                input = input_fungi_CPM,
@@ -1876,12 +1868,13 @@ plot_multipatt(mp_obj = mp_genus,
 dev.off()
 
 
+
 #### ..........................####
 #### Functional ####
 # Sent Dongying Wu of IMG staff list of taxonoids and list of fungal phyla
 # Dongying ran custom python scripts on JGI super computer to pull out KOs of only fungal phyla
 # Folder FungalKOs has a file for each metagenome with the KO hits of the fungal phyla scaffolds
-# Already deleted 318 blank files (no fungal KOs); 837 had at least 1 KO
+# Already deleted 318 blank files (no fungal KOs); 802 had at least 1 KO
 # Note that there is bias in eukaryote gene calling/KO assignment
 # We could also get COG or Pfam profiles if we want
 
@@ -1976,6 +1969,7 @@ sum(rownames(ko_comm) != ko_meta$taxon_oid)
 
 # Check environment sample size
 table(ko_meta$Environment)
+nrow(ko_meta) # 802
 
 # Get richness and Shannon
 ko_meta$richness_KO = specnumber(ko_comm)
@@ -2003,7 +1997,7 @@ dev.off()
 #dds <- estimateDispersions(dds)
 #ko_comm_DESeq <- as.data.frame(t(counts(dds, normalized = T)))
 # Save so you don't have to redo the DESeq (takes a while)
-# saveRDS(ko_comm_DESeq, "ko_comm_DESeq_updated.rds")
+#saveRDS(ko_comm_DESeq, "ko_comm_DESeq_updated.rds")
 ko_comm_DESeq <- readRDS("ko_comm_DESeq_updated.rds")
 
 
@@ -2121,12 +2115,12 @@ ko_richness <- ko_meta %>%
   mutate(index = seq(1:nrow(.)))
 plot(rownames(ko_list), ko_list$n)
 plot(ko_richness$index, ko_richness$richness_KO)
-sum(ko_richness$richness_KO == 1) # 66 with just 1 KO
-sum(ko_richness$richness_KO == 2) # 47 with just 2 KOs
-sum(ko_richness$richness_KO == 3) # 50 with just 3 KOs
+sum(ko_richness$richness_KO == 1) # 51 with just 1 KO
+sum(ko_richness$richness_KO == 2) # 42 with just 2 KOs
+sum(ko_richness$richness_KO == 3) # 43 with just 3 KOs
 
 # Need to find good cutoff with some KOs and still high sample size
-sum(ko_richness$richness_KO > 10) # 543 with > 10
+sum(ko_richness$richness_KO > 10) # 535 with > 10
 
 # Subset the metadata and community datasets
 ko_meta_filt <- ko_meta %>%
@@ -2255,23 +2249,24 @@ pdf("FigsUpdated/KO_PCoA_min100KOs.pdf", width = 8.5, height = 3.5)
 plot_grid(g5_ko, g6_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1))
 dev.off()
 
-# Also do with the same subset of the data as taxonomy (22 samples from each env)
+# Also do with the same subset of the data as taxonomy (20 samples from each env)
 # Note numbers are slightly different here because of 0 fungal KOs in some samples
-ko_meta_subset22 <- ko_meta %>%
+table(ko_meta$Environment)
+ko_meta_subset20 <- ko_meta %>%
   filter(sampleID %in% subset22$sampleID)
-ko_comm_DESeq_subset22 <- ko_comm_DESeq %>%
-  filter(rownames(.) %in% rownames(ko_meta_subset22))
-sum(rownames(ko_comm_DESeq_subset22) != rownames(ko_meta_subset22))
-table(ko_meta_subset22$Environment)
+ko_comm_DESeq_subset20 <- ko_comm_DESeq %>%
+  filter(rownames(.) %in% rownames(ko_meta_subset20))
+sum(rownames(ko_comm_DESeq_subset20) != rownames(ko_meta_subset20))
+table(ko_meta_subset20$Environment)
 
-bc_ko <- vegdist(ko_comm_DESeq_subset22, method = "bray")
-pcoa_ko <- cmdscale(bc_ko, k = nrow(ko_meta_subset22) - 1, eig = T)
+bc_ko <- vegdist(ko_comm_DESeq_subset20, method = "bray")
+pcoa_ko <- cmdscale(bc_ko, k = nrow(ko_meta_subset20) - 1, eig = T)
 pcoaA1 <- round((eigenvals(pcoa_ko)/sum(eigenvals(pcoa_ko)))[1]*100, digits = 1)
 pcoaA2 <- round((eigenvals(pcoa_ko)/sum(eigenvals(pcoa_ko)))[2]*100, digits = 1)
-ko_meta_subset22$Axis01 <- scores(pcoa_ko)[,1]
-ko_meta_subset22$Axis02 <- scores(pcoa_ko)[,2]
-micro.hulls <- ddply(ko_meta_subset22, c("Environment"), find_hull)
-g7_ko <- ggplot(ko_meta_subset22, aes(Axis01, Axis02, colour = Environment)) +
+ko_meta_subset20$Axis01 <- scores(pcoa_ko)[,1]
+ko_meta_subset20$Axis02 <- scores(pcoa_ko)[,2]
+micro.hulls <- ddply(ko_meta_subset20, c("Environment"), find_hull)
+g7_ko <- ggplot(ko_meta_subset20, aes(Axis01, Axis02, colour = Environment)) +
   geom_polygon(data = micro.hulls, aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F) +
   geom_point(size = 3, alpha = 0.5) +
@@ -2286,14 +2281,14 @@ g7_ko <- ggplot(ko_meta_subset22, aes(Axis01, Axis02, colour = Environment)) +
         plot.title = element_text(vjust = 0))
 g7_ko
 
-jac_ko <- vegdist(ko_comm_DESeq_subset22, method = "jaccard")
-pcoa1_ko <- cmdscale(jac_ko, k = nrow(ko_meta_subset22) - 1, eig = T)
+jac_ko <- vegdist(ko_comm_DESeq_subset20, method = "jaccard")
+pcoa1_ko <- cmdscale(jac_ko, k = nrow(ko_meta_subset20) - 1, eig = T)
 pcoa1A1 <- round((eigenvals(pcoa1_ko)/sum(eigenvals(pcoa1_ko)))[1]*100, digits = 1)
 pcoa1A2 <- round((eigenvals(pcoa1_ko)/sum(eigenvals(pcoa1_ko)))[2]*100, digits = 1)
-ko_meta_subset22$Axis01j <- scores(pcoa1_ko)[,1]
-ko_meta_subset22$Axis02j <- scores(pcoa1_ko)[,2]
-micro.hullsj <- ddply(ko_meta_subset22, c("Environment"), find_hullj)
-g8_ko <- ggplot(ko_meta_subset22, aes(Axis01j, Axis02j, colour = Environment)) +
+ko_meta_subset20$Axis01j <- scores(pcoa1_ko)[,1]
+ko_meta_subset20$Axis02j <- scores(pcoa1_ko)[,2]
+micro.hullsj <- ddply(ko_meta_subset20, c("Environment"), find_hullj)
+g8_ko <- ggplot(ko_meta_subset20, aes(Axis01j, Axis02j, colour = Environment)) +
   geom_polygon(data = micro.hullsj, aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F) +
   geom_point(size = 3, alpha = 0.5) +
@@ -2309,7 +2304,7 @@ g8_ko <- ggplot(ko_meta_subset22, aes(Axis01j, Axis02j, colour = Environment)) +
         plot.title = element_text(vjust = 0))
 g8_ko
 
-pdf("FigsUpdated/KO_PCoA_n22.pdf", width = 8.5, height = 3.5)
+pdf("FigsUpdated/KO_PCoA_n20.pdf", width = 8.5, height = 3.5)
 plot_grid(g7_ko, g8_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1))
 dev.off()
 
@@ -2320,33 +2315,33 @@ dev.off()
 bc_ko <- vegdist(ko_comm_DESeq_filt, method = "bray")
 jac_ko <- vegdist(ko_comm_DESeq_filt, method = "jaccard")
 set.seed(308)
-adonis2(bc_ko ~ Environment, data = ko_meta_filt) # R2 = 0.17, p = 0.001
+adonis2(bc_ko ~ Environment, data = ko_meta_filt) # R2 = 0.25, p = 0.001
 anova(betadisper(bc_ko, ko_meta_filt$Environment)) # Dispersion not homogeneous
 
 set.seed(308)
-adonis2(jac_ko ~ ko_meta_filt$Environment) # R2 = 0.16, p = 0.001
+adonis2(jac_ko ~ ko_meta_filt$Environment) # R2 = 0.23, p = 0.001
 anova(betadisper(jac_ko, ko_meta_filt$Environment)) # Dispersion not homogeneous
 
-# Subset 22 (rerun that section first)
-bc_ko <- vegdist(ko_comm_DESeq_subset22, method = "bray")
-jac_ko <- vegdist(ko_comm_DESeq_subset22, method = "jaccard")
+# Subset 20 (rerun that section first)
+bc_ko <- vegdist(ko_comm_DESeq_subset20, method = "bray")
+jac_ko <- vegdist(ko_comm_DESeq_subset20, method = "jaccard")
 set.seed(308)
-adonis2(bc_ko ~ Environment, data = ko_meta_subset22) # R2 = 0.10, p = 0.002
-anova(betadisper(bc_ko, ko_meta_subset22$Environment)) # Dispersion not homogeneous
+adonis2(bc_ko ~ Environment, data = ko_meta_subset20) # R2 = 0.15, p = 0.002
+anova(betadisper(bc_ko, ko_meta_subset20$Environment)) # Dispersion not homogeneous
 
 set.seed(308)
-adonis2(jac_ko ~ ko_meta_subset22$Environment) # R2 = 0.10, p = 0.002
-anova(betadisper(jac_ko, ko_meta_subset22$Environment)) # Dispersion not homogeneous
+adonis2(jac_ko ~ ko_meta_subset20$Environment) # R2 = 0.14, p = 0.002
+anova(betadisper(jac_ko, ko_meta_subset20$Environment)) # Dispersion not homogeneous
 
 set.seed(308)
-adonis2(bc_ko ~ ko_meta_subset22$Assembler) # R2 = 0.16, p = 0.084
-anova(betadisper(bc_ko, ko_meta_subset22$Assembler)) # Dispersion not homogeneous
+adonis2(bc_ko ~ ko_meta_subset20$Assembler) # R2 = 0.17, p = 0.084
+anova(betadisper(bc_ko, ko_meta_subset20$Assembler)) # Dispersion not homogeneous
 
-ko_meta_subset22 <- ko_meta_subset22 %>%
+ko_meta_subset20 <- ko_meta_subset20 %>%
   separate(`Add Date`, into = c("Day", "Month", "Year"), sep = "/", remove = F)
 set.seed(308)
-adonis2(bc_ko ~ as.factor(ko_meta_subset22$Year)) # R2 = 0.05, p = 0.06
-anova(betadisper(bc_ko, ko_meta_subset22$Year)) # Dispersion homogeneous
+adonis2(bc_ko ~ as.factor(ko_meta_subset20$Year)) # R2 = 0.08, p = 0.15
+anova(betadisper(bc_ko, ko_meta_subset20$Year)) # Dispersion not homogeneous
 
 
 
@@ -2443,8 +2438,8 @@ ggplot(gene_plot_summary, aes(Environment, mean, fill = Gene, group = Gene)) +
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1, vjust = 1),
         legend.text = element_text(size = 8),
         legend.key.size = unit(0.5, "cm"),
-        legend.position = c(1,1),
-        legend.justification = c(1,1),
+        legend.position = c(0,1),
+        legend.justification = c(0,1),
         legend.background = element_blank(),
         plot.margin = unit(c(0.1, 0.1, 0.1, 0.7), "cm"))
 dev.off()
@@ -2469,13 +2464,14 @@ gene_hm <- data.frame("sampleID" = ko_meta$sampleID,
 ann_cols <- data.frame(row.names = colnames(gene_hm), 
                        Environment = ko_meta$Environment)
 ann_colors <- list(Environment = c("Acid mine drainage" = hue_pal()(8)[1],
-                                   "Cryosphere" = hue_pal()(8)[2],
-                                   "Desert" = hue_pal()(8)[3],
-                                   "Glacial forefield" = hue_pal()(8)[4],
-                                   "Hot spring" = hue_pal()(8)[5],
-                                   "Hydrothermal vent" = hue_pal()(8)[6],
-                                   "Hypersaline" = hue_pal()(8)[7],
-                                   "Soda lake" = hue_pal()(8)[8]))
+                                   "Cryosphere - soil" = hue_pal()(8)[2],
+                                   "Cryosphere - water" = hue_pal()(8)[3],
+                                   "Desert" = hue_pal()(8)[4],
+                                   "Glacial forefield" = hue_pal()(8)[5],
+                                   "Hot spring" = hue_pal()(8)[6],
+                                   "Hydrothermal vent" = hue_pal()(8)[7],
+                                   "Hypersaline" = hue_pal()(8)[8],
+                                   "Soda lake" = hue_pal()(8)[9]))
 phm1 <- pheatmap(gene_hm,
          scale = "row",
          show_colnames = F,
