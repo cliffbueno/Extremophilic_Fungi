@@ -2246,6 +2246,75 @@ pdf("FigsUpdated/KO_PCoA_min100KOs.pdf", width = 8.5, height = 5)
 plot_grid(g5_ko, g6_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1.1))
 dev.off()
 
+# Now increase the cutoff even more - 750!
+sum(ko_richness$richness_KO > 750) # 52 with > 750
+ko_meta_filt <- ko_meta %>%
+  filter(richness_KO > 750)
+ko_comm_DESeq_filt <- ko_comm_DESeq %>%
+  filter(rownames(.) %in% rownames(ko_meta_filt))
+sum(rownames(ko_comm_DESeq_filt) != rownames(ko_meta_filt))
+table(ko_meta_filt$Environment) # No hot spring, oh well
+sort(colSums(ko_comm_DESeq_filt))
+sort(rowSums(ko_comm_DESeq_filt))
+sort(ko_meta_filt$richness_KO)
+
+bc_ko <- vegdist(ko_comm_DESeq_filt, method = "bray")
+pcoa_ko <- cmdscale(bc_ko, k = nrow(ko_meta_filt) - 1, eig = T)
+pcoaA1 <- round((eigenvals(pcoa_ko)/sum(eigenvals(pcoa_ko)))[1]*100, digits = 1)
+pcoaA2 <- round((eigenvals(pcoa_ko)/sum(eigenvals(pcoa_ko)))[2]*100, digits = 1)
+ko_meta_filt$Axis01 <- scores(pcoa_ko)[,1]
+ko_meta_filt$Axis02 <- scores(pcoa_ko)[,2]
+micro.hulls <- ddply(ko_meta_filt, c("Environment"), find_hull)
+g5_ko <- ggplot(ko_meta_filt, aes(Axis01, Axis02, colour = Environment)) +
+  geom_polygon(data = micro.hulls, aes(colour = Environment, fill = Environment),
+               alpha = 0.1, show.legend = F) +
+  geom_point(aes(size = richness_KO), alpha = 0.5) +
+  scale_size(range = c(1, 10)) +
+  labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
+       y = paste("PC2: ", pcoaA2, "%", sep = ""),
+       colour = "Environment",
+       size = "Number of KOs",
+       title = "KO Bray-Curtis") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
+  theme_bw() +
+  theme(legend.position = "right",
+        axis.title = element_text(face = "bold", size = 14), 
+        axis.text = element_text(size = 12),
+        plot.title = element_text(vjust = 0))
+g5_ko
+ko_pcoa_leg <- get_legend(g5_ko)
+g5_ko <- g5_ko +
+  theme(legend.position = "none")
+
+jac_ko <- vegdist(ko_comm_DESeq_filt, method = "jaccard")
+pcoa1_ko <- cmdscale(jac_ko, k = nrow(ko_meta_filt) - 1, eig = T)
+pcoa1A1 <- round((eigenvals(pcoa1_ko)/sum(eigenvals(pcoa1_ko)))[1]*100, digits = 1)
+pcoa1A2 <- round((eigenvals(pcoa1_ko)/sum(eigenvals(pcoa1_ko)))[2]*100, digits = 1)
+ko_meta_filt$Axis01j <- scores(pcoa1_ko)[,1]
+ko_meta_filt$Axis02j <- scores(pcoa1_ko)[,2]
+micro.hullsj <- ddply(ko_meta_filt, c("Environment"), find_hullj)
+g6_ko <- ggplot(ko_meta_filt, aes(Axis01j, Axis02j, colour = Environment)) +
+  geom_polygon(data = micro.hullsj, aes(colour = Environment, fill = Environment),
+               alpha = 0.1, show.legend = F) +
+  geom_point(aes(size = richness_KO), alpha = 0.5) +
+  scale_size(range = c(1, 10)) +
+  labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
+       y = paste("PC2: ", pcoaA2, "%", sep = ""),
+       colour = "Environment",
+       size = "Number of KOs",
+       title = "KO Jaccard") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
+  theme_bw() +  
+  theme(legend.position = "none",
+        axis.title = element_text(face = "bold", size = 14), 
+        axis.text = element_text(size = 12),
+        plot.title = element_text(vjust = 0))
+g6_ko
+
+pdf("FigsUpdated/KO_PCoA_min750KOs.pdf", width = 8.5, height = 5)
+plot_grid(g5_ko, g6_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1.1))
+dev.off()
+
 # Also do with the same subset of the data as taxonomy (20 samples from each env)
 # Note numbers are slightly different here because of 0 fungal KOs in some samples
 table(ko_meta$Environment)
