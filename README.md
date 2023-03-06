@@ -3,4 +3,5 @@ Analyses of extreme environment metagenomes for review paper on extremophilic fu
 Exploratory figures from first pass are in the Figs folder\
 Figure prefix key:\
 -Rel = relative abundance\
--CPM = counts per million (of assembled reads)
+-CPM = counts per million (of assembled reads)\
+Updated figures are in the FigsUpdated folder
