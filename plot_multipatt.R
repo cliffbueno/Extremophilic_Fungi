@@ -1,11 +1,10 @@
 # Function to automate plotting multipatt results
-# Make plot of indicator correlation coeffiecients and mean abundance across all samples
+# Make plot of indicator correlation coefficients and mean abundance across all samples
 # Just for taxa indicative of one group
-# Can work for Phylum through Genus level
+# Can work for Phylum through OTU level
 # Can work for factor with up to 10 levels
-# Uses CPM for abundances
 
-plot_multipatt <- function(mp_obj, input, tax_sum, group) {
+plot_multipatt <- function(mp_obj, input, tax_sum, group, filter, filter_vals, abund, qcut, rcut) {
   
   # Make results dataframe
   mp_obj_results <- mp_obj$sign %>%
@@ -13,7 +12,8 @@ plot_multipatt <- function(mp_obj, input, tax_sum, group) {
            Group = "NA",
            taxon = rownames(mp_obj$sign),
            num_groups = rowSums(mp_obj$sign[,1:(ncol(mp_obj$sign)-3)])) %>%
-    filter(q.value < 0.05) %>%
+    filter(q.value < qcut) %>%
+    filter(stat > rcut) %>%
     filter(num_groups == 1)
   
   # Make group variable and assign values
@@ -87,22 +87,46 @@ plot_multipatt <- function(mp_obj, input, tax_sum, group) {
   # Check number in each group
   table(mp_obj_results$Group)
   
-  # Arrange by Group then taxon, later use this to order the taxon factor for the heatmap
-  mp_obj_results <- mp_obj_results %>%
-    arrange(Group, taxon)
+  # Filter
+  if (filter == TRUE) {
+    mp_obj_results <- mp_obj_results %>%
+      filter(Group != filter_vals)
+  }
   
   # Get dataframe with indicator correlation coefficients, to plot
   mp_obj_corrs <- as.data.frame(mp_obj$str) %>%
-    dplyr::select(1:length(levels(input$map_loaded$Environment))) %>%
+    dplyr::select(1:length(levels(input$map_loaded[[group]]))) %>%
     mutate(taxon = rownames(.)) %>%
     filter(taxon %in% mp_obj_results$taxon) %>%
-    set_names(c(levels(input$map_loaded$Environment), "taxon"))
+    set_names(c(levels(input$map_loaded[[group]]), "taxon"))
   
-  # Add abundances to dataframe
-  mean_CPM <- data.frame("CPM" = rowSums(tax_sum)/nrow(input$map_loaded),
-                         "taxon" = rownames(tax_sum))
+  # Filter
+  if (filter == TRUE) {
+    mp_obj_corrs <- mp_obj_corrs %>%
+      dplyr::select(-c(all_of(filter_vals)))
+  }
+  
+  # Add mean % relative abundances, add phylum name, switch ASV to OTU, arrange by group and taxon
+  mean_abund <- data.frame(abund = rowMeans(tax_sum)*100,
+                           "taxon" = rownames(tax_sum))
+
+  taxonomy <- input$taxonomy_loaded %>%
+    dplyr::select(taxonomy2, taxonomy8)
+  
   mp_obj_results <- mp_obj_results %>%
-    left_join(., mean_CPM, by = "taxon")
+    left_join(., mean_abund, by = "taxon") %>%
+    left_join(., taxonomy, by = c("taxon" = "taxonomy8")) %>%
+    mutate(taxon = paste(taxonomy2, taxon, sep = "; ")) %>%
+    dplyr::select(-taxonomy2) %>%
+    mutate(taxon = gsub("ASV", "OTU", taxon)) %>%
+    arrange(Group, taxon)
+  
+  # Add phyla to mp_obj_corrs
+  mp_obj_corrs <- mp_obj_corrs %>%
+    left_join(., taxonomy, by = c("taxon" = "taxonomy8")) %>%
+    mutate(taxon = paste(taxonomy2, taxon, sep = "; ")) %>%
+    dplyr::select(-taxonomy2) %>%
+    mutate(taxon = gsub("ASV", "OTU", taxon))
   
   # Melt dataframe for heatmap
   hm.melted <- mp_obj_corrs %>%
@@ -150,7 +174,7 @@ plot_multipatt <- function(mp_obj, input, tax_sum, group) {
     labs(y = group)
   
   # Abundance plot
-  bp.y <- ggplot(data = mp_obj_results, aes(x = taxon, y = CPM)) + 
+  bp.y <- ggplot(data = mp_obj_results, aes(x = taxon, y = abund)) + 
     geom_bar(stat = "identity", fill = "grey") + 
     scale_y_continuous(position = "right") +
     scale_x_discrete(limits = rev(levels(mp_obj_results$taxon))) +
@@ -163,7 +187,7 @@ plot_multipatt <- function(mp_obj, input, tax_sum, group) {
           legend.position = "none", 
           plot.margin = margin(c(0,5,0,0)),
           axis.text.x.top = element_text(size = 6, margin = margin(c(0,0,-2,0)))) +
-    labs(y = "Mean CPM")
+    labs(y = abund)
   
   top <- plot_grid(hm.clean, bp.y, ncol = 2, 
                    rel_widths = c(0.7, 0.3), align = "h")
