@@ -394,6 +394,8 @@ input_fungi$map_loaded$fung_count <- colSums(input_fungi$data_loaded)
 input_fungi$map_loaded$present <- ifelse(input_fungi$map_loaded$fung_count > 0,
                                          1,
                                          0)
+# Save file
+#saveRDS(input_fungi, "input_fungi_updated.rds")
 
 # Note, will do this again but with CPM normalization
 ggplot(input_fungi$map_loaded, aes(reorder(`Environment`, fung_count, mean), fung_count)) +
@@ -1875,8 +1877,10 @@ dev.off()
 # Dongying ran custom python scripts on JGI super computer to pull out KOs of only fungal phyla
 # Folder FungalKOs has a file for each metagenome with the KO hits of the fungal phyla scaffolds
 # Already deleted 318 blank files (no fungal KOs); 802 had at least 1 KO
-# Note that there is bias in eukaryote gene calling/KO assignment
+# Note that there is bias in eukaryotic gene calling/KO assignment
 # We could also get COG or Pfam profiles if we want
+# Code below is how DESeq-transformed abundance table was created
+# To reload the KO table and metadata, go to "_Start here" subsection
 
 # Run a for loop to read in the file for each metagenome and combine into 1
 setwd("FungalKOs/")
@@ -1891,7 +1895,6 @@ for (i in 1:length(list.files())) {
   ko_table <- ko_table %>%
     rbind(ko[[i]])
 }
-
 setwd("~/Documents/GitHub/Extremophilic_Fungi/")
 
 # Add new desert samples
@@ -1939,12 +1942,12 @@ ko_list <- ko_table %>%
 old_ko_list <- read.csv("KOlist_wDefinitions.csv")
 new_ko_list <- ko_list %>%
   filter(KO %notin% old_ko_list$KO)
-for (i in 1:nrow(new_ko_list)) {
-  def <- keggFind(database = "ko", query = new_ko_list$KO[i])
-  if (length(def) != 0) {
-    new_ko_list$Definition[i] <- def
-  }
-}
+#for (i in 1:nrow(new_ko_list)) {
+#  def <- keggFind(database = "ko", query = new_ko_list$KO[i])
+#  if (length(def) != 0) {
+#    new_ko_list$Definition[i] <- def
+#  }
+#}
 #write.csv(new_ko_list, file = "KOlist_wDefinitions_new.csv", row.names = F)
 new_ko_list <- read.csv("KOlist_wDefinitions_new.csv")
 ko_list <- rbind(old_ko_list, new_ko_list)
@@ -1977,6 +1980,9 @@ ko_meta$shannon_KO = diversity(ko_comm, index = "shannon")
 range(ko_meta$richness_KO)
 range(ko_meta$shannon_KO)
 
+# Save ko_meta
+saveRDS(ko_meta, "ko_meta.rds")
+
 pdf("FigsUpdated/KO_Genus_richness.pdf", width = 6, height = 4)
 ggplot(ko_meta, aes(rich, richness_KO)) +
   geom_point(size = 1.5, alpha = 0.25, aes(colour = Environment)) +
@@ -1998,7 +2004,12 @@ dev.off()
 #ko_comm_DESeq <- as.data.frame(t(counts(dds, normalized = T)))
 # Save so you don't have to redo the DESeq (takes a while)
 #saveRDS(ko_comm_DESeq, "ko_comm_DESeq_updated.rds")
+
+
+
+#### _Start here ####
 ko_comm_DESeq <- readRDS("ko_comm_DESeq_updated.rds")
+ko_meta <- readRDS("ko_meta.rds")
 
 
 
