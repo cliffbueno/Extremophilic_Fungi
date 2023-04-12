@@ -67,6 +67,10 @@ suppressWarnings(suppressMessages(library(multcompView))) # For significance let
 suppressWarnings(suppressMessages(library(rcompanion))) # For significance letters
 suppressWarnings(suppressMessages(library(pheatmap))) # For heatmaps
 suppressWarnings(suppressMessages(library(qvalue))) # For qvalue
+suppressWarnings(suppressMessages(library(writexl))) # For writing to Excel
+suppressWarnings(suppressMessages(library(ggpubr))) # For density plots
+suppressWarnings(suppressMessages(library(PMCMRplus))) # For Nemenyi posthoc
+suppressWarnings(suppressMessages(library(DirichletReg))) # For analyzing proportions
 
 # Working directory (GitHub repository)
 setwd("~/Documents/GitHub/Extremophilic_Fungi/")
@@ -85,6 +89,7 @@ save_pheatmap_pdf <- function(x, filename, width = 7, height = 5) {
 }
 
 source("plot_multipatt.R")
+source("compareBC.R")
 
 # So far used Krusal-Wallis + Nemenyi posthoc
 # May want to update some stats to zero-inflated negative binomial regression instead
@@ -1298,6 +1303,422 @@ g_fun2
 
 pdf("FigsUpdated/PCoA_ArcBacFun_n20.pdf", width = 8, height = 5)
 plot_grid(g_arc2,g_bac2,g_fun2,g_leg, ncol = 2, hjust = "hv")
+dev.off
+
+
+
+#### _Compare BC ####
+# Let's dig into the archaeal, bacterial, fungal communities a bit more
+# How does Bray-Curtis dissimilarity compare for within or between sample type comparisons
+# Note, the length of the long dataframe should equal (n*(n-1))/2
+
+
+
+#### __Genus ####
+# Fungi
+fun_bray_mat <- as.matrix(bc)
+fun_bray_mat[upper.tri(fun_bray_mat, diag = TRUE)] <- NA
+fun_bray_df <- as.data.frame(fun_bray_mat)
+fun_bray_df$sampleID <- rownames(fun_bray_df)
+fun_bray_df_long <- melt(fun_bray_df, id.vars = "sampleID")
+fun_bray_df_long <- na.omit(fun_bray_df_long)
+fun_bray_df_long$sampleID <- as.factor(fun_bray_df_long$sampleID)
+env <- dplyr::select(input_arc_CPM_nz$map_loaded, sampleID, Environment)
+fun_bray_df_long <- inner_join(fun_bray_df_long, env, 
+                               by = c("sampleID" = "sampleID"))
+fun_bray_df_long <- inner_join(fun_bray_df_long, env, 
+                               by = c("variable" = "sampleID"))
+for (i in 1:nrow(fun_bray_df_long)) {
+  ifelse(fun_bray_df_long$Environment.x[i] == fun_bray_df_long$Environment.y[i],
+         fun_bray_df_long$comparison[i] <- "within",
+         fun_bray_df_long$comparison[i] <- "between")
+}
+fun_bray_df_long$comparison <- as.factor(fun_bray_df_long$comparison)
+table(fun_bray_df_long$comparison)
+shapiro.test(fun_bray_df_long$value[1:5000])
+t.test(value ~ comparison, data = fun_bray_df_long)
+wilcox.test(value ~ comparison, data = fun_bray_df_long)
+
+# Bacteria
+bac_bray_mat <- as.matrix(bc_bac)
+bac_bray_mat[upper.tri(bac_bray_mat, diag = TRUE)] <- NA
+bac_bray_df <- as.data.frame(bac_bray_mat)
+bac_bray_df$sampleID <- rownames(bac_bray_df)
+bac_bray_df_long <- melt(bac_bray_df, id.vars = "sampleID")
+bac_bray_df_long <- na.omit(bac_bray_df_long)
+bac_bray_df_long$sampleID <- as.factor(bac_bray_df_long$sampleID)
+env <- dplyr::select(input_arc_CPM_nz$map_loaded, sampleID, Environment)
+bac_bray_df_long <- inner_join(bac_bray_df_long, env, 
+                               by = c("sampleID" = "sampleID"))
+bac_bray_df_long <- inner_join(bac_bray_df_long, env, 
+                               by = c("variable" = "sampleID"))
+for (i in 1:nrow(bac_bray_df_long)) {
+  ifelse(bac_bray_df_long$Environment.x[i] == bac_bray_df_long$Environment.y[i],
+         bac_bray_df_long$comparison[i] <- "within",
+         bac_bray_df_long$comparison[i] <- "between")
+}
+bac_bray_df_long$comparison <- as.factor(bac_bray_df_long$comparison)
+table(bac_bray_df_long$comparison)
+shapiro.test(bac_bray_df_long$value[1:5000])
+t.test(value ~ comparison, data = bac_bray_df_long)
+wilcox.test(value ~ comparison, data = bac_bray_df_long)
+
+# Archaea
+arc_bray_mat <- as.matrix(bc_arc)
+arc_bray_mat[upper.tri(arc_bray_mat, diag = TRUE)] <- NA
+arc_bray_df <- as.data.frame(arc_bray_mat)
+arc_bray_df$sampleID <- rownames(arc_bray_df)
+arc_bray_df_long <- melt(arc_bray_df, id.vars = "sampleID")
+arc_bray_df_long <- na.omit(arc_bray_df_long)
+arc_bray_df_long$sampleID <- as.factor(arc_bray_df_long$sampleID)
+env <- dplyr::select(input_arc_CPM_nz$map_loaded, sampleID, Environment)
+arc_bray_df_long <- inner_join(arc_bray_df_long, env, 
+                               by = c("sampleID" = "sampleID"))
+arc_bray_df_long <- inner_join(arc_bray_df_long, env, 
+                               by = c("variable" = "sampleID"))
+for (i in 1:nrow(arc_bray_df_long)) {
+  ifelse(arc_bray_df_long$Environment.x[i] == arc_bray_df_long$Environment.y[i],
+         arc_bray_df_long$comparison[i] <- "within",
+         arc_bray_df_long$comparison[i] <- "between")
+}
+arc_bray_df_long$comparison <- as.factor(arc_bray_df_long$comparison)
+table(arc_bray_df_long$comparison)
+shapiro.test(arc_bray_df_long$value[1:5000])
+t.test(value ~ comparison, data = arc_bray_df_long)
+wilcox.test(value ~ comparison, data = arc_bray_df_long)
+
+# Combine and Graph
+fun_bray_df_long$taxon <- "Fungi"
+bac_bray_df_long$taxon <- "Bacteria"
+arc_bray_df_long$taxon <- "Archaea"
+combined <- rbind(fun_bray_df_long, bac_bray_df_long, arc_bray_df_long)
+combined$taxcomp <- paste(combined$taxon, combined$comparison, sep = "_")
+leveneTest(value ~ taxcomp, data = combined)
+m <- aov(value ~ taxcomp, data = combined)
+summary(m)
+TukeyHSD(m)
+shapiro.test(m$residuals[1:5000])
+kruskal.test(value ~ taxcomp, data = combined)
+kwAllPairsNemenyiTest(combined$value, as.factor(combined$taxcomp))
+
+# Basic barplot
+label.df <- data.frame(taxon = c("Fungi", "Fungi",
+                                 "Bacteria", "Bacteria",
+                                 "Archaea", "Archaea"),
+                       comparison = c("between","within",
+                                      "between","within",
+                                      "between","within"),
+                       Value = c(1.05,1.05,1.05,1.05,1.05,1.05),
+                       Sig = c("e","f","c","d","a","b"))
+ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
+  geom_jitter(size = 0.5, alpha = 0.01) +
+  geom_boxplot(aes(comparison, value), outlier.shape = NA, color = "black", 
+               fill = NA, inherit.aes = F) +
+  geom_text(data = label.df, aes(x = comparison, y = Value, label = Sig, group = NULL),
+            inherit.aes = F) +
+  scale_colour_manual(values = brewer.pal(6, "Paired")[1:6]) +
+  labs(x = "Environment comparison",
+       y = "Bray-Curtis dissimilarity") +
+  facet_wrap(~ taxon, ncol = 3) +
+  ylim(0,1.05) +
+  theme_bw() +
+  theme(plot.margin = unit(c(0.1,0.1,0.1,0.1),"cm"),
+        legend.position = "none")
+
+# With density plot
+# Can't do with facet wrap, so plot separately and use plot_grid
+p1 <- ggplot(data = arc_bray_df_long, aes(comparison, value, colour = comparison)) +
+  geom_jitter(size = 0.5, alpha = 0.01) +
+  geom_boxplot(aes(comparison, value), outlier.shape = NA, color = "black", 
+               fill = NA, inherit.aes = F) +
+  geom_text(data = label.df, aes(x = comparison, y = Value, label = Sig, group = NULL),
+            inherit.aes = F) +
+  scale_colour_manual(values = brewer.pal(6, "Paired")[1:2]) +
+  labs(x = "Environment comparison",
+       y = "Bray-Curtis dissimilarity") +
+  ylim(0,1.05) +
+  theme_bw() +
+  theme(plot.margin = unit(c(0.1,0.1,0.1,0.1),"cm"),
+        legend.position = "none")
+p2 <- ggdensity(arc_bray_df_long, "value", fill = "comparison", 
+                   palette = c(brewer.pal(6, "Paired")[1:2]), size = 0.25) +
+  rotate() + 
+  clean_theme() + 
+  rremove("legend") + 
+  xlim(0.55, 1.05)
+p_arc <- insert_yaxis_grob(p1, p2, position = "right")
+
+p3 <- ggplot(data = bac_bray_df_long, aes(comparison, value, colour = comparison)) +
+  geom_jitter(size = 0.5, alpha = 0.01) +
+  geom_boxplot(aes(comparison, value), outlier.shape = NA, color = "black", 
+               fill = NA, inherit.aes = F) +
+  geom_text(data = label.df, aes(x = comparison, y = Value, label = Sig, group = NULL),
+            inherit.aes = F) +
+  scale_colour_manual(values = brewer.pal(6, "Paired")[3:4]) +
+  labs(x = "Environment comparison",
+       y = "Bray-Curtis dissimilarity") +
+  ylim(0,1.05) +
+  theme_bw() +
+  theme(plot.margin = unit(c(0.1,0.1,0.1,0.1),"cm"),
+        legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+p4 <- ggdensity(bac_bray_df_long, "value", fill = "comparison", 
+                palette = c(brewer.pal(6, "Paired")[3:4]), size = 0.25) +
+  rotate() + 
+  clean_theme() + 
+  rremove("legend") + 
+  xlim(0.55, 1.05)
+p_bac <- insert_yaxis_grob(p3, p4, position = "right")
+
+p5 <- ggplot(data = fun_bray_df_long, aes(comparison, value, colour = comparison)) +
+  geom_jitter(size = 0.5, alpha = 0.01) +
+  geom_boxplot(aes(comparison, value), outlier.shape = NA, color = "black", 
+               fill = NA, inherit.aes = F) +
+  geom_text(data = label.df, aes(x = comparison, y = Value, label = Sig, group = NULL),
+            inherit.aes = F) +
+  scale_colour_manual(values = brewer.pal(6, "Paired")[5:6]) +
+  labs(x = "Environment comparison",
+       y = "Bray-Curtis dissimilarity") +
+  ylim(0,1.05) +
+  theme_bw() +
+  theme(plot.margin = unit(c(0.1,0.1,0.1,0.1),"cm"),
+        legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+p6 <- ggdensity(fun_bray_df_long, "value", fill = "comparison", 
+                palette = c(brewer.pal(6, "Paired")[5:6]), size = 0.25) +
+  rotate() + 
+  clean_theme() + 
+  rremove("legend") + 
+  xlim(0.55, 1.05)
+p_fun <- insert_yaxis_grob(p5, p6, position = "right")
+
+g1 <- ggdraw(p_arc)
+g2 <- ggdraw(p_bac)
+g3 <- ggdraw(p_fun)
+
+png("FigsUpdated/CompareBrayCurtis_wDensity.png", width = 9, height = 3, units = "in", res = 300)
+plot_grid(g1, g2, g3,
+          ncol = 3,
+          labels = c("a) Archaea", "b) Bacteria", "c) Fungi"),
+          rel_widths = c(0.4, 0.3, 0.3))
+dev.off()
+
+# Best option is probably violin plot!
+png("FigsUpdated/CompareBrayCurtis_genus.png", width = 7, height = 3, units = "in", res = 300)
+ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
+  #geom_jitter(size = 0.5, alpha = 0.01, aes(colour = taxcomp)) + # don't show, too many
+  geom_violin() +
+  geom_boxplot(width = 0.1, outlier.shape = NA) +
+  stat_summary(fun.y = mean, geom = "point", shape = 23, size = 2) +
+  geom_text(data = label.df, aes(x = comparison, y = Value, label = Sig, group = NULL),
+            inherit.aes = F) +
+  scale_colour_manual(values = brewer.pal(6, "Paired")[1:6]) +
+  labs(x = "Environment comparison",
+       y = "Bray-Curtis dissimilarity") +
+  facet_wrap(~ taxon, ncol = 3) +
+  ylim(0,1.05) +
+  theme_bw() +
+  theme(plot.margin = unit(c(0.1,0.1,0.1,0.1),"cm"),
+        legend.position = "none")
+dev.off()
+
+
+
+#### __Phylum ####
+# Wrote function to streamline this some
+arc_bray_df_long <- compareBC(input = input_arc_CPM_nz,
+                              sampleID = "sampleID",
+                              variable = "Environment",
+                              level = 2)
+bac_bray_df_long <- compareBC(input = input_bac_CPM,
+                              sampleID = "sampleID",
+                              variable = "Environment",
+                              level = 2)
+fun_bray_df_long <- compareBC(input = input_fungi_CPM_nz,
+                              sampleID = "sampleID",
+                              variable = "Environment",
+                              level = 2)
+# Combine and Graph
+fun_bray_df_long$taxon <- "Fungi"
+bac_bray_df_long$taxon <- "Bacteria"
+arc_bray_df_long$taxon <- "Archaea"
+combined <- rbind(fun_bray_df_long, bac_bray_df_long, arc_bray_df_long)
+combined$taxcomp <- paste(combined$taxon, combined$comparison, sep = "_")
+leveneTest(value ~ taxcomp, data = combined)
+m <- aov(value ~ taxcomp, data = combined)
+summary(m)
+TukeyHSD(m)
+shapiro.test(m$residuals[1:5000])
+kruskal.test(value ~ taxcomp, data = combined)
+kwAllPairsNemenyiTest(combined$value, as.factor(combined$taxcomp))
+
+label.df <- data.frame(taxon = c("Fungi", "Fungi",
+                                 "Bacteria", "Bacteria",
+                                 "Archaea", "Archaea"),
+                       comparison = c("between","within",
+                                      "between","within",
+                                      "between","within"),
+                       Value = c(1.05,1.05,1.05,1.05,1.05,1.05),
+                       Sig = c("c","f","c","d","a","b"))
+
+png("FigsUpdated/CompareBrayCurtis_phylum.png", width = 7, height = 3, units = "in", res = 300)
+ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
+  geom_violin() +
+  geom_boxplot(width = 0.1, outlier.shape = NA) +
+  stat_summary(fun.y = mean, geom = "point", shape = 23, size = 2) +
+  geom_text(data = label.df, aes(x = comparison, y = Value, label = Sig, group = NULL),
+            inherit.aes = F) +
+  scale_colour_manual(values = brewer.pal(6, "Paired")[1:6]) +
+  labs(x = "Environment comparison",
+       y = "Bray-Curtis dissimilarity") +
+  facet_wrap(~ taxon, ncol = 3) +
+  ylim(0,1.05) +
+  theme_bw() +
+  theme(plot.margin = unit(c(0.1,0.1,0.1,0.1),"cm"),
+        legend.position = "none")
+dev.off()
+
+
+
+#### __Class ####
+# Wrote function to streamline this some
+arc_bray_df_long <- compareBC(input = input_arc_CPM_nz,
+                              sampleID = "sampleID",
+                              variable = "Environment",
+                              level = 3)
+bac_bray_df_long <- compareBC(input = input_bac_CPM,
+                              sampleID = "sampleID",
+                              variable = "Environment",
+                              level = 3)
+fun_bray_df_long <- compareBC(input = input_fungi_CPM_nz,
+                              sampleID = "sampleID",
+                              variable = "Environment",
+                              level = 3)
+# Combine and Graph
+fun_bray_df_long$taxon <- "Fungi"
+bac_bray_df_long$taxon <- "Bacteria"
+arc_bray_df_long$taxon <- "Archaea"
+combined <- rbind(fun_bray_df_long, bac_bray_df_long, arc_bray_df_long)
+combined$taxcomp <- paste(combined$taxon, combined$comparison, sep = "_")
+leveneTest(value ~ taxcomp, data = combined)
+m <- aov(value ~ taxcomp, data = combined)
+summary(m)
+TukeyHSD(m)
+shapiro.test(m$residuals[1:5000])
+kruskal.test(value ~ taxcomp, data = combined)
+kwAllPairsNemenyiTest(combined$value, as.factor(combined$taxcomp))
+
+png("FigsUpdated/CompareBrayCurtis_class.png", width = 7, height = 3, units = "in", res = 300)
+ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
+  geom_violin() +
+  geom_boxplot(width = 0.1, outlier.shape = NA) +
+  stat_summary(fun.y = mean, geom = "point", shape = 23, size = 2) +
+  geom_text(data = label.df, aes(x = comparison, y = Value, label = Sig, group = NULL),
+            inherit.aes = F) +
+  scale_colour_manual(values = brewer.pal(6, "Paired")[1:6]) +
+  labs(x = "Environment comparison",
+       y = "Bray-Curtis dissimilarity") +
+  facet_wrap(~ taxon, ncol = 3) +
+  ylim(0,1.05) +
+  theme_bw() +
+  theme(plot.margin = unit(c(0.1,0.1,0.1,0.1),"cm"),
+        legend.position = "none")
+dev.off()
+
+
+
+#### __Order ####
+# Wrote function to streamline this some
+arc_bray_df_long <- compareBC(input = input_arc_CPM_nz,
+                              sampleID = "sampleID",
+                              variable = "Environment",
+                              level = 4)
+bac_bray_df_long <- compareBC(input = input_bac_CPM,
+                              sampleID = "sampleID",
+                              variable = "Environment",
+                              level = 4)
+fun_bray_df_long <- compareBC(input = input_fungi_CPM_nz,
+                              sampleID = "sampleID",
+                              variable = "Environment",
+                              level = 4)
+# Combine and Graph
+fun_bray_df_long$taxon <- "Fungi"
+bac_bray_df_long$taxon <- "Bacteria"
+arc_bray_df_long$taxon <- "Archaea"
+combined <- rbind(fun_bray_df_long, bac_bray_df_long, arc_bray_df_long)
+combined$taxcomp <- paste(combined$taxon, combined$comparison, sep = "_")
+leveneTest(value ~ taxcomp, data = combined)
+m <- aov(value ~ taxcomp, data = combined)
+summary(m)
+TukeyHSD(m)
+shapiro.test(m$residuals[1:5000])
+kruskal.test(value ~ taxcomp, data = combined)
+kwAllPairsNemenyiTest(combined$value, as.factor(combined$taxcomp))
+
+png("FigsUpdated/CompareBrayCurtis_order.png", width = 7, height = 3, units = "in", res = 300)
+ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
+  geom_violin() +
+  geom_boxplot(width = 0.1, outlier.shape = NA) +
+  stat_summary(fun.y = mean, geom = "point", shape = 23, size = 2) +
+  geom_text(data = label.df, aes(x = comparison, y = Value, label = Sig, group = NULL),
+            inherit.aes = F) +
+  scale_colour_manual(values = brewer.pal(6, "Paired")[1:6]) +
+  labs(x = "Environment comparison",
+       y = "Bray-Curtis dissimilarity") +
+  facet_wrap(~ taxon, ncol = 3) +
+  ylim(0,1.05) +
+  theme_bw() +
+  theme(plot.margin = unit(c(0.1,0.1,0.1,0.1),"cm"),
+        legend.position = "none")
+dev.off()
+
+
+
+#### __Family ####
+# Wrote function to streamline this some
+arc_bray_df_long <- compareBC(input = input_arc_CPM_nz,
+                              sampleID = "sampleID",
+                              variable = "Environment",
+                              level = 5)
+bac_bray_df_long <- compareBC(input = input_bac_CPM,
+                              sampleID = "sampleID",
+                              variable = "Environment",
+                              level = 5)
+fun_bray_df_long <- compareBC(input = input_fungi_CPM_nz,
+                              sampleID = "sampleID",
+                              variable = "Environment",
+                              level = 5)
+# Combine and Graph
+fun_bray_df_long$taxon <- "Fungi"
+bac_bray_df_long$taxon <- "Bacteria"
+arc_bray_df_long$taxon <- "Archaea"
+combined <- rbind(fun_bray_df_long, bac_bray_df_long, arc_bray_df_long)
+combined$taxcomp <- paste(combined$taxon, combined$comparison, sep = "_")
+leveneTest(value ~ taxcomp, data = combined)
+m <- aov(value ~ taxcomp, data = combined)
+summary(m)
+TukeyHSD(m)
+shapiro.test(m$residuals[1:5000])
+kruskal.test(value ~ taxcomp, data = combined)
+kwAllPairsNemenyiTest(combined$value, as.factor(combined$taxcomp))
+
+png("FigsUpdated/CompareBrayCurtis_family.png", width = 7, height = 3, units = "in", res = 300)
+ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
+  geom_violin() +
+  geom_boxplot(width = 0.1, outlier.shape = NA) +
+  stat_summary(fun.y = mean, geom = "point", shape = 23, size = 2) +
+  geom_text(data = label.df, aes(x = comparison, y = Value, label = Sig, group = NULL),
+            inherit.aes = F) +
+  scale_colour_manual(values = brewer.pal(6, "Paired")[1:6]) +
+  labs(x = "Environment comparison",
+       y = "Bray-Curtis dissimilarity") +
+  facet_wrap(~ taxon, ncol = 3) +
+  ylim(0,1.05) +
+  theme_bw() +
+  theme(plot.margin = unit(c(0.1,0.1,0.1,0.1),"cm"),
+        legend.position = "none")
 dev.off()
 
 
@@ -1722,6 +2143,125 @@ pies_c
 pdf("FigsUpdated/Pies_Classes.pdf", width = 9, height = 7)
 plot_grid(pies_c, pie_leg_c, rel_widths = c(4, 1))
 dev.off()
+
+
+
+#### _Top Taxa ####
+# Barplots were for top taxa overall, but let's now get the top taxa in each environment
+# Use input file for each environment, and summarize with mctoolsr at each taxonomic level
+# Combined into data frame and write file so people can see
+# Already got 9 input data lists in the "by Ecosystem" section
+# These are  CPM, and don't contain any zeroes
+# Environments
+env <- list()
+for (i in 1:length(levels(input_fungi_CPM_nz$map_loaded$Environment))) {
+  env[[i]] <- filter_data(input_fungi_CPM_nz,
+                          filter_cat = "Environment",
+                          keep_vals = levels(input_fungi_CPM_nz$map_loaded$Environment)[i])
+}
+
+
+# Summary taxonomy
+phy <- list()
+for (i in 1:length(levels(input_fungi_CPM_nz$map_loaded$Environment))) {
+  phy[[i]] <- summarize_taxonomy(env[[i]], level = 2, report_higher_tax = F, relative = F)
+}
+cla <- list()
+for (i in 1:length(levels(input_fungi_CPM_nz$map_loaded$Environment))) {
+  cla[[i]] <- summarize_taxonomy(env[[i]], level = 3, report_higher_tax = F, relative = F)
+}
+ord <- list()
+for (i in 1:length(levels(input_fungi_CPM_nz$map_loaded$Environment))) {
+  ord[[i]] <- summarize_taxonomy(env[[i]], level = 4, report_higher_tax = F, relative = F)
+}
+fam <- list()
+for (i in 1:length(levels(input_fungi_CPM_nz$map_loaded$Environment))) {
+  fam[[i]] <- summarize_taxonomy(env[[i]], level = 5, report_higher_tax = F, relative = F)
+}
+gen <- list()
+for (i in 1:length(levels(input_fungi_CPM_nz$map_loaded$Environment))) {
+  gen[[i]] <- summarize_taxonomy(env[[i]], level = 6, report_higher_tax = F, relative = F)
+}
+
+# Top n taxa
+ntax = 10 # set n to 10
+
+top_phy <- list()
+for (i in 1:length(levels(input_fungi_CPM_nz$map_loaded$Environment))) {
+top_phy[[i]] <- plot_taxa_bars(phy[[i]],
+                               env[[i]]$map_loaded,
+                               type_header = "Environment",
+                               num_taxa = ntax,
+                               data_only = T) %>%
+  mutate(Level = "Phylum") %>%
+  arrange(desc(mean_value))
+}
+
+top_cla <- list()
+for (i in 1:length(levels(input_fungi_CPM_nz$map_loaded$Environment))) {
+  top_cla[[i]] <- plot_taxa_bars(cla[[i]],
+                                 env[[i]]$map_loaded,
+                                 type_header = "Environment",
+                                 num_taxa = ntax,
+                                 data_only = T) %>%
+    mutate(Level = "Class") %>%
+    arrange(desc(mean_value))
+}
+
+top_ord <- list()
+for (i in 1:length(levels(input_fungi_CPM_nz$map_loaded$Environment))) {
+  top_ord[[i]] <- plot_taxa_bars(ord[[i]],
+                                 env[[i]]$map_loaded,
+                                 type_header = "Environment",
+                                 num_taxa = ntax,
+                                 data_only = T) %>%
+    mutate(Level = "Order") %>%
+    arrange(desc(mean_value))
+}
+
+top_fam <- list()
+for (i in 1:length(levels(input_fungi_CPM_nz$map_loaded$Environment))) {
+  top_fam[[i]] <- plot_taxa_bars(fam[[i]],
+                                 env[[i]]$map_loaded,
+                                 type_header = "Environment",
+                                 num_taxa = ntax,
+                                 data_only = T) %>%
+    mutate(Level = "Family") %>%
+    arrange(desc(mean_value))
+}
+
+top_gen <- list()
+for (i in 1:length(levels(input_fungi_CPM_nz$map_loaded$Environment))) {
+  top_gen[[i]] <- plot_taxa_bars(gen[[i]],
+                                 env[[i]]$map_loaded,
+                                 type_header = "Environment",
+                                 num_taxa = ntax,
+                                 data_only = T) %>%
+    mutate(Level = "Genus") %>%
+    arrange(desc(mean_value))
+}
+
+# Combine
+top_taxa <- rbind(top_phy[[1]], top_phy[[2]], top_phy[[3]],
+                  top_phy[[4]], top_phy[[5]], top_phy[[6]],
+                  top_phy[[7]], top_phy[[8]], top_phy[[9]],
+                  top_cla[[1]], top_cla[[2]], top_cla[[3]],
+                  top_cla[[4]], top_cla[[5]], top_cla[[6]],
+                  top_cla[[7]], top_cla[[8]], top_cla[[9]],
+                  top_ord[[1]], top_ord[[2]], top_ord[[3]],
+                  top_ord[[4]], top_ord[[5]], top_ord[[6]],
+                  top_ord[[7]], top_ord[[8]], top_ord[[9]],
+                  top_fam[[1]], top_fam[[2]], top_fam[[3]],
+                  top_fam[[4]], top_fam[[5]], top_fam[[6]],
+                  top_fam[[7]], top_fam[[8]], top_fam[[9]],
+                  top_gen[[1]], top_gen[[2]], top_gen[[3]],
+                  top_gen[[4]], top_gen[[5]], top_gen[[6]],
+                  top_gen[[7]], top_gen[[8]], top_gen[[9]]) %>%
+  filter(taxon != "Other") %>%
+  rename("Environment" = "group_by") %>%
+  rename("mean_CPM" = "mean_value") %>%
+  mutate(mean_CPM = round(mean_CPM, digits = 2))
+#write_xlsx(top_taxa, "top_taxa_by_env.xlsx", format_headers = F)
 
 
 
