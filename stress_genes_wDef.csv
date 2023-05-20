@@ -1,0 +1,209 @@
+"KO","Definition","Symbol","Name","Stress","Notes"
+"K00033","PGD, gnd, gntZ; 6-phosphogluconate dehydrogenase [EC:1.1.1.44 1.1.1.343]","PGD, gnd, gntZ"," 6-phosphogluconate dehydrogenase [EC:1.1.1.44 1.1.1.343]","Oxidative",NA
+"K00034","gdh; glucose 1-dehydrogenase [EC:1.1.1.47]","gdh"," glucose 1-dehydrogenase [EC:1.1.1.47]","General",NA
+"K00059","fabG, OAR1; 3-oxoacyl-[acyl-carrier protein] reductase [EC:1.1.1.100]","fabG, OAR1"," 3-oxoacyl-[acyl-carrier protein] reductase [EC:1.1.1.100]","Cold",NA
+"K00111","glpA, glpD; glycerol-3-phosphate dehydrogenase [EC:1.1.5.3]","glpA, glpD"," glycerol-3-phosphate dehydrogenase [EC:1.1.5.3]","Cold",NA
+"K00134","GAPDH, gapA; glyceraldehyde 3-phosphate dehydrogenase (phosphorylating) [EC:1.2.1.12]","GAPDH, gapA"," glyceraldehyde 3-phosphate dehydrogenase (phosphorylating) [EC:1.2.1.12]","Oxidative",NA
+"K00288","MTHFD; methylenetetrahydrofolate dehydrogenase (NADP+) / methenyltetrahydrofolate cyclohydrolase / formyltetrahydrofolate synthetase [EC:1.5.1.5 3.5.4.9 6.3.4.3]","MTHFD"," methylenetetrahydrofolate dehydrogenase (NADP+) / methenyltetrahydrofolate cyclohydrolase / formyltetrahydrofolate synthetase [EC:1.5.1.5 3.5.4.9 6.3.4.3]","General",NA
+"K00354","E1.6.99.1; NADPH2 dehydrogenase [EC:1.6.99.1]","E1.6.99.1"," NADPH2 dehydrogenase [EC:1.6.99.1]","Oxidative",NA
+"K00370","narG, narZ, nxrA; nitrate reductase / nitrite oxidoreductase, alpha subunit [EC:1.7.5.1 1.7.99.-]","narG, narZ, nxrA"," nitrate reductase / nitrite oxidoreductase, alpha subunit [EC:1.7.5.1 1.7.99.-]","Nitrite oxidoreductase",NA
+"K00382","DLD, lpd, pdhD; dihydrolipoamide dehydrogenase [EC:1.8.1.4]","DLD, lpd, pdhD"," dihydrolipoamide dehydrogenase [EC:1.8.1.4]","Chlorine",NA
+"K00383","GSR, gor; glutathione reductase (NADPH) [EC:1.8.1.7]","GSR, gor"," glutathione reductase (NADPH) [EC:1.8.1.7]","Oxidative",NA
+"K00384","trxB, TRR; thioredoxin reductase (NADPH) [EC:1.8.1.9]","trxB, TRR"," thioredoxin reductase (NADPH) [EC:1.8.1.9]","General",NA
+"K00507","SCD, desC; stearoyl-CoA desaturase (Delta-9 desaturase) [EC:1.14.19.1]","SCD, desC"," stearoyl-CoA desaturase (Delta-9 desaturase) [EC:1.14.19.1]","Cold",NA
+"K00668","FAS1; fatty acid synthase subunit beta, fungi type [EC:2.3.1.86]","FAS1"," fatty acid synthase subunit beta, fungi type [EC:2.3.1.86]","Cold",NA
+"K00679","E2.3.1.158; phospholipid:diacylglycerol acyltransferase [EC:2.3.1.158]","E2.3.1.158"," phospholipid:diacylglycerol acyltransferase [EC:2.3.1.158]","Cold",NA
+"K00693","GYS; glycogen synthase [EC:2.4.1.11]","GYS"," glycogen synthase [EC:2.4.1.11]","Cold",NA
+"K00697","otsA; trehalose 6-phosphate synthase [EC:2.4.1.15 2.4.1.347]","otsA"," trehalose 6-phosphate synthase [EC:2.4.1.15 2.4.1.347]","Osmotic",NA
+"K00721","DPM1; dolichol-phosphate mannosyltransferase [EC:2.4.1.83]","DPM1"," dolichol-phosphate mannosyltransferase [EC:2.4.1.83]","General",NA
+"K00750","GYG1, GYG2; glycogenin [EC:2.4.1.186]","GYG1, GYG2"," glycogenin [EC:2.4.1.186]","Cold",NA
+"K00763","pncB, NAPRT1; nicotinate phosphoribosyltransferase [EC:6.3.4.21]","pncB, NAPRT1"," nicotinate phosphoribosyltransferase [EC:6.3.4.21]","Oxidative",NA
+"K00799","GST, gst; glutathione S-transferase [EC:2.5.1.18]","GST, gst"," glutathione S-transferase [EC:2.5.1.18]","Oxidative",NA
+"K00818","E2.6.1.11, argD; acetylornithine aminotransferase [EC:2.6.1.11]","E2.6.1.11, argD"," acetylornithine aminotransferase [EC:2.6.1.11]","Oxidative",NA
+"K00863","DAK, TKFC; triose/dihydroxyacetone kinase / FAD-AMP lyase (cyclizing) [EC:2.7.1.28 2.7.1.29 4.6.1.15]","DAK, TKFC"," triose/dihydroxyacetone kinase / FAD-AMP lyase (cyclizing) [EC:2.7.1.28 2.7.1.29 4.6.1.15]","General",NA
+"K00888","PI4KA; phosphatidylinositol 4-kinase A [EC:2.7.1.67]","PI4KA"," phosphatidylinositol 4-kinase A [EC:2.7.1.67]","General",NA
+"K00940","ndk, NME; nucleoside-diphosphate kinase [EC:2.7.4.6]","ndk, NME"," nucleoside-diphosphate kinase [EC:2.7.4.6]","Oxidative",NA
+"K01082","cysQ, MET22, BPNT1; 3'(2'), 5'-bisphosphate nucleotidase [EC:3.1.3.7]","cysQ, MET22, BPNT1"," 3'(2'), 5'-bisphosphate nucleotidase [EC:3.1.3.7]","Osmotic",NA
+"K01087","otsB; trehalose 6-phosphate phosphatase [EC:3.1.3.12]","otsB"," trehalose 6-phosphate phosphatase [EC:3.1.3.12]","Osmotic",NA
+"K01115","PLD1_2; phospholipase D1/2 [EC:3.1.4.4]","PLD1_2"," phospholipase D1/2 [EC:3.1.4.4]","Environmental",NA
+"K01166","RNASET2; ribonuclease T2 [EC:4.6.1.19]","RNASET2"," ribonuclease T2 [EC:4.6.1.19]","General",NA
+"K01194","TREH, treA, treF; alpha,alpha-trehalase [EC:3.2.1.28]","TREH, treA, treF"," alpha,alpha-trehalase [EC:3.2.1.28]","Osmotic",NA
+"K01196","AGL; glycogen debranching enzyme [EC:2.4.1.25 3.2.1.33]","AGL"," glycogen debranching enzyme [EC:2.4.1.25 3.2.1.33]","Cold",NA
+"K01406","prtC; serralysin [EC:3.4.24.40]","prtC"," serralysin [EC:3.4.24.40]","pH",NA
+"K01426","E3.5.1.4, amiE; amidase [EC:3.5.1.4]","E3.5.1.4, amiE"," amidase [EC:3.5.1.4]","General",NA
+"K01532","PCA1, CAD2; Cd2+-exporting ATPase [EC:7.2.2.21]","PCA1, CAD2"," Cd2+-exporting ATPase [EC:7.2.2.21]","Osmotic",NA
+"K01610","E4.1.1.49, pckA; phosphoenolpyruvate carboxykinase (ATP) [EC:4.1.1.49]","E4.1.1.49, pckA"," phosphoenolpyruvate carboxykinase (ATP) [EC:4.1.1.49]","Heat-Osmotic",NA
+"K01624","FBA, fbaA; fructose-bisphosphate aldolase, class II [EC:4.1.2.13]","FBA, fbaA"," fructose-bisphosphate aldolase, class II [EC:4.1.2.13]","General",NA
+"K01672","CA; carbonic anhydrase [EC:4.2.1.1]","CA"," carbonic anhydrase [EC:4.2.1.1]","pH",NA
+"K01673","cynT, can; carbonic anhydrase [EC:4.2.1.1]","cynT, can"," carbonic anhydrase [EC:4.2.1.1]","Oxidative",NA
+"K01689","ENO, eno; enolase [EC:4.2.1.11]","ENO, eno"," enolase [EC:4.2.1.11]","Heat",NA
+"K01745","hutH, HAL; histidine ammonia-lyase [EC:4.3.1.3]","hutH, HAL"," histidine ammonia-lyase [EC:4.3.1.3]",NA,NA
+"K01768","E4.6.1.1; adenylate cyclase [EC:4.6.1.1]","E4.6.1.1"," adenylate cyclase [EC:4.6.1.1]","Oxidative",NA
+"K01783","rpe, RPE; ribulose-phosphate 3-epimerase [EC:5.1.3.1]","rpe, RPE"," ribulose-phosphate 3-epimerase [EC:5.1.3.1]","Oxidative",NA
+"K01802","E5.2.1.8; peptidylprolyl isomerase [EC:5.2.1.8]","E5.2.1.8"," peptidylprolyl isomerase [EC:5.2.1.8]","Environmental-Oxidative",NA
+"K01897","ACSL, fadD; long-chain acyl-CoA synthetase [EC:6.2.1.3]","ACSL, fadD"," long-chain acyl-CoA synthetase [EC:6.2.1.3]","Cold",NA
+"K02207","UBE2R, UBC3, CDC34; ubiquitin-conjugating enzyme E2 R [EC:2.3.2.23]","UBE2R, UBC3, CDC34"," ubiquitin-conjugating enzyme E2 R [EC:2.3.2.23]","Cellular",NA
+"K02866","RP-L10e, RPL10; large subunit ribosomal protein L10e","RP-L10e, RPL10"," large subunit ribosomal protein L10e","Cold",NA
+"K02893","RP-L23Ae, RPL23A; large subunit ribosomal protein L23Ae","RP-L23Ae, RPL23A"," large subunit ribosomal protein L23Ae","Cold",NA
+"K02900","RP-L27Ae, RPL27A; large subunit ribosomal protein L27Ae","RP-L27Ae, RPL27A"," large subunit ribosomal protein L27Ae","Cold",NA
+"K02908","RP-L30e, RPL30; large subunit ribosomal protein L30e","RP-L30e, RPL30"," large subunit ribosomal protein L30e","Cold",NA
+"K02917","RP-L35Ae, RPL35A; large subunit ribosomal protein L35Ae","RP-L35Ae, RPL35A"," large subunit ribosomal protein L35Ae","Cold",NA
+"K02925","RP-L3e, RPL3; large subunit ribosomal protein L3e","RP-L3e, RPL3"," large subunit ribosomal protein L3e","Cold",NA
+"K02951","RP-S12e, RPS12; small subunit ribosomal protein S12e","RP-S12e, RPS12"," small subunit ribosomal protein S12e","Cold",NA
+"K02953","RP-S13e, RPS13; small subunit ribosomal protein S13e","RP-S13e, RPS13"," small subunit ribosomal protein S13e","Cold",NA
+"K02967","RP-S2, MRPS2, rpsB; small subunit ribosomal protein S2","RP-S2, MRPS2, rpsB"," small subunit ribosomal protein S2","Cold",NA
+"K02969","RP-S20e, RPS20; small subunit ribosomal protein S20e","RP-S20e, RPS20"," small subunit ribosomal protein S20e","Cold",NA
+"K02981","RP-S2e, RPS2; small subunit ribosomal protein S2e","RP-S2e, RPS2"," small subunit ribosomal protein S2e","Cold",NA
+"K02985","RP-S3e, RPS3; small subunit ribosomal protein S3e","RP-S3e, RPS3"," small subunit ribosomal protein S3e","Cold",NA
+"K03000","RPA12, POLR1H, ZNRD1; DNA-directed RNA polymerase I subunit RPA12","RPA12, POLR1H, ZNRD1"," DNA-directed RNA polymerase I subunit RPA12","Cold",NA
+"K03004","RPA43, POLR1F, TWISTNB; DNA-directed RNA polymerase I subunit RPA43","RPA43, POLR1F, TWISTNB"," DNA-directed RNA polymerase I subunit RPA43","Cold",NA
+"K03005","RPA49, POLR1E; DNA-directed RNA polymerase I subunit RPA49","RPA49, POLR1E"," DNA-directed RNA polymerase I subunit RPA49","Cold",NA
+"K03013","RPABC1, RPB5, POLR2E; DNA-directed RNA polymerases I, II, and III subunit RPABC1","RPABC1, RPB5, POLR2E"," DNA-directed RNA polymerases I, II, and III subunit RPABC1","Heat-Osmotic",NA
+"K03083","GSK3B; glycogen synthase kinase 3 beta [EC:2.7.11.26]","GSK3B"," glycogen synthase kinase 3 beta [EC:2.7.11.26]","Oxidative",NA
+"K03115","CSNK2B; casein kinase II subunit beta","CSNK2B"," casein kinase II subunit beta","Heat",NA
+"K03134","TAF10; transcription initiation factor TFIID subunit 10","TAF10"," transcription initiation factor TFIID subunit 10","Osmotic",NA
+"K03135","TAF11; transcription initiation factor TFIID subunit 11","TAF11"," transcription initiation factor TFIID subunit 11","Osmotic",NA
+"K03146","THI4, THI1; cysteine-dependent adenosine diphosphate thiazole synthase [EC:2.4.2.60]","THI4, THI1"," cysteine-dependent adenosine diphosphate thiazole synthase [EC:2.4.2.60]","General",NA
+"K03176","NTRK1, TRKA; neurotrophic tyrosine kinase receptor type 1 [EC:2.7.10.1]","NTRK1, TRKA"," neurotrophic tyrosine kinase receptor type 1 [EC:2.7.10.1]",NA,NA
+"K03283","HSPA1s; heat shock 70kDa protein 1/2/6/8","HSPA1s"," heat shock 70kDa protein 1/2/6/8","General",NA
+"K03347","CUL1, CDC53; cullin 1","CUL1, CDC53"," cullin 1","Oxidative",NA
+"K03441","GLP-F; aquaglyceroporin related protein, other eukaryote","GLP-F"," aquaglyceroporin related protein, other eukaryote","Osmotic",NA
+"K03549","kup; KUP system potassium uptake protein","kup"," KUP system potassium uptake protein","Osmotic, Low pH",NA
+"K03564","BCP, PRXQ, DOT5; thioredoxin-dependent peroxiredoxin [EC:1.11.1.24]","BCP, PRXQ, DOT5"," thioredoxin-dependent peroxiredoxin [EC:1.11.1.24]","Oxidative",NA
+"K03671","trxA; thioredoxin 1","trxA"," thioredoxin 1","Oxidative",NA
+"K03676","grxC, GLRX, GLRX2; glutaredoxin 3","grxC, GLRX, GLRX2"," glutaredoxin 3","Heat",NA
+"K03687","GRPE; molecular chaperone GrpE","GRPE"," molecular chaperone GrpE","General",NA
+"K03781","katE, CAT, catB, srpA; catalase [EC:1.11.1.6]","katE, CAT, catB, srpA"," catalase [EC:1.11.1.6]","Oxidative",NA
+"K03935","NDUFS2; NADH dehydrogenase (ubiquinone) Fe-S protein 2 [EC:7.1.1.2]","NDUFS2"," NADH dehydrogenase (ubiquinone) Fe-S protein 2 [EC:7.1.1.2]","Oxidative",NA
+"K03979","obgE, cgtA, MTG2; GTPase [EC:3.6.5.-]","obgE, cgtA, MTG2"," GTPase [EC:3.6.5.-]","Starvation",NA
+"K04043","dnaK, HSPA9; molecular chaperone DnaK","dnaK, HSPA9"," molecular chaperone DnaK","General",NA
+"K04077","groEL, HSPD1; chaperonin GroEL [EC:5.6.1.7]","groEL, HSPD1"," chaperonin GroEL [EC:5.6.1.7]","General",NA
+"K04078","groES, HSPE1; chaperonin GroES","groES, HSPE1"," chaperonin GroES","General",NA
+"K04345","PKA; protein kinase A [EC:2.7.11.11]","PKA"," protein kinase A [EC:2.7.11.11]","Alkaline pH",NA
+"K04348","PPP3C, CNA; serine/threonine-protein phosphatase 2B catalytic subunit [EC:3.1.3.16]","PPP3C, CNA"," serine/threonine-protein phosphatase 2B catalytic subunit [EC:3.1.3.16]","Alkaline pH",NA
+"K04371","ERK, MAPK1_3; mitogen-activated protein kinase 1/3 [EC:2.7.11.24]","ERK, MAPK1_3"," mitogen-activated protein kinase 1/3 [EC:2.7.11.24]","Osmotic",NA
+"K04409","PAK1; p21-activated kinase 1 [EC:2.7.11.1]","PAK1"," p21-activated kinase 1 [EC:2.7.11.1]","Osmotic",NA
+"K04482","RAD51; DNA repair protein RAD51","RAD51"," DNA repair protein RAD51","Oxidative",NA
+"K04487","iscS, NFS1; cysteine desulfurase [EC:2.8.1.7]","iscS, NFS1"," cysteine desulfurase [EC:2.8.1.7]","Oxidative",NA
+"K04564","SOD2; superoxide dismutase, Fe-Mn family [EC:1.15.1.1]","SOD2"," superoxide dismutase, Fe-Mn family [EC:1.15.1.1]","Oxidative",NA
+"K04982","TRPM7, CHAK1; transient receptor potential cation channel subfamily M member 7 [EC:2.7.11.1]","TRPM7, CHAK1"," transient receptor potential cation channel subfamily M member 7 [EC:2.7.11.1]","Osmotic, Low pH",NA
+"K05605","HIBCH; 3-hydroxyisobutyryl-CoA hydrolase [EC:3.1.2.4]","HIBCH"," 3-hydroxyisobutyryl-CoA hydrolase [EC:3.1.2.4]","Heat-Osmotic",NA
+"K05767","IQGAP2_3; Ras GTPase-activating-like protein IQGAP2/3","IQGAP2_3"," Ras GTPase-activating-like protein IQGAP2/3","Granule",NA
+"K06013","STE24; STE24 endopeptidase [EC:3.4.24.84]","STE24"," STE24 endopeptidase [EC:3.4.24.84]","Oxidative",NA
+"K06188","aqpZ; aquaporin Z","aqpZ"," aquaporin Z","Osmotic",NA
+"K06694","PSMD10; 26S proteasome non-ATPase regulatory subunit 10","PSMD10"," 26S proteasome non-ATPase regulatory subunit 10","General",NA
+"K06876","phrB; (6-4)DNA photolyase [EC:4.1.99.13]","phrB"," (6-4)DNA photolyase [EC:4.1.99.13]","UV radiaiton",NA
+"K07147","msrP; methionine sulfoxide reductase catalytic subunit [EC:1.8.-.-]","msrP"," methionine sulfoxide reductase catalytic subunit [EC:1.8.-.-]","Oxidative",NA
+"K07151","STT3; dolichyl-diphosphooligosaccharide---protein glycosyltransferase [EC:2.4.99.18]","STT3"," dolichyl-diphosphooligosaccharide---protein glycosyltransferase [EC:2.4.99.18]","General",NA
+"K07213","ATOX1, ATX1, copZ, golB; copper chaperone","ATOX1, ATX1, copZ, golB"," copper chaperone","Oxidative",NA
+"K07238","TC.ZIP, zupT, ZRT3, ZIP2; zinc transporter, ZIP family","TC.ZIP, zupT, ZRT3, ZIP2"," zinc transporter, ZIP family","Oxidative",NA
+"K07304","msrA; peptide-methionine (S)-S-oxide reductase [EC:1.8.4.11]","msrA"," peptide-methionine (S)-S-oxide reductase [EC:1.8.4.11]","Oxidative",NA
+"K07565","NIP7; 60S ribosome subunit biogenesis protein NIP7","NIP7"," 60S ribosome subunit biogenesis protein NIP7","Cold",NA
+"K07787","cusA, silA; copper/silver efflux system protein","cusA, silA"," copper/silver efflux system protein","Metal resistance-Cu/Au",NA
+"K07840","DIRAS1; DIRAS family, GTP-binding Ras-like 1","DIRAS1"," DIRAS family, GTP-binding Ras-like 1","Oxidative",NA
+"K08054","CANX; calnexin","CANX"," calnexin","Heat",NA
+"K08337","ATG7; ubiquitin-like modifier-activating enzyme ATG7","ATG7"," ubiquitin-like modifier-activating enzyme ATG7","General",NA
+"K08822","GSK3A; glycogen synthase kinase 3 alpha [EC:2.7.11.26]","GSK3A"," glycogen synthase kinase 3 alpha [EC:2.7.11.26]","Oxidative",NA
+"K08852","ERN1; serine/threonine-protein kinase/endoribonuclease IRE1 [EC:2.7.11.1 3.1.26.-]","ERN1"," serine/threonine-protein kinase/endoribonuclease IRE1 [EC:2.7.11.1 3.1.26.-]","Oxidative",NA
+"K09074","TYE7; fungal twist-like factor","TYE7"," fungal twist-like factor","Oxidative",NA
+"K09238","ACE2; metallothionein expression activator","ACE2"," metallothionein expression activator","Oxidative",NA
+"K09419","HSFF; heat shock transcription factor, other eukaryote","HSFF"," heat shock transcription factor, other eukaryote","Heat",NA
+"K09487","HSP90B, TRA1; heat shock protein 90kDa beta","HSP90B, TRA1"," heat shock protein 90kDa beta","Heat",NA
+"K09553","STIP1; stress-induced-phosphoprotein 1","STIP1"," stress-induced-phosphoprotein 1","General",NA
+"K09562","HSPBP1, FES1; hsp70-interacting protein","HSPBP1, FES1"," hsp70-interacting protein","Heat",NA
+"K10245","ELO2; fatty acid elongase 2 [EC:2.3.1.199]","ELO2"," fatty acid elongase 2 [EC:2.3.1.199]","Cold",NA
+"K10246","ELO3; fatty acid elongase 3 [EC:2.3.1.199]","ELO3"," fatty acid elongase 3 [EC:2.3.1.199]","Cold",NA
+"K10251","HSD17B12, KAR, IFA38; 17beta-estradiol 17-dehydrogenase / very-long-chain 3-oxoacyl-CoA reductase [EC:1.1.1.62 1.1.1.330]","HSD17B12, KAR, IFA38"," 17beta-estradiol 17-dehydrogenase / very-long-chain 3-oxoacyl-CoA reductase [EC:1.1.1.62 1.1.1.330]","Cold",NA
+"K10520","ABTB1, BPOZ; ankyrin repeat and BTB/POZ domain-containing protein 1","ABTB1, BPOZ"," ankyrin repeat and BTB/POZ domain-containing protein 1","Endoplasmic reticulum",NA
+"K10627","RAD18; E3 ubiquitin-protein ligase RAD18 [EC:2.3.2.27]","RAD18"," E3 ubiquitin-protein ligase RAD18 [EC:2.3.2.27]","Oxidative",NA
+"K10866","RAD50; DNA repair protein RAD50 [EC:3.6.-.-]","RAD50"," DNA repair protein RAD50 [EC:3.6.-.-]","Oxidative",NA
+"K11204","GCLC; glutamate--cysteine ligase catalytic subunit [EC:6.3.2.2]","GCLC"," glutamate--cysteine ligase catalytic subunit [EC:6.3.2.2]","Oxidative",NA
+"K11229","BCK1; mitogen-activated protein kinase kinase kinase [EC:2.7.11.25]","BCK1"," mitogen-activated protein kinase kinase kinase [EC:2.7.11.25]","Osmotic",NA
+"K11246","SHO1; SHO1 osmosensor","SHO1"," SHO1 osmosensor","Osmotic",NA
+"K11279","NAP1L1, NRP; nucleosome assembly protein 1-like 1","NAP1L1, NRP"," nucleosome assembly protein 1-like 1","Osmotic",NA
+"K11314","TADA2A, ADA2; transcriptional adapter 2-alpha","TADA2A, ADA2"," transcriptional adapter 2-alpha","Osmotic",NA
+"K11553","DAD1; DASH complex subunit DAD1","DAD1"," DASH complex subunit DAD1","Osmotic",NA
+"K11594","DDX3X, bel; ATP-dependent RNA helicase DDX3X [EC:3.6.4.13]","DDX3X, bel"," ATP-dependent RNA helicase DDX3X [EC:3.6.4.13]","Cold",NA
+"K11737","cycA; D-serine/D-alanine/glycine transporter","cycA"," D-serine/D-alanine/glycine transporter","Oxidative",NA
+"K11747","kefB; glutathione-regulated potassium-efflux system protein KefB","kefB"," glutathione-regulated potassium-efflux system protein KefB","Alkalinity",NA
+"K11835","USP4_11, UBP12; ubiquitin carboxyl-terminal hydrolase 4/11 [EC:3.4.19.12]","USP4_11, UBP12"," ubiquitin carboxyl-terminal hydrolase 4/11 [EC:3.4.19.12]","Osmotic",NA
+"K11915","stp1, pppA; serine/threonine protein phosphatase Stp1 [EC:3.1.3.16]","stp1, pppA"," serine/threonine protein phosphatase Stp1 [EC:3.1.3.16]","Oxidative",NA
+"K12200","PDCD6IP, ALIX, RIM20; programmed cell death 6-interacting protein","PDCD6IP, ALIX, RIM20"," programmed cell death 6-interacting protein","pH",NA
+"K12267","msrAB; peptide methionine sulfoxide reductase msrA/msrB [EC:1.8.4.11 1.8.4.12]","msrAB"," peptide methionine sulfoxide reductase msrA/msrB [EC:1.8.4.11 1.8.4.12]","Oxidative",NA
+"K12346","SMF; metal iron transporter","SMF"," metal iron transporter",NA,NA
+"K12351","SMPD2; sphingomyelin phosphodiesterase 2 [EC:3.1.4.12]","SMPD2"," sphingomyelin phosphodiesterase 2 [EC:3.1.4.12]","Cold",NA
+"K12614","DDX6, RCK, DHH1; ATP-dependent RNA helicase DDX6/DHH1 [EC:3.6.4.13]","DDX6, RCK, DHH1"," ATP-dependent RNA helicase DDX6/DHH1 [EC:3.6.4.13]","General",NA
+"K12760","CLN1; G1/S-specific cyclin CLN1","CLN1"," G1/S-specific cyclin CLN1","Cold",NA
+"K12763","EFG1, SOK2; enhanced filamentous growth protein 1","EFG1, SOK2"," enhanced filamentous growth protein 1","Oxidative",NA
+"K12844","PRPF31; U4/U6 small nuclear ribonucleoprotein PRP31","PRPF31"," U4/U6 small nuclear ribonucleoprotein PRP31","Cold",NA
+"K13025","EIF4A3, FAL1; ATP-dependent RNA helicase [EC:3.6.4.13]","EIF4A3, FAL1"," ATP-dependent RNA helicase [EC:3.6.4.13]","Cold",NA
+"K13179","DDX18, HAS1; ATP-dependent RNA helicase DDX18/HAS1 [EC:3.6.4.13]","DDX18, HAS1"," ATP-dependent RNA helicase DDX18/HAS1 [EC:3.6.4.13]","Cold",NA
+"K13181","DDX27, DRS1; ATP-dependent RNA helicase DDX27 [EC:3.6.4.13]","DDX27, DRS1"," ATP-dependent RNA helicase DDX27 [EC:3.6.4.13]","Cold",NA
+"K13289","CTSA, CPY; cathepsin A (carboxypeptidase C) [EC:3.4.16.5]","CTSA, CPY"," cathepsin A (carboxypeptidase C) [EC:3.4.16.5]","Oxidative",NA
+"K13348","MPV17; protein Mpv17","MPV17"," protein Mpv17","General",NA
+"K13381","chiA; bifunctional chitinase/lysozyme [EC:3.2.1.14 3.2.1.17]","chiA"," bifunctional chitinase/lysozyme [EC:3.2.1.14 3.2.1.17]",NA,NA
+"K13830","ARO1; pentafunctional AROM polypeptide [EC:4.2.3.4 4.2.1.10 1.1.1.25 2.7.1.71 2.5.1.19]","ARO1"," pentafunctional AROM polypeptide [EC:4.2.3.4 4.2.1.10 1.1.1.25 2.7.1.71 2.5.1.19]","Osmotic",NA
+"K13993","HSP20; HSP20 family protein","HSP20"," HSP20 family protein","General",NA
+"K14012","NSFL1C, UBX1, SHP1; UBX domain-containing protein 1","NSFL1C, UBX1, SHP1"," UBX domain-containing protein 1","General",NA
+"K14171","AHP1; alkyl hydroperoxide reductase 1 [EC:1.11.1.24]","AHP1"," alkyl hydroperoxide reductase 1 [EC:1.11.1.24]","Oxidative",NA
+"K14289","XPO5; exportin-5","XPO5"," exportin-5","Osmotic",NA
+"K14457","MOGAT2, MGAT2; 2-acylglycerol O-acyltransferase 2 [EC:2.3.1.22]","MOGAT2, MGAT2"," 2-acylglycerol O-acyltransferase 2 [EC:2.3.1.22]","General",NA
+"K14764","SHQ1; protein SHQ1","SHQ1"," protein SHQ1","General",NA
+"K14778","DDX49, DBP8; ATP-dependent RNA helicase DDX49/DBP8 [EC:3.6.4.13]","DDX49, DBP8"," ATP-dependent RNA helicase DDX49/DBP8 [EC:3.6.4.13]","Cold",NA
+"K14792","RRP5, PDCD11; rRNA biogenesis protein RRP5","RRP5, PDCD11"," rRNA biogenesis protein RRP5","Cold",NA
+"K14805","DDX24, MAK5; ATP-dependent RNA helicase DDX24/MAK5 [EC:3.6.4.13]","DDX24, MAK5"," ATP-dependent RNA helicase DDX24/MAK5 [EC:3.6.4.13]","Cold",NA
+"K14806","DDX31, DBP7; ATP-dependent RNA helicase DDX31/DBP7 [EC:3.6.4.13]","DDX31, DBP7"," ATP-dependent RNA helicase DDX31/DBP7 [EC:3.6.4.13]","Cold",NA
+"K14808","DDX54, DBP10; ATP-dependent RNA helicase DDX54/DBP10 [EC:3.6.4.13]","DDX54, DBP10"," ATP-dependent RNA helicase DDX54/DBP10 [EC:3.6.4.13]","Cold",NA
+"K14811","DBP3; ATP-dependent RNA helicase DBP3 [EC:3.6.4.13]","DBP3"," ATP-dependent RNA helicase DBP3 [EC:3.6.4.13]","Cold",NA
+"K14857","SPB1, FTSJ3; AdoMet-dependent rRNA methyltransferase SPB1 [EC:2.1.1.-]","SPB1, FTSJ3"," AdoMet-dependent rRNA methyltransferase SPB1 [EC:2.1.1.-]","Cold",NA
+"K15033","ICT1, MRPL58; peptidyl-tRNA hydrolase ICT1 [EC:3.1.1.29]","ICT1, MRPL58"," peptidyl-tRNA hydrolase ICT1 [EC:3.1.1.29]","Cold",NA
+"K15160","SIN4, MED16; mediator of RNA polymerase II transcription subunit 16, fungi type","SIN4, MED16"," mediator of RNA polymerase II transcription subunit 16, fungi type","Osmotic",NA
+"K15263","LYER; cell growth-regulating nucleolar protein","LYER"," cell growth-regulating nucleolar protein","Oxidative",NA
+"K15446","TRM13, CCDC76; tRNA:m4X modification enzyme [EC:2.1.1.225]","TRM13, CCDC76"," tRNA:m4X modification enzyme [EC:2.1.1.225]","Osmotic",NA
+"K15726","czcA, cusA, cnrA; heavy metal efflux system protein","czcA, cusA, cnrA"," heavy metal efflux system protein","Metal resistance",NA
+"K15731","CTDSP; carboxy-terminal domain RNA polymerase II polypeptide A small phosphatase [EC:3.1.3.16]","CTDSP"," carboxy-terminal domain RNA polymerase II polypeptide A small phosphatase [EC:3.1.3.16]","Oxidative",NA
+"K15760","tmoA, tbuA1, touA; toluene monooxygenase system protein A [EC:1.14.13.236 1.14.13.-]","tmoA, tbuA1, touA"," toluene monooxygenase system protein A [EC:1.14.13.236 1.14.13.-]","Hypersaline",NA
+"K15975","K15975; glyoxalase family protein","K15975"," glyoxalase family protein","Oxidative",NA
+"K16055","TPS; trehalose 6-phosphate synthase/phosphatase [EC:2.4.1.15 3.1.3.12]","TPS"," trehalose 6-phosphate synthase/phosphatase [EC:2.4.1.15 3.1.3.12]","Osmotic",NA
+"K16055","TPS; trehalose 6-phosphate synthase/phosphatase [EC:2.4.1.15 3.1.3.12]","TPS"," trehalose 6-phosphate synthase/phosphatase [EC:2.4.1.15 3.1.3.12]","Osmotic",NA
+"K16196","EIF2AK4; eukaryotic translation initiation factor 2-alpha kinase 4 [EC:2.7.11.1]","EIF2AK4"," eukaryotic translation initiation factor 2-alpha kinase 4 [EC:2.7.11.1]","Environmental",NA
+"K16264","czcD, zitB; cobalt-zinc-cadmium efflux system protein","czcD, zitB"," cobalt-zinc-cadmium efflux system protein","Metal resistance-Zn",NA
+"K16952","sor; sulfur oxygenase/reductase [EC:1.13.11.55]","sor"," sulfur oxygenase/reductase [EC:1.13.11.55]","sulfur oxygenase/reductase",NA
+"K17222","soxA; L-cysteine S-thiosulfotransferase [EC:2.8.5.2]","soxA"," L-cysteine S-thiosulfotransferase [EC:2.8.5.2]","High pH","High pH/sulfur oxide -Inorganic sulfur compounds can serve as energy sources for specialized prokaryotes in high pH and high saline systems"
+"K17224","soxB; S-sulfosulfanyl-L-cysteine sulfohydrolase [EC:3.1.6.20]","soxB"," S-sulfosulfanyl-L-cysteine sulfohydrolase [EC:3.1.6.20]","High pH","High pH/sulfur oxide -Inorganic sulfur compounds can serve as energy sources for specialized prokaryotes in high pH and high saline systems"
+"K17225","soxC; sulfane dehydrogenase subunit SoxC","soxC"," sulfane dehydrogenase subunit SoxC","High pH","High pH/sulfur oxide -Inorganic sulfur compounds can serve as energy sources for specialized prokaryotes in high pH and high saline systems"
+"K17226","soxY; sulfur-oxidizing protein SoxY","soxY"," sulfur-oxidizing protein SoxY","High pH","High pH/sulfur oxide -Inorganic sulfur compounds can serve as energy sources for specialized prokaryotes in high pH and high saline systems"
+"K17227","soxZ; sulfur-oxidizing protein SoxZ","soxZ"," sulfur-oxidizing protein SoxZ","Sulfer-oxidizing protein",NA
+"K17229","fccB; sulfide dehydrogenase [flavocytochrome c] flavoprotein chain [EC:1.8.2.3]","fccB"," sulfide dehydrogenase [flavocytochrome c] flavoprotein chain [EC:1.8.2.3]","Sulfer metabolizing",NA
+"K17486","dmdA; dimethylsulfoniopropionate demethylase [EC:2.1.1.269]","dmdA"," dimethylsulfoniopropionate demethylase [EC:2.1.1.269]","Osmotic",NA
+"K18532","AK6, FAP7; adenylate kinase [EC:2.7.4.3]","AK6, FAP7"," adenylate kinase [EC:2.7.4.3]","Oxidative",NA
+"K18655","DDX19, DBP5; ATP-dependent RNA helicase DDX19/DBP5 [EC:3.6.4.13]","DDX19, DBP5"," ATP-dependent RNA helicase DDX19/DBP5 [EC:3.6.4.13]","General",NA
+"K18857","ADH1; alcohol dehydrogenase class-P [EC:1.1.1.1]","ADH1"," alcohol dehydrogenase class-P [EC:1.1.1.1]","Oxidative",NA
+"K19691","NIK1, TCSC; osomolarity two-component system, sensor histidine kinase NIK1 [EC:2.7.13.3]","NIK1, TCSC"," osomolarity two-component system, sensor histidine kinase NIK1 [EC:2.7.13.3]","Oxidative",NA
+"K19786","IPK1; inositol-pentakisphosphate 2-kinase [EC:2.7.1.158]","IPK1"," inositol-pentakisphosphate 2-kinase [EC:2.7.1.158]","Cold",NA
+"K19788","OLA1; obg-like ATPase 1","OLA1"," obg-like ATPase 1","Oxidative",NA
+"K19791","FET3_5; iron transport multicopper oxidase","FET3_5"," iron transport multicopper oxidase","Oxidative",NA
+"K19800","SCH9; serine/threonine protein kinase SCH9 [EC:2.7.11.1]","SCH9"," serine/threonine protein kinase SCH9 [EC:2.7.11.1]","General",NA
+"K20059","LDB19, ART1; arrestin-related trafficking adapter 1","LDB19, ART1"," arrestin-related trafficking adapter 1","Osmotic",NA
+"K20063","RIM8, ART9; arrestin-related trafficking adapter 9","RIM8, ART9"," arrestin-related trafficking adapter 9","pH",NA
+"K20221","IPO4, RANBP4; importin-4","IPO4, RANBP4"," importin-4","Oxidative",NA
+"K20367","ERGIC3, ERV46; endoplasmic reticulum-Golgi intermediate compartment protein 3","ERGIC3, ERV46"," endoplasmic reticulum-Golgi intermediate compartment protein 3","pH",NA
+"K21633","CZF1; zinc cluster transcription factor CZF1","CZF1"," zinc cluster transcription factor CZF1","Oxidative",NA
+"K22211","GLX3, HSP31; D-lactate dehydratase [EC:4.2.1.130]","GLX3, HSP31"," D-lactate dehydratase [EC:4.2.1.130]","Oxidative",NA
+"K22684","MCA1; metacaspase-1 [EC:3.4.22.-]","MCA1"," metacaspase-1 [EC:3.4.22.-]","General",NA
+"K23856","GPX; peroxiredoxin [EC:1.11.1.24]","GPX"," peroxiredoxin [EC:1.11.1.24]","Oxidative",NA
+"K23994","SLC9B1_2; solute carrier family 9B (sodium/hydrogen exchanger), member 1/2","SLC9B1_2"," solute carrier family 9B (sodium/hydrogen exchanger), member 1/2","Osmotic",NA
+"K24139","PILS, ECM3; auxin efflux carrier family protein","PILS, ECM3"," auxin efflux carrier family protein","Osmotic",NA
+"K24160","NHA1, SOD2; sodium/hydrogen antiporter","NHA1, SOD2"," sodium/hydrogen antiporter","Osmotic",NA
+"K24935","TTC27; tetratricopeptide repeat protein 27","TTC27"," tetratricopeptide repeat protein 27","General",NA
+"K25817","MAF1; repressor of RNA polymerase III transcription MAF1","MAF1"," repressor of RNA polymerase III transcription MAF1","General",NA
+"K25860","PACC1; proton-activated chloride channel","PACC1"," proton-activated chloride channel","pH neutral to alkaline","ThreeCys2His2 zinc finger transcription factor that mediateschanges in gene expression in response to neutral or alkaline pH."
+"K26089","ANKZF1, VMS1; ankyrin repeat and zinc finger domain-containing protein 1","ANKZF1, VMS1"," ankyrin repeat and zinc finger domain-containing protein 1","General",NA
+"K26216","AHSA1, AHA1; activator of Hsp90 ATPase protein 1","AHSA1, AHA1"," activator of Hsp90 ATPase protein 1","General",NA
+"K00020","HIBADH, mmsB; 3-hydroxyisobutyrate dehydrogenase [EC:1.1.1.31]","HIBADH, mmsB"," 3-hydroxyisobutyrate dehydrogenase [EC:1.1.1.31]","Heat",NA
+"K00190","PGD, gnd, gntZ; 6-phosphogluconate dehydrogenase [EC:1.1.1.44 1.1.1.343]","PGD, gnd, gntZ"," 6-phosphogluconate dehydrogenase [EC:1.1.1.44 1.1.1.343]","Heat",NA
+"K00564","rsmC; 16S rRNA (guanine1207-N2)-methyltransferase [EC:2.1.1.172]","rsmC"," 16S rRNA (guanine1207-N2)-methyltransferase [EC:2.1.1.172]","Heat",NA
+"K02060","PGD, gnd, gntZ; 6-phosphogluconate dehydrogenase [EC:1.1.1.44 1.1.1.343]","PGD, gnd, gntZ"," 6-phosphogluconate dehydrogenase [EC:1.1.1.44 1.1.1.343]","Heat",NA
+"K04110","badA; benzoate-CoA ligase [EC:6.2.1.25]","badA"," benzoate-CoA ligase [EC:6.2.1.25]","Heat",NA
+"K04213","OPRD1; delta-type opioid receptor","OPRD1"," delta-type opioid receptor","Heat",NA
+"K04920","KCNK10, K2P10.1; potassium channel subfamily K member 10","KCNK10, K2P10.1"," potassium channel subfamily K member 10","Heat",NA

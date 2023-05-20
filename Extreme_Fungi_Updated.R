@@ -2976,7 +2976,7 @@ summary(mp) # None!!
 
 
 
-#### _KO Individual ####
+#### _KO Top ####
 # Extract and analyze list of KOs of interest
 # Need to get list of KOs from Lara/Quandt Lab
 # For now make barplot and heatmap of top 10 KOs to develop script
@@ -3099,6 +3099,261 @@ phm1 <- pheatmap(gene_hm,
          annotation_col = ann_cols,
          annotation_colors = ann_colors)
 save_pheatmap_pdf(phm1, "FigsUpdated/KO_heatmap_Top.pdf")
+
+
+
+#### _KO Stress ####
+# Got list of genes from Quandt Lab
+#stress_genes <- read_xlsx("Stress_genes_cleaned.xlsx")
+
+# Add definitions in standardized fashion
+#for (i in 1:nrow(stress_genes)) {
+#  def <- keggFind(database = "ko", query = stress_genes$KO[i])
+#  if (length(def) != 0) {
+#    stress_genes$Definition[i] <- def
+#  }
+#}
+
+#stress_genes <- stress_genes %>%
+#  dplyr::select(-Symbol, -Name, -Protein) %>%
+#  separate(Definition, into = c("Symbol", "Name"), sep = ";", remove = F) %>%
+#  dplyr::select(KO, Definition, Symbol, Name, Stress, Notes)
+#write.csv(stress_genes, file = "stress_genes_wDef.csv", row.names = F)
+stress_genes <- read.csv("stress_genes_wDef.csv") %>%
+  filter(KO %in% colnames(ko_comm_DESeq)) %>%
+  filter(!duplicated(KO))
+# Note 158 of 208 KOs are in the dataset
+# Note 2 were duplicates. So there are 157 KOs
+
+# Data frame
+gene_plot <- ko_comm_DESeq %>%
+  dplyr::select(stress_genes$KO) %>%
+  mutate("Environment" = ko_meta$Environment)
+
+
+
+#### __ (I) Stats ####
+# Run a loop 
+kruskal_results_genes <- as.data.frame(matrix(data = NA, ncol(gene_plot)-1, 3)) %>%
+  set_names(c("Gene", "X2", "P"))
+for (i in 1:(ncol(gene_plot)-1)) {
+  k <- kruskal.test(gene_plot[[i]] ~ gene_plot$Environment)
+  kruskal_results_genes$Gene[i] <- names(gene_plot)[i]
+  kruskal_results_genes$X2[i] <- round(k$statistic, digits = 2)
+  kruskal_results_genes$P[i] <- k$p.value
+}
+kruskal_results_genes <- kruskal_results_genes %>%
+  filter(is.na(Gene) == F) %>%
+  mutate(Pfdr = p.adjust(P, method = "fdr"))
+# All significant
+
+
+
+#### __ (II) Graphs ####
+# Barplot
+table(ko_meta$Environment)
+gene_plot_long <- gene_plot %>%
+  pivot_longer(names(gene_plot)[1:157], 
+               names_to = "Gene", values_to = "Abundance") %>%
+  mutate(Gene = as.factor(Gene)) %>%
+  droplevels() %>%
+  mutate(Environment = dplyr::recode_factor(Environment,
+                                            "Acid mine drainage" = "Acid mine drainage (n = 33)",
+                                            "Cryosphere" = "Cryosphere (n = 47)",
+                                            "Desert" = "Desert (n = 33)",
+                                            "Glacial forefield" = "Glacial forefield (n = 60)",
+                                            "Hot spring" = "Hot spring (n = 167)",
+                                            "Hydrothermal vent" = "Hydrothermal vent (n = 237)",
+                                            "Hypersaline" = "Hypersaline (n = 225)",
+                                            "Soda lake" = "Soda lake (n = 25)"))
+
+gene_plot_summary <- gene_plot_long %>%
+  group_by(Environment, Gene) %>%
+  summarise(mean = mean(Abundance),
+            se = std.error(Abundance))
+
+# Too many to do barplot
+ggplot(gene_plot_summary, aes(Environment, mean, fill = Gene, group = Gene)) +
+  geom_bar(stat = "identity", position = position_dodge(0.75)) +
+  geom_linerange(aes(x = Environment, ymin = mean - se, ymax = mean + se, 
+                     group = Gene),
+                 position = position_dodge(0.75)) +
+  labs(x = NULL, 
+       y = "Abundance (DESeq2 normalized)",
+       fill = "KO") +
+  #scale_fill_manual(values = brewer.pal(10, "Paired"),
+  #                  labels = ko_list$KO_def[1:10]) +
+  scale_y_continuous(expand = c(0.01, 0.01)) +
+  theme_classic() +
+  theme(axis.title = element_text(size = 12),
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1, vjust = 1),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        legend.position = "right",
+        plot.margin = unit(c(0.1, 0.1, 0.1, 0.7), "cm"))
+
+# Heatmap
+# Use pheatmap (pretty heatmap) package
+# Sort by environment
+ko_meta_sorted <- ko_meta %>%
+  arrange(Environment)
+reorder_idx <- match(rownames(ko_meta_sorted), rownames(ko_comm_DESeq))
+ko_comm_DESeq_sorted <- ko_comm_DESeq[reorder_idx,]
+sum(rownames(ko_meta_sorted) != rownames(ko_comm_DESeq_sorted))
+
+# Sort by stress
+stress_genes_sorted <- stress_genes %>%
+  arrange(Stress)
+write.csv(stress_genes_sorted, "stress_genes_sorted_5.19.23.csv")
+stress_genes_sorted$KOsymb <- paste(stress_genes_sorted$KO, stress_genes_sorted$Symbol, sep = "; ")
+
+gene_hm <- ko_comm_DESeq_sorted %>%
+  dplyr::select(stress_genes_sorted$KO) %>%
+  mutate("sampleID" = ko_meta_sorted$sampleID)
+rownames(gene_hm) <- gene_hm$sampleID
+gene_hm <- gene_hm %>%
+  dplyr::select(-sampleID) %>%
+  t() %>%
+  as.matrix()
+
+ann_cols <- data.frame(row.names = colnames(gene_hm), 
+                       Environment = ko_meta_sorted$Environment)
+ann_rows <- data.frame(row.names = rownames(gene_hm), 
+                       Stress = stress_genes_sorted$Stress)
+ann_colors <- list(Environment = c("Acid mine drainage" = hue_pal()(9)[1],
+                                   "Cryosphere - soil" = hue_pal()(9)[2],
+                                   "Cryosphere - water" = hue_pal()(9)[3],
+                                   "Desert" = hue_pal()(9)[4],
+                                   "Glacial forefield" = hue_pal()(9)[5],
+                                   "Hot spring" = hue_pal()(9)[6],
+                                   "Hydrothermal vent" = hue_pal()(9)[7],
+                                   "Hypersaline" = hue_pal()(9)[8],
+                                   "Soda lake" = hue_pal()(9)[9]),
+                   Stress = c("Alkaline pH" = viridis_pal()(17)[1],
+                              "Cellular" = viridis_pal()(17)[2],
+                              "Chlorine" = viridis_pal()(17)[3],
+                              "Cold" = viridis_pal()(17)[4],
+                              "Environmental" = viridis_pal()(17)[5],
+                              "Environmental-Oxidative" = viridis_pal()(17)[6],
+                              "General" = viridis_pal()(17)[7],
+                              "Granule" = viridis_pal()(17)[8],
+                              "Heat" = viridis_pal()(17)[9],
+                              "Heat-Osmotic" = viridis_pal()(17)[10],
+                              "High pH" = viridis_pal()(17)[11],
+                              "Metal resistance-Zn" = viridis_pal()(17)[12],
+                              "Osmotic" = viridis_pal()(17)[13],
+                              "Osmotic, Low pH" = viridis_pal()(17)[14],
+                              "Oxidative" = viridis_pal()(17)[15],
+                              "pH" = viridis_pal()(17)[16],
+                              "Starvation" = viridis_pal()(17)[17]))
+phm1 <- pheatmap(gene_hm,
+                 color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdBu")))(100),
+                 border_color = NA,
+                 scale = "row",
+                 show_colnames = F,
+                 angle_col = 315,
+                 cluster_rows = F,
+                 cluster_cols = F,
+                 fontsize_row = 4,
+                 annotation_col = ann_cols,
+                 annotation_row = ann_rows,
+                 annotation_colors = ann_colors)
+
+# Still no good. Summarize by environment so there are only 9 columns
+gene_plot_sorted <- ko_comm_DESeq_sorted %>%
+  dplyr::select(stress_genes_sorted$KO) %>%
+  mutate("Environment" = ko_meta_sorted$Environment)
+
+gene_plot_long_sorted <- gene_plot_sorted %>%
+  pivot_longer(names(gene_plot)[1:157], 
+               names_to = "Gene", values_to = "Abundance") %>%
+  mutate(Environment = dplyr::recode_factor(Environment,
+                                            "Acid mine drainage" = "Acid mine drainage (n = 33)",
+                                            "Cryosphere - soil" = "Cryosphere - soil (n = 27)",
+                                            "Cryosphere - water" = "Cryosphere - water (n = 20)",
+                                            "Desert" = "Desert (n = 33)",
+                                            "Glacial forefield" = "Glacial forefield (n = 60)",
+                                            "Hot spring" = "Hot spring (n = 167)",
+                                            "Hydrothermal vent" = "Hydrothermal vent (n = 237)",
+                                            "Hypersaline" = "Hypersaline (n = 225)",
+                                            "Soda lake" = "Soda lake (n = 25)"))
+
+gene_plot_summary_sorted <- gene_plot_long_sorted %>%
+  group_by(Environment, Gene) %>%
+  summarise(mean = mean(Abundance),
+            se = std.error(Abundance))
+
+gene_hm_summary <- gene_plot_summary_sorted %>%
+  dplyr::select(-se) %>%
+  pivot_wider(names_from = Environment, values_from = mean) %>%
+  column_to_rownames(var = "Gene") %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::select(stress_genes_sorted$KO) %>%
+  t() %>%
+  as.matrix()
+rownames(gene_hm_summary) <- stress_genes_sorted$KOsymb
+
+ann_rows <- data.frame(row.names = rownames(gene_hm_summary), 
+                       Stress = stress_genes_sorted$Stress)
+ann_colors <- list(Stress = c("Alkaline pH" = viridis_pal()(17)[1],
+                              "Cellular" = viridis_pal()(17)[2],
+                              "Chlorine" = viridis_pal()(17)[3],
+                              "Cold" = viridis_pal()(17)[4],
+                              "Environmental" = viridis_pal()(17)[5],
+                              "Environmental-Oxidative" = viridis_pal()(17)[6],
+                              "General" = viridis_pal()(17)[7],
+                              "Granule" = viridis_pal()(17)[8],
+                              "Heat" = viridis_pal()(17)[9],
+                              "Heat-Osmotic" = viridis_pal()(17)[10],
+                              "High pH" = viridis_pal()(17)[11],
+                              "Metal resistance-Zn" = viridis_pal()(17)[12],
+                              "Osmotic" = viridis_pal()(17)[13],
+                              "Osmotic, Low pH" = viridis_pal()(17)[14],
+                              "Oxidative" = viridis_pal()(17)[15],
+                              "pH" = viridis_pal()(17)[16],
+                              "Starvation" = viridis_pal()(17)[17]))
+
+phm1 <- pheatmap(gene_hm_summary,
+                 color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdBu")))(100),
+                 legend = T,
+                 legend_breaks = c(-2, -1, 0, 1, 2, 2.65),
+                 legend_labels = c("-2", "-1", "0", "1", "2", "Abund."),
+                 border_color = NA,
+                 scale = "row",
+                 show_colnames = T,
+                 angle_col = 315,
+                 cluster_rows = F,
+                 cluster_cols = T,
+                 fontsize_row = 4,
+                 annotation_row = ann_rows,
+                 annotation_colors = ann_colors)
+save_pheatmap_pdf <- function(x, filename, width = 7, height = 12) {
+  stopifnot(!missing(x))
+  stopifnot(!missing(filename))
+  pdf(filename, width=width, height=height)
+  grid::grid.newpage()
+  grid::grid.draw(x$gtable)
+  dev.off()
+}
+save_pheatmap_pdf(phm1, "FigsUpdated/KO_heatmap_Stress.pdf")
+
+phm2 <- pheatmap(gene_hm_summary,
+                 color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdBu")))(100),
+                 legend = T,
+                 legend_breaks = c(-2, -1, 0, 1, 2, 2.65),
+                 legend_labels = c("-2", "-1", "0", "1", "2", "Abund."),
+                 border_color = NA,
+                 scale = "row",
+                 show_colnames = T,
+                 angle_col = 315,
+                 cluster_rows = T,
+                 cluster_cols = T,
+                 fontsize_row = 4,
+                 annotation_row = ann_rows,
+                 annotation_colors = ann_colors)
+
 
 
 
