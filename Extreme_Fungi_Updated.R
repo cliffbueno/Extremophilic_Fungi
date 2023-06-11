@@ -3705,6 +3705,7 @@ phm1 <- pheatmap(gene_hm_summary,
                  angle_col = 315,
                  cluster_rows = F,
                  cluster_cols = T,
+                 method = "ward.D2",
                  fontsize_row = 4,
                  annotation_row = ann_rows,
                  annotation_colors = ann_colors)
@@ -3736,6 +3737,7 @@ pheatmap(gene_hm_summary,
          file = "FinalFigs/Figure6.png",
          height = 12,
          width = 7)
+dev.off()
 
 # Explore clustering by rows too
 phm2 <- pheatmap(gene_hm_summary,
