@@ -1,0 +1,51 @@
+"KO","Definition","Symbol","Name","Stress","Notes"
+"K00370","narG, narZ, nxrA; nitrate reductase / nitrite oxidoreductase, alpha subunit [EC:1.7.5.1 1.7.99.-]","narG, narZ, nxrA"," nitrate reductase / nitrite oxidoreductase, alpha subunit [EC:1.7.5.1 1.7.99.-]","Nitrite oxidoreductase",NA
+"K01532","PCA1, CAD2; Cd2+-exporting ATPase [EC:7.2.2.21]","PCA1, CAD2"," Cd2+-exporting ATPase [EC:7.2.2.21]","Osmotic",NA
+"K03176","NTRK1, TRKA; neurotrophic tyrosine kinase receptor type 1 [EC:2.7.10.1]","NTRK1, TRKA"," neurotrophic tyrosine kinase receptor type 1 [EC:2.7.10.1]",NA,NA
+"K04982","TRPM7, CHAK1; transient receptor potential cation channel subfamily M member 7 [EC:2.7.11.1]","TRPM7, CHAK1"," transient receptor potential cation channel subfamily M member 7 [EC:2.7.11.1]","Osmotic, Low pH",NA
+"K06876","phrB; (6-4)DNA photolyase [EC:4.1.99.13]","phrB"," (6-4)DNA photolyase [EC:4.1.99.13]","UV radiaiton",NA
+"K07787","cusA, silA; copper/silver efflux system protein","cusA, silA"," copper/silver efflux system protein","Metal resistance-Cu/Au",NA
+"K07840","DIRAS1; DIRAS family, GTP-binding Ras-like 1","DIRAS1"," DIRAS family, GTP-binding Ras-like 1","Oxidative",NA
+"K09074","TYE7; fungal twist-like factor","TYE7"," fungal twist-like factor","Oxidative",NA
+"K09562","HSPBP1, FES1; hsp70-interacting protein","HSPBP1, FES1"," hsp70-interacting protein","Heat",NA
+"K10520","ABTB1, BPOZ; ankyrin repeat and BTB/POZ domain-containing protein 1","ABTB1, BPOZ"," ankyrin repeat and BTB/POZ domain-containing protein 1","Endoplasmic reticulum",NA
+"K11737","cycA; D-serine/D-alanine/glycine transporter","cycA"," D-serine/D-alanine/glycine transporter","Oxidative",NA
+"K11747","kefB; glutathione-regulated potassium-efflux system protein KefB","kefB"," glutathione-regulated potassium-efflux system protein KefB","Alkalinity",NA
+"K11915","stp1, pppA; serine/threonine protein phosphatase Stp1 [EC:3.1.3.16]","stp1, pppA"," serine/threonine protein phosphatase Stp1 [EC:3.1.3.16]","Oxidative",NA
+"K12267","msrAB; peptide methionine sulfoxide reductase msrA/msrB [EC:1.8.4.11 1.8.4.12]","msrAB"," peptide methionine sulfoxide reductase msrA/msrB [EC:1.8.4.11 1.8.4.12]","Oxidative",NA
+"K12760","CLN1; G1/S-specific cyclin CLN1","CLN1"," G1/S-specific cyclin CLN1","Cold",NA
+"K13381","chiA; bifunctional chitinase/lysozyme [EC:3.2.1.14 3.2.1.17]","chiA"," bifunctional chitinase/lysozyme [EC:3.2.1.14 3.2.1.17]",NA,NA
+"K15726","czcA, cusA, cnrA; heavy metal efflux system protein","czcA, cusA, cnrA"," heavy metal efflux system protein","Metal resistance",NA
+"K15760","tmoA, tbuA1, touA; toluene monooxygenase system protein A [EC:1.14.13.236 1.14.13.-]","tmoA, tbuA1, touA"," toluene monooxygenase system protein A [EC:1.14.13.236 1.14.13.-]","Hypersaline",NA
+"K15975","K15975; glyoxalase family protein","K15975"," glyoxalase family protein","Oxidative",NA
+"K16952","sor; sulfur oxygenase/reductase [EC:1.13.11.55]","sor"," sulfur oxygenase/reductase [EC:1.13.11.55]","sulfur oxygenase/reductase",NA
+"K17222","soxA; L-cysteine S-thiosulfotransferase [EC:2.8.5.2]","soxA"," L-cysteine S-thiosulfotransferase [EC:2.8.5.2]","High pH","High pH/sulfur oxide -Inorganic sulfur compounds can serve as energy sources for specialized prokaryotes in high pH and high saline systems"
+"K17224","soxB; S-sulfosulfanyl-L-cysteine sulfohydrolase [EC:3.1.6.20]","soxB"," S-sulfosulfanyl-L-cysteine sulfohydrolase [EC:3.1.6.20]","High pH","High pH/sulfur oxide -Inorganic sulfur compounds can serve as energy sources for specialized prokaryotes in high pH and high saline systems"
+"K17226","soxY; sulfur-oxidizing protein SoxY","soxY"," sulfur-oxidizing protein SoxY","High pH","High pH/sulfur oxide -Inorganic sulfur compounds can serve as energy sources for specialized prokaryotes in high pH and high saline systems"
+"K17227","soxZ; sulfur-oxidizing protein SoxZ","soxZ"," sulfur-oxidizing protein SoxZ","Sulfer-oxidizing protein",NA
+"K17229","fccB; sulfide dehydrogenase [flavocytochrome c] flavoprotein chain [EC:1.8.2.3]","fccB"," sulfide dehydrogenase [flavocytochrome c] flavoprotein chain [EC:1.8.2.3]","Sulfer metabolizing",NA
+"K17486","dmdA; dimethylsulfoniopropionate demethylase [EC:2.1.1.269]","dmdA"," dimethylsulfoniopropionate demethylase [EC:2.1.1.269]","Osmotic",NA
+"K18857","ADH1; alcohol dehydrogenase class-P [EC:1.1.1.1]","ADH1"," alcohol dehydrogenase class-P [EC:1.1.1.1]","Oxidative",NA
+"K19800","SCH9; serine/threonine protein kinase SCH9 [EC:2.7.11.1]","SCH9"," serine/threonine protein kinase SCH9 [EC:2.7.11.1]","General",NA
+"K20059","LDB19, ART1; arrestin-related trafficking adapter 1","LDB19, ART1"," arrestin-related trafficking adapter 1","Osmotic",NA
+"K20063","RIM8, ART9; arrestin-related trafficking adapter 9","RIM8, ART9"," arrestin-related trafficking adapter 9","pH",NA
+"K20221","IPO4, RANBP4; importin-4","IPO4, RANBP4"," importin-4","Oxidative",NA
+"K20367","ERGIC3, ERV46; endoplasmic reticulum-Golgi intermediate compartment protein 3","ERGIC3, ERV46"," endoplasmic reticulum-Golgi intermediate compartment protein 3","pH",NA
+"K21633","CZF1; zinc cluster transcription factor CZF1","CZF1"," zinc cluster transcription factor CZF1","Oxidative",NA
+"K22211","GLX3, HSP31; D-lactate dehydratase [EC:4.2.1.130]","GLX3, HSP31"," D-lactate dehydratase [EC:4.2.1.130]","Oxidative",NA
+"K22684","MCA1; metacaspase-1 [EC:3.4.22.-]","MCA1"," metacaspase-1 [EC:3.4.22.-]","General",NA
+"K23856","GPX; peroxiredoxin [EC:1.11.1.24]","GPX"," peroxiredoxin [EC:1.11.1.24]","Oxidative",NA
+"K23994","SLC9B1_2; solute carrier family 9B (sodium/hydrogen exchanger), member 1/2","SLC9B1_2"," solute carrier family 9B (sodium/hydrogen exchanger), member 1/2","Osmotic",NA
+"K24139","PILS, ECM3; auxin efflux carrier family protein","PILS, ECM3"," auxin efflux carrier family protein","Osmotic",NA
+"K24160","NHA1, SOD2; sodium/hydrogen antiporter","NHA1, SOD2"," sodium/hydrogen antiporter","Osmotic",NA
+"K24935","TTC27; tetratricopeptide repeat protein 27","TTC27"," tetratricopeptide repeat protein 27","General",NA
+"K25817","MAF1; repressor of RNA polymerase III transcription MAF1","MAF1"," repressor of RNA polymerase III transcription MAF1","General",NA
+"K25860","PACC1; proton-activated chloride channel","PACC1"," proton-activated chloride channel","pH neutral to alkaline","ThreeCys2His2 zinc finger transcription factor that mediateschanges in gene expression in response to neutral or alkaline pH."
+"K26089","ANKZF1, VMS1; ankyrin repeat and zinc finger domain-containing protein 1","ANKZF1, VMS1"," ankyrin repeat and zinc finger domain-containing protein 1","General",NA
+"K26216","AHSA1, AHA1; activator of Hsp90 ATPase protein 1","AHSA1, AHA1"," activator of Hsp90 ATPase protein 1","General",NA
+"K00190","PGD, gnd, gntZ; 6-phosphogluconate dehydrogenase [EC:1.1.1.44 1.1.1.343]","PGD, gnd, gntZ"," 6-phosphogluconate dehydrogenase [EC:1.1.1.44 1.1.1.343]","Heat",NA
+"K00564","rsmC; 16S rRNA (guanine1207-N2)-methyltransferase [EC:2.1.1.172]","rsmC"," 16S rRNA (guanine1207-N2)-methyltransferase [EC:2.1.1.172]","Heat",NA
+"K02060","PGD, gnd, gntZ; 6-phosphogluconate dehydrogenase [EC:1.1.1.44 1.1.1.343]","PGD, gnd, gntZ"," 6-phosphogluconate dehydrogenase [EC:1.1.1.44 1.1.1.343]","Heat",NA
+"K04110","badA; benzoate-CoA ligase [EC:6.2.1.25]","badA"," benzoate-CoA ligase [EC:6.2.1.25]","Heat",NA
+"K04213","OPRD1; delta-type opioid receptor","OPRD1"," delta-type opioid receptor","Heat",NA
+"K04920","KCNK10, K2P10.1; potassium channel subfamily K member 10","KCNK10, K2P10.1"," potassium channel subfamily K member 10","Heat",NA

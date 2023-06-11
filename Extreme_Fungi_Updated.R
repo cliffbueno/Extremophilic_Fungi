@@ -71,6 +71,10 @@ suppressWarnings(suppressMessages(library(writexl))) # For writing to Excel
 suppressWarnings(suppressMessages(library(ggpubr))) # For density plots
 suppressWarnings(suppressMessages(library(PMCMRplus))) # For Nemenyi posthoc
 suppressWarnings(suppressMessages(library(DirichletReg))) # For analyzing proportions
+suppressWarnings(suppressMessages(library(MASS))) # For zinf reg
+suppressWarnings(suppressMessages(library(pscl))) # For zinf reg
+suppressWarnings(suppressMessages(library(boot))) # For zinf reg
+suppressWarnings(suppressMessages(library(gamlss))) # For zinf reg
 
 # Working directory (GitHub repository)
 setwd("~/Documents/GitHub/Extremophilic_Fungi/")
@@ -91,14 +95,14 @@ save_pheatmap_pdf <- function(x, filename, width = 7, height = 5) {
 source("plot_multipatt.R")
 source("compareBC.R")
 
-# So far used Krusal-Wallis + Nemenyi posthoc
+# So far used Kruskal-Wallis + Nemenyi posthoc
 # May want to update some stats to zero-inflated negative binomial regression instead
 # If using ANOVA and Tukey, can use this code to get sig. letters
 # Example from genus richness
 #tuk <- emmeans(object = m, specs = "Environment") %>%
 #  cld(object = ., adjust = "Tukey", Letters = letters, alpha = 0.05) %>%
 #  mutate(name = "rich",
-#         y = max(input_fungi$map_loaded$rich)+(max(input_fungi$map_loaded$rich)-min(input_fungi$map_loaded$rich))/20)
+#     y = max(input_fungi$map_loaded$rich)+(max(input_fungi$map_loaded$rich)-min(input_fungi$map_loaded$rich))/20)
 
 
 #### ..........................####
@@ -199,6 +203,7 @@ ggplot(input$map_loaded, aes(GenomeSize, count)) +
   theme(axis.title = element_text(size = 14, face = "bold"),
         axis.text = element_text(size = 10))
 dev.off()
+summary(lm(input$map_loaded$count ~ input$map_loaded$GenomeSize)) # R2 = 0.91
 
 
 
@@ -275,7 +280,7 @@ dev.off()
 
 #### __Check Fungi ####
 # First do same as done above for euk but extract fungal phyla
-tax_sum_phyla <- summarize_taxonomy(input, level = 2, report_higher_tax = T, relative = TRUE)
+tax_sum_phyla <- summarize_taxonomy(input, level = 2, report_higher_tax = T, relative = T)
 fungal_phyla <- tax_sum_phyla[grep("Ascomycota|Basidiomycota|Blastocladiomycota|Chytridiomycota|
                   Cryptomycota|Microsporidia|Mucoromycota|Nephridiophagidae|Olpidiomycota|
                   Sanchytriomycota|Zoopagomycota", rownames(tax_sum_phyla)),]
@@ -331,9 +336,13 @@ ggplot(topfun$map_loaded, aes(reorder(sampleID, Fungi, mean), Fungi, fill = Envi
 dev.off()
 
 # By environment
+hist(input$map_loaded$Fungi)
+hist(log(input$map_loaded$Fungi))
 leveneTest(input$map_loaded$Fungi ~ input$map_loaded$Environment) # Bad
 m1 <- aov(Fungi ~ Environment, data = input$map_loaded)
 shapiro.test(m1$residuals) # Bad
+hist(m1$residuals)
+plot(m1$fitted.values, m1$residuals)
 summary(m1)
 TukeyHSD(m1)
 kruskal.test(Fungi ~ Environment, data = input$map_loaded)
@@ -358,6 +367,61 @@ ggplot(input$map_loaded, aes(reorder(Environment, Fungi, mean), Fungi)) +
         axis.text.x = element_text(size = 8, angle = 45, hjust = 1),
         strip.text = element_text(size = 10))
 dev.off()
+
+# Explore
+ggplot(input$map_loaded, aes(reorder(Environment, Fungi, mean), log(Fungi))) +
+  geom_violin(outlier.shape = NA) +
+  geom_boxplot(outlier.shape = NA, width = 0.1) +
+  geom_jitter(size = 1, alpha = 0.2, width = 0.4) +
+  geom_text(data = nyi_let1, aes(Environment, y, label = label), 
+            size = 4, color = "black") +
+  labs(x = NULL, y = "Fungal relative abundance") +
+  ylim(-14, 0.1) +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title = element_text(size = 12),
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 8, angle = 45, hjust = 1),
+        strip.text = element_text(size = 10))
+
+# Try ANOVA with log?
+# Tough to deal with zeroes
+
+# Zero-inflated negative binomial?
+# Can't use because numeric not integer
+z1 <- zeroinfl(Fungi ~ Environment, data = input$map_loaded, dist = "negbin")
+summary(z1)
+
+# Zero-inflated Beta regression
+d <- input$map_loaded # emmeans can't handle $
+b1 <- gamlss(input$map_loaded$Fungi ~ d$Environment,  family = BEZI, trace = F)
+summary(b1)
+plot(b1)
+emmeans(b1, "Environment", type = "response")
+pairs(.Last.value)
+
+tuk <- emmeans(object = b1, specs = "Environment") %>%
+  cld(object = ., adjust = "Tukey", Letters = letters, alpha = 0.05) %>%
+  mutate(name = "rich",
+         y = rep(0.11, nrow(.))) %>%
+  mutate(label = c("a", "a", "abc", "ab", "bc", "abc", "c", "abc", "bc"))
+br_plot <- ggplot(input$map_loaded, aes(reorder(Environment, Fungi, median), Fungi)) +
+  #geom_boxplot(outlier.shape = NA) +
+  geom_jitter(size = 1, alpha = 0.2, width = 0.4) +
+  geom_text(data = tuk, aes(Environment, y, label = label), 
+            size = 4, color = "black", hjust = 0.5) +
+  labs(x = NULL, y = "Fungal relative abundance") +
+  scale_y_continuous(breaks = c(0, 0.02, 0.04, 0.06, 0.08, 0.10)) +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title = element_text(size = 12),
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+        strip.text = element_text(size = 10))
+br_plot
+
+mean(input$map_loaded$Fungi)
+se(input$map_loaded$Fungi)
 
 
 
@@ -424,6 +488,7 @@ ggplot(input_fungi$map_loaded, aes(GenomeSize, fung_count)) +
   theme(axis.title = element_text(size = 14, face = "bold"),
         axis.text = element_text(size = 10))
 dev.off()
+summary(lm(input_fungi$map_loaded$fung_count ~ input_fungi$map_loaded$GenomeSize))
 
 # Get and plot fraction of samples with 0 versus > 0 fungal reads, and also n
 env_prev <- input_fungi$map_loaded %>%
@@ -474,6 +539,47 @@ ggplot(env_prev_long, aes(reorder(Environment, value, mean), value,
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
 dev.off()
 
+# Make multipanel Figure 1
+n <- ggplot(env_prev_long, aes(reorder(Environment, value, mean), value, 
+                          group = Environment, fill = variable)) +
+  geom_bar(stat = "identity") +
+  geom_text(data = env_prev, 
+            aes(reorder(Environment, num_samples, mean), num_samples+15, 
+                label = num_samples), inherit.aes = F) +
+  geom_text(aes(x = "Glacial forefield", y = 295, label = "total n = 1038\nn with fungi = 864"),
+            hjust = 0.5, check_overlap = T, size = 3) +
+  scale_fill_manual(values = c("#F8766D", "#619CFF"),
+                    breaks = c("num_absent", "num_present"),
+                    labels = c("Absent", "Present")) +
+  labs(x = NULL, 
+       y = "Sample size",
+       fill = "Fungi") +
+  theme_classic() +
+  theme(legend.position = c(0,1),
+        legend.justification = c(0,1),
+        legend.background = element_blank(),
+        axis.title = element_text(size = 12),
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_blank())
+
+prev <- ggplot(env_prev, aes(reorder(Environment, num_samples, mean), prevalence)) +
+  geom_bar(stat = "identity") +
+  labs(x = NULL, 
+       y = "Fungal prevalence (%)") +
+  theme_classic() +
+  theme(axis.title = element_text(size = 12),
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
+
+f1a <- plot_grid(n, prev, ncol = 1, rel_heights = c(0.4, 0.6))
+f1a
+
+f1 <- plot_grid(f1a, br_plot, ncol = 2, labels = "AUTO")
+f1
+
+png("FinalFigs/Figure1.png", width = 7, height = 5, units = "in", res = 300)
+f1
+dev.off()
 
 
 #### _CPM ####
@@ -490,7 +596,7 @@ for (i in 1:ncol(input_fungi$data_loaded)) {
 }
 
 # Make stacked bar plots by taxonomic level
-# Resort so unassigned and other are on the top
+# Re-sort so unassigned and other are on the top
 # Use "Paired" palette from RColorBrewer
 # Note: "Set2" palette could be another option
 # Unassigned gets grey75, Other gets grey90
@@ -509,18 +615,23 @@ barsPhyla <- plot_taxa_bars(tax_sum_Phyla,
   mutate(taxon = fct_rev(taxon))
 
 pdf("FigsUpdated/CPM_Phyla.pdf", width = 7, height = 5)
-ggplot(barsPhyla, aes(group_by, mean_value, fill = taxon)) +
+fs3a <- ggplot(barsPhyla, aes(reorder(group_by, mean_value, mean), mean_value, fill = taxon)) +
   geom_bar(stat = "identity", colour = NA, size = 0.25) +
   labs(x = "Environment", y = "Abundance (CPM)", fill = "Phylum") +
   scale_fill_manual(values = brewer.pal(12, "Paired")[7:1]) +
   scale_y_continuous(expand = c(0.01, 0.01)) +
   theme_classic() +
-  theme(axis.title = element_text(size = 12), 
+  theme(axis.title.y = element_text(size = 12),
+        axis.title.x = element_blank(),
         axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
         legend.text = element_text(size = 8),
         legend.key.size = unit(0.5, "cm"),
-        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"))
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"),
+        legend.position = c(0,1),
+        legend.justification = c(0,1),
+        legend.background = element_blank())
+fs3a
 dev.off()
 taxa_summary_by_sample_type(tax_sum_Phyla, input_fungi_CPM$map_loaded, 'Environment', 0.0001, 'KW')
 
@@ -537,7 +648,8 @@ plot_taxa_bars(tax_sum_Class,
   theme(legend.position = "right",
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
 
-tax_sum_Class <- summarize_taxonomy(input_fungi_CPM, level = 3, report_higher_tax = F, relative = F)
+tax_sum_Class <- summarize_taxonomy(input_fungi_CPM, level = 3, report_higher_tax = T, relative = F)
+rownames(tax_sum_Class) <- substring(rownames(tax_sum_Class), 12)
 barsClass <- plot_taxa_bars(tax_sum_Class,
                input_fungi_CPM$map_loaded,
                type_header = "Environment",
@@ -547,20 +659,41 @@ barsClass <- plot_taxa_bars(tax_sum_Class,
   mutate(taxon = fct_rev(taxon))
 
 pdf("FigsUpdated/CPM_Class.pdf", width = 7, height = 5)
-ggplot(barsClass, aes(group_by, mean_value, fill = taxon)) +
+fs3b <- ggplot(barsClass, aes(reorder(group_by, mean_value, mean), mean_value, fill = taxon)) +
   geom_bar(stat = "identity", colour = NA, size = 0.25) +
   labs(x = "Environment", y = "Abundance (CPM)", fill = "Class") +
   scale_fill_manual(values = c("grey90", mycolors[15:1])) +
   scale_y_continuous(expand = c(0.01, 0.01)) +
   theme_classic() +
-  theme(axis.title = element_text(size = 12), 
+  theme(axis.title.y = element_text(size = 12),
+        axis.title.x = element_blank(), 
         axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
         legend.text = element_text(size = 8),
         legend.key.size = unit(0.5, "cm"),
-        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"))
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"),
+        legend.position = c(0,1),
+        legend.justification = c(0,1),
+        legend.background = element_blank())
+fs3b
 dev.off()
-taxa_summary_by_sample_type(tax_sum_Class, input_fungi_CPM$map_loaded, 'Environment', 0.0001, 'KW')
+taxa_summary_by_sample_type(tax_sum_Class, 
+                            input_fungi_CPM$map_loaded, 
+                            'Environment', 
+                            0.0001, 
+                            'KW')
+
+# Multipanel Figure S3
+# Horizontal
+fs3b <- fs3b +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+fs3 <- plot_grid(fs3a, fs3b, ncol = 2, labels = "AUTO", rel_widths = c(0.52, 0.48))
+fs3
+
+png("FinalFigs/FigureS3.png", width = 8, height = 6, units = "in", res = 300)
+fs3
+dev.off()
 
 # Order
 tax_sum_Order <- summarize_taxonomy(input_fungi_CPM, level = 4, report_higher_tax = F, relative = F)
@@ -645,6 +778,7 @@ taxa_summary_by_sample_type(tax_sum_Genus, input_fungi_CPM$map_loaded, 'Environm
 
 # Also plot total fungal CPM by environment
 input_fungi_CPM$map_loaded$totalFun <- colSums(input_fungi_CPM$data_loaded)
+hist(input_fungi_CPM$map_loaded$totalFun)
 leveneTest(input_fungi_CPM$map_loaded$totalFun ~ input_fungi_CPM$map_loaded$Environment) # Bad
 m2 <- aov(totalFun ~ Environment, data = input_fungi_CPM$map_loaded)
 shapiro.test(m2$residuals) # Bad
@@ -722,7 +856,7 @@ input_fungi_nz <- filter_data(input_fungi,
                               filter_cat = "sampleID",
                               filter_vals = rownames(countFun))
 
-# Calculate relative abundance of fungi, only for samples with fungi (n = 921)
+# Calculate relative abundance of fungi, only for samples with fungi (n = 864)
 # Make relative abundance stacked bar plots by taxonomic level
 # Re-sort so unassigned and other are on the top
 # Use "Paired" palette from RColorBrewer
@@ -878,7 +1012,7 @@ taxa_summary_by_sample_type(tax_sum_Genus, input_fungi_nz$map_loaded, 'Environme
 # PCoA and PERMANOVA by Environment
 # Also check Habitat, Ecosystem.Category, Ecosystem.Subtype, Ecosystem.Type, Specific.Ecosystem
 
-# Filter out fungal zeroes from CPM data (filters 188 samples, 921 remaining)
+# Filter out fungal zeroes from CPM data (filters 174 samples, 864 remaining)
 input_fungi_CPM_nz <- filter_data(input_fungi_CPM,
                                   filter_cat = "sampleID",
                                   filter_vals = rownames(countFun))
@@ -906,12 +1040,34 @@ pcoaA1 <- round((eigenvals(pcoa)/sum(eigenvals(pcoa)))[1]*100, digits = 1)
 pcoaA2 <- round((eigenvals(pcoa)/sum(eigenvals(pcoa)))[2]*100, digits = 1)
 input_fungi_CPM_nz$map_loaded$Axis01 <- scores(pcoa)[,1]
 input_fungi_CPM_nz$map_loaded$Axis02 <- scores(pcoa)[,2]
+input_fungi_CPM_nz$map_loaded$Axis03 <- scores(pcoa)[,3]
 micro.hulls <- ddply(input_fungi_CPM_nz$map_loaded, c("Environment"), find_hull)
 pdf("FigsUpdated/PCoA_Genus.pdf", width = 7, height = 5)
 g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
-  geom_polygon(data = micro.hulls, 
-               aes(colour = Environment, fill = Environment),
-               alpha = 0.1, show.legend = F) +
+  #geom_polygon(data = micro.hulls, 
+  #             aes(colour = Environment, fill = Environment),
+  #             alpha = 0.1, show.legend = F) +
+  geom_point(size = 2, alpha = 0.5, aes(colour = Environment, 
+                                        #shape = Environment
+                                        ),
+             show.legend = T) +
+  labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
+       y = paste("PC2: ", pcoaA2, "%", sep = "")) +
+  #scale_shape_manual(values = c(16, 17, 15, 3, 7, 8, 18, 6, 11)) +
+  #scale_shape_manual(values = c(15, 16, 16, 16, 16, 17, 17, 17, 17)) +
+  #scale_colour_brewer(palette = "Set1") +
+  guides(colour = guide_legend(override.aes = list(alpha = 1))) +
+  theme_bw() +  
+  theme(legend.position = "right",
+        axis.title = element_text(face = "bold", size = 12), 
+        axis.text = element_text(size = 10),
+        panel.grid = element_blank())
+g
+dev.off()
+
+# Try ellipse? Bad
+ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
+  stat_ellipse(mapping = aes(x = Axis01, y = Axis02, color = Environment), alpha = 0.8) +
   geom_point(size = 2, alpha = 0.5, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
@@ -921,8 +1077,6 @@ g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   theme(legend.position = "right",
         axis.title = element_text(face = "bold", size = 12), 
         axis.text = element_text(size = 10))
-g
-dev.off()
 
 # Interactive plot (can hover mouse over points)
 ggplotly(g)
@@ -1124,7 +1278,8 @@ g_arc <- ggplot(input_arc_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   theme(legend.position = "none",
         axis.title = element_text(face = "bold", size = 12), 
         axis.text = element_text(size = 10),
-        plot.title = element_text(hjust = 0.5, vjust = -1))
+        plot.title = element_text(hjust = 0.5, vjust = -1),
+        panel.grid = element_blank())
 g_arc
 
 # Bacteria
@@ -1168,7 +1323,8 @@ g_bac <- ggplot(input_bac_CPM$map_loaded, aes(Axis01, Axis02)) +
   theme(legend.position = "none",
         axis.title = element_text(face = "bold", size = 12), 
         axis.text = element_text(size = 10),
-        plot.title = element_text(hjust = 0.5, vjust = -1))
+        plot.title = element_text(hjust = 0.5, vjust = -1),
+        panel.grid = element_blank())
 g_bac
 
 # Remake first one with fungi title
@@ -1189,12 +1345,21 @@ g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   theme(legend.position = "none",
         axis.title = element_text(face = "bold", size = 12), 
         axis.text = element_text(size = 10),
-        plot.title = element_text(hjust = 0.5, vjust = -1))
+        plot.title = element_text(hjust = 0.5, vjust = -1),
+        panel.grid = element_blank())
 g
 
 # Multipanel
 pdf("FigsUpdated/PCoA_ArcBacFun.pdf", width = 8, height = 5)
-plot_grid(g_arc,g_bac,g,g_leg, ncol = 2, hjust = "hv")
+plot_grid(g_arc,g_bac,g,g_leg, ncol = 2, hjust = "hv", 
+          labels = c("A", "B", "C", ""),
+          label_x = 0.1)
+dev.off()
+
+png("FinalFigs/FigureS2.png", width = 8, height = 6, units = "in", res = 300)
+plot_grid(g_arc,g_bac,g,g_leg, ncol = 2, hjust = "hv", 
+          labels = c("A", "B", "C", ""),
+          label_x = 0.1)
 dev.off()
 
 
@@ -1309,7 +1474,7 @@ dev.off
 
 #### _Compare BC ####
 # Let's dig into the archaeal, bacterial, fungal communities a bit more
-# How does Bray-Curtis dissimilarity compare for within or between sample type comparisons
+# How does Bray-Curtis dissimilarity compare for within or between sample type comparisons?
 # Note, the length of the long dataframe should equal (n*(n-1))/2
 
 
@@ -1393,11 +1558,15 @@ bac_bray_df_long$taxon <- "Bacteria"
 arc_bray_df_long$taxon <- "Archaea"
 combined <- rbind(fun_bray_df_long, bac_bray_df_long, arc_bray_df_long)
 combined$taxcomp <- paste(combined$taxon, combined$comparison, sep = "_")
+hist(combined$value)
 leveneTest(value ~ taxcomp, data = combined)
 m <- aov(value ~ taxcomp, data = combined)
 summary(m)
 TukeyHSD(m)
 shapiro.test(m$residuals[1:5000])
+plot(m$fitted.values, m$residuals)
+m <- aov(value ~ taxon + comparison, data = combined)
+Anova(m, type = "II")
 kruskal.test(value ~ taxcomp, data = combined)
 kwAllPairsNemenyiTest(combined$value, as.factor(combined$taxcomp))
 
@@ -1410,6 +1579,10 @@ label.df <- data.frame(taxon = c("Fungi", "Fungi",
                                       "between","within"),
                        Value = c(1.05,1.05,1.05,1.05,1.05,1.05),
                        Sig = c("e","f","c","d","a","b"))
+label.B <- data.frame(taxon = c("Archaea"),
+                       comparison = c("between"),
+                       Value = c(1.05),
+                       Sig = c("B"))
 ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
   geom_jitter(size = 0.5, alpha = 0.01) +
   geom_boxplot(aes(comparison, value), outlier.shape = NA, color = "black", 
@@ -1498,22 +1671,23 @@ g1 <- ggdraw(p_arc)
 g2 <- ggdraw(p_bac)
 g3 <- ggdraw(p_fun)
 
-png("FigsUpdated/CompareBrayCurtis_wDensity.png", width = 9, height = 3, units = "in", res = 300)
 plot_grid(g1, g2, g3,
           ncol = 3,
           labels = c("a) Archaea", "b) Bacteria", "c) Fungi"),
           rel_widths = c(0.4, 0.3, 0.3))
-dev.off()
 
 # Best option is probably violin plot!
 png("FigsUpdated/CompareBrayCurtis_genus.png", width = 7, height = 3, units = "in", res = 300)
-ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
+f3b <- ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
   #geom_jitter(size = 0.5, alpha = 0.01, aes(colour = taxcomp)) + # don't show, too many
   geom_violin() +
   geom_boxplot(width = 0.1, outlier.shape = NA) +
   stat_summary(fun.y = mean, geom = "point", shape = 23, size = 2) +
   geom_text(data = label.df, aes(x = comparison, y = Value, label = Sig, group = NULL),
             inherit.aes = F) +
+  geom_text(data = label.B,
+            aes(x = -Inf, y = Inf, label = Sig, group = NULL, hjust = -0.5, vjust = 2, fontface = "bold"), 
+            check_overlap = T, size = 5, inherit.aes = F) +
   scale_colour_manual(values = brewer.pal(6, "Paired")[1:6]) +
   labs(x = "Environment comparison",
        y = "Bray-Curtis dissimilarity") +
@@ -1521,9 +1695,50 @@ ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
   ylim(0,1.05) +
   theme_bw() +
   theme(plot.margin = unit(c(0.1,0.1,0.1,0.1),"cm"),
-        legend.position = "none")
+        legend.position = "none",
+        panel.grid = element_blank(),
+        strip.background = element_rect(fill = "white"))
+f3b
 dev.off()
 
+
+
+# Make multipanel Figure 3
+# Get fungal PCoA, genus level, no title, but A label
+# Remake first one with fungi title
+input_fungi_CPM_nz$map_loaded$Axis01 <- scores(pcoa)[,1]
+input_fungi_CPM_nz$map_loaded$Axis02 <- scores(pcoa)[,2]
+micro.hulls <- ddply(input_fungi_CPM_nz$map_loaded, c("Environment"), find_hull)
+g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
+  #geom_polygon(data = micro.hulls, 
+  #             aes(colour = Environment, fill = Environment),
+  #             alpha = 0.1, show.legend = F, size = 0.25) +
+  geom_point(size = 2, alpha = 0.5, aes(colour = Environment),
+             show.legend = T) +
+  geom_text(aes(x = -Inf, y = Inf, label = "A", hjust = -0.5, vjust = 2, fontface = "bold"),
+            size = 5, check_overlap = T) +
+  labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
+       y = paste("PC2: ", pcoaA2, "%", sep = "")) +
+  guides(colour = guide_legend(override.aes = list(alpha = 1))) +
+  theme_bw() +  
+  theme(legend.position = "right",
+        axis.title = element_text(size = 12), 
+        axis.text = element_text(size = 10),
+        plot.title = element_text(hjust = 0.5, vjust = -1),
+        panel.grid = element_blank())
+g
+
+f3 <- plot_grid(g, f3b, ncol = 1, rel_heights = c(0.5, 0.5))
+f3
+
+png("FinalFigs/Figure3.png", width = 7, height = 6, units = "in", res = 300)
+f3
+dev.off()
+
+combined %>%
+  group_by(taxon, comparison) %>%
+  summarise(mean = mean(value),
+            se = se(value))
 
 
 #### __Phylum ####
@@ -2012,7 +2227,7 @@ df[[28]]$map_loaded$Location <- "Garden Lake, Australia\n(n = 117)"
 df[[30]]$map_loaded$Location <- "Eisfeld solar saltern, Namibia\n(n = 7)"
 
 
-# Phyla
+#### __Phyla ####
 for (i in 1:nrow(studies)) {
   phy[[i]] <- summarize_taxonomy(df[[i]], level = 2, report_higher_tax = F, relative = T)
 }
@@ -2071,12 +2286,66 @@ pies <- plot_grid(p[[1]], p[[2]], p[[3]], p[[4]],
                   ncol = 4)
 pies
 
+# Add labels
+l1 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
+  geom_text(aes(label = "Acid mine\ndrainage", angle = 90, fontface = "bold"), size = 2.5) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
+l2 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
+  geom_text(aes(label = "Cryosphere\nsoil", angle = 90, fontface = "bold"), size = 2.5) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
+l3 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
+  geom_text(aes(label = "Cryosphere\nwater", angle = 90, fontface = "bold"), size = 2.5) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
+l4 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
+  geom_text(aes(label = "Desert", angle = 90, fontface = "bold"), size = 2.5) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
+l5 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
+  geom_text(aes(label = "Glacial\nforefield", angle = 90, fontface = "bold"), size = 2.5) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
+l6 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
+  geom_text(aes(label = "Hot\nspring", angle = 90, fontface = "bold"), size = 2.5) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
+l7 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
+  geom_text(aes(label = "Hydrothermal\nvent", angle = 90, fontface = "bold"), size = 2.5) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
+l8 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
+  geom_text(aes(label = "Hypersaline", angle = 90, fontface = "bold"), size = 2.5) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
+l9 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
+  geom_text(aes(label = "Soda lake", angle = 90, fontface = "bold"), size = 2.5) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
+
+# Remake
+pies <- plot_grid(l1, p[[1]], p[[2]], p[[3]], p[[4]],
+                  l2, p[[5]], p[[6]], p[[7]], p[[8]],
+                  l3, p[[9]], p[[10]], p[[11]], NULL,
+                  l4, p[[12]], p[[13]], p[[14]], p[[15]],
+                  l5, p[[16]], p[[17]], p[[18]], p[[19]],
+                  l6, p[[20]], p[[21]], p[[22]], p[[23]],
+                  l7, p[[24]], p[[25]], p[[26]], p[[27]],
+                  l8, p[[28]], p[[29]], p[[30]], p[[31]],
+                  l9, p[[32]], p[[33]], p[[34]], p[[35]],
+                  ncol = 5,
+                  rel_widths = c(0.04, 0.24, 0.24, 0.24, 0.24))
+pies
+
 # Add legend
 pdf("FigsUpdated/Pies_Phyla.pdf", width = 9, height = 7)
 plot_grid(pies, pie_leg, rel_widths = c(4, 1))
 dev.off()
 
-# Now do at class level
+
+
+#### __Class ####
 cla <- list()
 c_colors <- list()
 c <- list()
@@ -2127,20 +2396,26 @@ c_forleg
 pie_leg_c <- get_legend(c_forleg)
 
 # Make huge multipanel
-pies_c <- plot_grid(c[[1]], c[[2]], c[[3]], c[[4]],
-                    c[[5]], c[[6]], c[[7]], c[[8]],
-                    c[[9]], c[[10]], c[[11]], NULL,
-                    c[[12]], c[[13]], c[[14]], c[[15]],
-                    c[[16]], c[[17]], c[[18]], c[[19]],
-                    c[[20]], c[[21]], c[[22]], c[[23]],
-                    c[[24]], c[[25]], c[[26]], c[[27]],
-                    c[[28]], c[[29]], c[[30]], c[[31]],
-                    c[[32]], c[[33]], c[[34]], c[[35]],
-                    ncol = 4)
+pies_c <- plot_grid(l1, c[[1]], c[[2]], c[[3]], c[[4]],
+                    l2, c[[5]], c[[6]], c[[7]], c[[8]],
+                    l3, c[[9]], c[[10]], c[[11]], NULL,
+                    l4, c[[12]], c[[13]], c[[14]], c[[15]],
+                    l5, c[[16]], c[[17]], c[[18]], c[[19]],
+                    l6, c[[20]], c[[21]], c[[22]], c[[23]],
+                    l7, c[[24]], c[[25]], c[[26]], c[[27]],
+                    l8, c[[28]], c[[29]], c[[30]], c[[31]],
+                    l9, c[[32]], c[[33]], c[[34]], c[[35]],
+                    ncol = 5,
+                    rel_widths = c(0.04, 0.24, 0.24, 0.24, 0.24))
 pies_c
 
 # Add legend
 pdf("FigsUpdated/Pies_Classes.pdf", width = 9, height = 7)
+plot_grid(pies_c, pie_leg_c, rel_widths = c(4, 1))
+dev.off()
+
+# Figure 4
+png("FinalFigs/Figure4.png", width = 9, height = 7, units = "in", res = 300)
 plot_grid(pies_c, pie_leg_c, rel_widths = c(4, 1))
 dev.off()
 
@@ -2277,11 +2552,16 @@ input_fungi$map_loaded$shannon <- diversity(input_fungi$data_loaded,
                                             MARGIN = 2)
 
 # Stats and graphs
+hist(input_fungi$map_loaded$rich)
+hist(log(input_fungi$map_loaded$rich + 1))
 leveneTest(input_fungi$map_loaded$rich ~ input_fungi$map_loaded$Environment) # Bad
 m3 <- aov(rich ~ Environment, data = input_fungi$map_loaded)
 summary(m3)
 TukeyHSD(m3)
 shapiro.test(m3$residuals) # Bad
+hist(m3$residuals) # Could argue it approximates normal
+plot(m3$fitted.values, m3$residuals)
+plot(m3)
 kruskal.test(rich ~ Environment, data = input_fungi$map_loaded)
 nyi3 <- kwAllPairsNemenyiTest(rich ~ Environment, data = input_fungi$map_loaded)
 nyi_table3 <- fullPTable(nyi3$p.value)
@@ -2293,11 +2573,14 @@ nyi_let3 <- as.data.frame(nyi_list3$Letters) %>%
   dplyr::select(-`nyi_list3$Letters`) %>%
   rownames_to_column(var = "Environment")
 
+hist(input_fungi$map_loaded$shannon)
+hist(log(input_fungi$map_loaded$shannon + 1))
 leveneTest(input_fungi$map_loaded$shannon ~ input_fungi$map_loaded$Environment) # Bad
 m4 <- aov(shannon ~ Environment, data = input_fungi$map_loaded)
 shapiro.test(m4$residuals) # Bad
 summary(m4)
 TukeyHSD(m4)
+kruskal.test(shannon ~ Environment, data = input_fungi$map_loaded)
 nyi4 <- kwAllPairsNemenyiTest(shannon ~ Environment, data = input_fungi$map_loaded)
 nyi_table4 <- fullPTable(nyi4$p.value)
 nyi_list4 <- multcompLetters(nyi_table4)
@@ -2308,15 +2591,37 @@ nyi_let4 <- as.data.frame(nyi_list4$Letters) %>%
   dplyr::select(-`nyi_list4$Letters`) %>%
   rownames_to_column(var = "Environment")
 
-label_df <- rbind(nyi_let3, nyi_let4)
+label_df <- rbind(nyi_let3, nyi_let4) %>%
+  mutate(Environment = factor(Environment,
+                              levels = c("Acid mine drainage",
+                                         "Hypersaline",
+                                         "Glacial forefield",
+                                         "Hydrothermal vent",
+                                         "Hot spring",
+                                         "Cryosphere - soil",
+                                         "Soda lake",
+                                         "Desert",
+                                         "Cryosphere - water")))
 facet_df <- c("rich" = "(a) Genus richness",
               "shannon" = "(b) Genus Shannon")
 alpha_long <- input_fungi$map_loaded %>%
-  pivot_longer(cols = c("rich", "shannon"))
+  pivot_longer(cols = c("rich", "shannon")) %>%
+  mutate(Environment = factor(Environment,
+                              levels = c("Acid mine drainage",
+                                         "Hypersaline",
+                                         "Glacial forefield",
+                                         "Hydrothermal vent",
+                                         "Hot spring",
+                                         "Cryosphere - soil",
+                                         "Soda lake",
+                                         "Desert",
+                                         "Cryosphere - water")))
 pdf("FigsUpdated/AlphaDiversity.pdf", width = 6, height = 3)
-ggplot(alpha_long, aes(reorder(Environment, value, mean), value)) +
+f2 <- ggplot(alpha_long, aes(Environment, value)) +
   geom_boxplot(outlier.shape = NA) +
+  #geom_violin() +
   geom_jitter(size = 0.5, alpha = 0.2, width = 0.3) +
+  stat_summary(fun.y = mean, geom = "point", shape = 23, size = 3, colour = "red") +
   geom_text(data = label_df, aes(Environment, y, label = label), 
             size = 4, color = "black") +
   labs(x = NULL, y = NULL) +
@@ -2326,7 +2631,15 @@ ggplot(alpha_long, aes(reorder(Environment, value, mean), value)) +
         axis.title = element_blank(),
         axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 8, angle = 45, hjust = 1),
-        strip.text = element_text(size = 10))
+        strip.text = element_text(size = 10),
+        panel.grid = element_blank(),
+        strip.background = element_rect(fill = "white"),
+        plot.margin = margin(1, 1, 1, 15))
+f2
+dev.off()
+
+png("FinalFigs/Figure2.png", width = 6, height = 3, units = "in", res = 300)
+f2
 dev.off()
 
 
@@ -2386,12 +2699,20 @@ mp_family <- multipatt(t(tax_sum_family),
                       input_fungi_CPM$map_loaded$Environment, 
                       func = "r.g", 
                       control = how(nperm=999))
-summary(mp_family) # Acid mine 3, cryo soil 13, soda lake 36, 
+summary(mp_family) # 110 to 1 group: Acid mine 3, cryo soil 42, desert 2, GF 1, soda lake 62, 
 pdf("FigsUpdated/mp_Family.pdf", width = 5, height = 10)
 plot_multipatt(mp_obj = mp_family, 
                input = input_fungi_CPM,
                tax_sum = tax_sum_family,
                group = "Environment")
+dev.off()
+
+# Figure S4
+png("FinalFigs/FigureS4.png", width = 5, height = 10, units = "in", res = 300)
+plot_multipatt_fungal(mp_obj = mp_family, 
+                      input = input_fungi_CPM,
+                      tax_sum = tax_sum_family,
+                      group = "Environment")
 dev.off()
 
 # Genus
@@ -2554,10 +2875,12 @@ ko_meta <- readRDS("ko_meta.rds")
 
 
 #### _KO Alpha ####
+hist(ko_meta$richness_KO)
 leveneTest(richness_KO ~ Environment, data = ko_meta) # Bad
 m5 <- aov(richness_KO ~ Environment, data = ko_meta)
 summary(m5)
 shapiro.test(m5$residuals) # Bad
+plot(m5$fitted.values, m5$residuals)
 TukeyHSD(m5)
 kruskal.test(richness_KO ~ Environment, data = ko_meta)
 nyi5 <- kwAllPairsNemenyiTest(richness_KO ~ Environment, data = ko_meta)
@@ -2570,10 +2893,12 @@ nyi_let5 <- as.data.frame(nyi_list5$Letters) %>%
   dplyr::select(-`nyi_list5$Letters`) %>%
   rownames_to_column(var = "Environment")
 
+hist(ko_meta$shannon_KO)
 leveneTest(shannon_KO ~ Environment, data = ko_meta) # Bad
 m6 <- aov(shannon_KO ~ Environment, data = ko_meta)
 summary(m6)
 shapiro.test(m6$residuals) # Bad
+plot(m6$fitted.values, m6$residuals)
 TukeyHSD(m6)
 kruskal.test(shannon_KO ~ Environment, data = ko_meta)
 nyi6 <- kwAllPairsNemenyiTest(shannon_KO ~ Environment, data = ko_meta)
@@ -2606,6 +2931,11 @@ ggplot(alpha_long_ko, aes(reorder(Environment, value, mean), value)) +
         axis.text.x = element_text(size = 8, angle = 45, hjust = 1),
         strip.text = element_text(size = 10))
 dev.off()
+
+min(ko_meta$richness_KO)
+max(ko_meta$richness_KO)
+mean(ko_meta$richness_KO)
+se(ko_meta$richness_KO)
 
 
 
@@ -2669,6 +2999,28 @@ plot(ko_richness$index, ko_richness$richness_KO)
 sum(ko_richness$richness_KO == 1) # 51 with just 1 KO
 sum(ko_richness$richness_KO == 2) # 42 with just 2 KOs
 sum(ko_richness$richness_KO == 3) # 43 with just 3 KOs
+
+# Check relationships with genome size and fungal count and genus richness
+plot(ko_meta$GenomeSize, ko_meta$richness_KO)
+summary(lm(richness_KO ~ GenomeSize, data = ko_meta))
+cor.test(ko_meta$GenomeSize, ko_meta$richness_KO, method = "pearson")
+
+plot(ko_meta$fung_count, ko_meta$richness_KO)
+pdf("FigsUpdated/KO_richness_total.pdf", width = 7, height = 5)
+ggplot(ko_meta, aes(fung_count, richness_KO)) +
+  geom_point(size = 3, alpha = 0.5) +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2)) +
+  labs(x = "Total number of fungal metagenomic reads",
+       y = "KO richness") +
+  theme_classic()
+dev.off()
+summary(lm(richness_KO ~ fung_count, data = ko_meta))
+summary(lm(richness_KO ~ poly(fung_count, 2, raw = TRUE), data = ko_meta))
+cor.test(ko_meta$fung_count, ko_meta$richness_KO, method = "pearson")
+
+plot(ko_meta$rich, ko_meta$richness_KO)
+# Very weird! does this have to do with euk gene calling issues? 
+# Does the 100-200 genus assigned scaffold range cause issues?
 
 # Need to find good cutoff with some KOs and still high sample size
 sum(ko_richness$richness_KO > 10) # 535 with > 10
@@ -2815,6 +3167,8 @@ pcoaA1 <- round((eigenvals(pcoa_ko)/sum(eigenvals(pcoa_ko)))[1]*100, digits = 1)
 pcoaA2 <- round((eigenvals(pcoa_ko)/sum(eigenvals(pcoa_ko)))[2]*100, digits = 1)
 ko_meta_filt$Axis01 <- scores(pcoa_ko)[,1]
 ko_meta_filt$Axis02 <- scores(pcoa_ko)[,2]
+range(ko_meta_filt$Axis01)
+range(ko_meta_filt$Axis02)
 micro.hulls <- ddply(ko_meta_filt, c("Environment"), find_hull)
 g5_ko <- ggplot(ko_meta_filt, aes(Axis01, Axis02, colour = Environment)) +
   geom_polygon(data = micro.hulls, aes(colour = Environment, fill = Environment),
@@ -2826,12 +3180,16 @@ g5_ko <- ggplot(ko_meta_filt, aes(Axis01, Axis02, colour = Environment)) +
        colour = "Environment",
        size = "Number of KOs",
        title = "KO Bray-Curtis") +
+  scale_colour_manual(values = c(hue_pal()(9)[1:5], hue_pal()(9)[7:9])) +
+  xlim(-0.2, 0.29) +
+  ylim(-0.3, 0.12) +
   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
   theme_bw() +
   theme(legend.position = "right",
-        axis.title = element_text(face = "bold", size = 14), 
-        axis.text = element_text(size = 12),
-        plot.title = element_text(vjust = 0))
+        axis.title = element_text(size = 12), 
+        axis.text = element_text(size = 10),
+        plot.title = element_text(vjust = 0),
+        panel.grid = element_blank())
 g5_ko
 ko_pcoa_leg <- get_legend(g5_ko)
 g5_ko <- g5_ko +
@@ -2843,27 +3201,43 @@ pcoa1A1 <- round((eigenvals(pcoa1_ko)/sum(eigenvals(pcoa1_ko)))[1]*100, digits =
 pcoa1A2 <- round((eigenvals(pcoa1_ko)/sum(eigenvals(pcoa1_ko)))[2]*100, digits = 1)
 ko_meta_filt$Axis01j <- scores(pcoa1_ko)[,1]
 ko_meta_filt$Axis02j <- scores(pcoa1_ko)[,2]
+range(ko_meta_filt$Axis01j)
+range(ko_meta_filt$Axis02j)
 micro.hullsj <- ddply(ko_meta_filt, c("Environment"), find_hullj)
 g6_ko <- ggplot(ko_meta_filt, aes(Axis01j, Axis02j, colour = Environment)) +
   geom_polygon(data = micro.hullsj, aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F) +
   geom_point(aes(size = richness_KO), alpha = 0.5) +
   scale_size(range = c(1, 10)) +
-  labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
-       y = paste("PC2: ", pcoaA2, "%", sep = ""),
+  labs(x = paste("PC1: ", pcoa1A1, "%", sep = ""), 
+       y = paste("PC2: ", pcoa1A2, "%", sep = ""),
        colour = "Environment",
        size = "Number of KOs",
        title = "KO Jaccard") +
+  scale_colour_manual(values = c(hue_pal()(9)[1:5], hue_pal()(9)[7:9])) +
+  xlim(-0.2, 0.29) +
+  ylim(-0.3, 0.12) +
   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
   theme_bw() +  
   theme(legend.position = "none",
-        axis.title = element_text(face = "bold", size = 14), 
-        axis.text = element_text(size = 12),
-        plot.title = element_text(vjust = 0))
+        axis.title = element_text(size = 12), 
+        axis.text = element_text(size = 10),
+        plot.title = element_text(vjust = 0),
+        panel.grid = element_blank())
 g6_ko
 
 pdf("FigsUpdated/KO_PCoA_min750KOs.pdf", width = 8.5, height = 5)
 plot_grid(g5_ko, g6_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1.1))
+dev.off()
+
+pdf("FigsUpdated/KO_PCoA_min750KOs.pdf", width = 8.5, height = 5)
+plot_grid(g5_ko, g6_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1.1),
+          labels = c("A", "B"))
+dev.off()
+
+png("FinalFigs/Figure5.png", width = 8.5, height = 5, units = "in", res = 300)
+plot_grid(g5_ko, g6_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1.1),
+          labels = c("A", "B"))
 dev.off()
 
 # Also do with the same subset of the data as taxonomy (20 samples from each env)
@@ -2932,14 +3306,15 @@ dev.off()
 
 #### __Stats ####
 # Rerun whichever richness filter you want, then run this
+# 750
 bc_ko <- vegdist(ko_comm_DESeq_filt, method = "bray")
 jac_ko <- vegdist(ko_comm_DESeq_filt, method = "jaccard")
 set.seed(308)
-adonis2(bc_ko ~ Environment, data = ko_meta_filt) # R2 = 0.25, p = 0.001
+adonis2(bc_ko ~ Environment, data = ko_meta_filt) # R2 = 0.35, p = 0.001
 anova(betadisper(bc_ko, ko_meta_filt$Environment)) # Dispersion not homogeneous
 
 set.seed(308)
-adonis2(jac_ko ~ ko_meta_filt$Environment) # R2 = 0.23, p = 0.001
+adonis2(jac_ko ~ ko_meta_filt$Environment) # R2 = 0.32, p = 0.001
 anova(betadisper(jac_ko, ko_meta_filt$Environment)) # Dispersion not homogeneous
 
 # Subset 20 (rerun that section first)
@@ -3124,6 +3499,10 @@ stress_genes <- read.csv("stress_genes_wDef.csv") %>%
   filter(!duplicated(KO))
 # Note 158 of 208 KOs are in the dataset
 # Note 2 were duplicates. So there are 157 KOs
+not_present <- read.csv("stress_genes_wDef.csv") %>%
+  filter(KO %notin% colnames(ko_comm_DESeq)) %>%
+  filter(!duplicated(KO))
+#write.csv(not_present, file = "stress_genes_not_present.csv", row.names = F)
 
 # Data frame
 gene_plot <- ko_comm_DESeq %>%
@@ -3205,7 +3584,7 @@ sum(rownames(ko_meta_sorted) != rownames(ko_comm_DESeq_sorted))
 # Sort by stress
 stress_genes_sorted <- stress_genes %>%
   arrange(Stress)
-write.csv(stress_genes_sorted, "stress_genes_sorted_5.19.23.csv")
+#write.csv(stress_genes_sorted, "stress_genes_sorted_5.19.23.csv")
 stress_genes_sorted$KOsymb <- paste(stress_genes_sorted$KO, stress_genes_sorted$Symbol, sep = "; ")
 
 gene_hm <- ko_comm_DESeq_sorted %>%
@@ -3339,6 +3718,26 @@ save_pheatmap_pdf <- function(x, filename, width = 7, height = 12) {
 }
 save_pheatmap_pdf(phm1, "FigsUpdated/KO_heatmap_Stress.pdf")
 
+# Figure 6
+pheatmap(gene_hm_summary,
+         color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdBu")))(100),
+         legend = T,
+         legend_breaks = c(-2, -1, 0, 1, 2, 2.65),
+         legend_labels = c("-2", "-1", "0", "1", "2", "Abund."),
+         border_color = NA,
+         scale = "row",
+         show_colnames = T,
+         angle_col = 315,
+         cluster_rows = F,
+         cluster_cols = T,
+         fontsize_row = 4,
+         annotation_row = ann_rows,
+         annotation_colors = ann_colors,
+         file = "FinalFigs/Figure6.png",
+         height = 12,
+         width = 7)
+
+# Explore clustering by rows too
 phm2 <- pheatmap(gene_hm_summary,
                  color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdBu")))(100),
                  legend = T,
@@ -3367,7 +3766,7 @@ nrow(input$map_loaded)
 input$map_loaded$Latitude <- as.numeric(input$map_loaded$Latitude)
 input$map_loaded$Longitude <- as.numeric(input$map_loaded$Longitude)
 
-# 21 missing
+# 19 missing
 pdf("FigsUpdated/SampleMap.pdf", width = 8, height = 5)
 ggplot() +
   geom_map(data = world, map = world,
@@ -3384,6 +3783,22 @@ ggplot() +
         panel.grid.minor = element_blank())
 dev.off()
 
+# Figure S1
+png("FinalFigs/FigureS1.png", width = 8, height = 5, units = "in", res = 300)
+ggplot() +
+  geom_map(data = world, map = world,
+           aes(long, lat, map_id = region),
+           color = "white", fill = "lightgray", size = 0.1) +
+  geom_point(data = input$map_loaded, aes(x = Longitude, y = Latitude,
+                                          colour = Environment),
+             size = 1, alpha = 0.5) +
+  theme_void() +
+  labs(x = NULL,
+       y = NULL) +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2))) +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank())
+dev.off()
 
 
 #### End Script ####
