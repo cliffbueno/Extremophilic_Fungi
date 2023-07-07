@@ -3504,6 +3504,11 @@ not_present <- read.csv("stress_genes_wDef.csv") %>%
   filter(!duplicated(KO))
 #write.csv(not_present, file = "stress_genes_not_present.csv", row.names = F)
 
+# Updated file annotated by Lara
+# From 157, filtered to 56
+stress_genes <- read.csv("stress_genes_sorted_5.19.23_LV.csv") %>%
+  filter(Notes == "ok")
+
 # Data frame
 gene_plot <- ko_comm_DESeq %>%
   dplyr::select(stress_genes$KO) %>%
@@ -3532,7 +3537,7 @@ kruskal_results_genes <- kruskal_results_genes %>%
 # Barplot
 table(ko_meta$Environment)
 gene_plot_long <- gene_plot %>%
-  pivot_longer(names(gene_plot)[1:157], 
+  pivot_longer(names(gene_plot)[1:nrow(stress_genes)], 
                names_to = "Gene", values_to = "Abundance") %>%
   mutate(Gene = as.factor(Gene)) %>%
   droplevels() %>%
@@ -3645,7 +3650,7 @@ gene_plot_sorted <- ko_comm_DESeq_sorted %>%
   mutate("Environment" = ko_meta_sorted$Environment)
 
 gene_plot_long_sorted <- gene_plot_sorted %>%
-  pivot_longer(names(gene_plot)[1:157], 
+  pivot_longer(names(gene_plot)[1:nrow(stress_genes)], 
                names_to = "Gene", values_to = "Abundance") %>%
   mutate(Environment = dplyr::recode_factor(Environment,
                                             "Acid mine drainage" = "Acid mine drainage (n = 33)",
@@ -3676,23 +3681,14 @@ rownames(gene_hm_summary) <- stress_genes_sorted$KOsymb
 
 ann_rows <- data.frame(row.names = rownames(gene_hm_summary), 
                        Stress = stress_genes_sorted$Stress)
-ann_colors <- list(Stress = c("Alkaline pH" = viridis_pal()(17)[1],
-                              "Cellular" = viridis_pal()(17)[2],
-                              "Chlorine" = viridis_pal()(17)[3],
-                              "Cold" = viridis_pal()(17)[4],
-                              "Environmental" = viridis_pal()(17)[5],
-                              "Environmental-Oxidative" = viridis_pal()(17)[6],
-                              "General" = viridis_pal()(17)[7],
-                              "Granule" = viridis_pal()(17)[8],
-                              "Heat" = viridis_pal()(17)[9],
-                              "Heat-Osmotic" = viridis_pal()(17)[10],
-                              "High pH" = viridis_pal()(17)[11],
-                              "Metal resistance-Zn" = viridis_pal()(17)[12],
-                              "Osmotic" = viridis_pal()(17)[13],
-                              "Osmotic, Low pH" = viridis_pal()(17)[14],
-                              "Oxidative" = viridis_pal()(17)[15],
-                              "pH" = viridis_pal()(17)[16],
-                              "Starvation" = viridis_pal()(17)[17]))
+# Shortened list
+ann_colors <- list(Stress = c("Cellular" = viridis_pal()(7)[1],
+                              "Cold" = viridis_pal()(7)[2],
+                              "General" = viridis_pal()(7)[3],
+                              "Heat" = viridis_pal()(7)[4],
+                              "Osmotic" = viridis_pal()(7)[5],
+                              "Osmotic, Low pH" = viridis_pal()(7)[6],
+                              "Oxidative" = viridis_pal()(7)[7]))
 
 phm1 <- pheatmap(gene_hm_summary,
                  color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdBu")))(100),
@@ -3706,7 +3702,8 @@ phm1 <- pheatmap(gene_hm_summary,
                  cluster_rows = F,
                  cluster_cols = T,
                  method = "ward.D2",
-                 fontsize_row = 4,
+                 fontsize_row = 5,
+                 gaps_row = c(1, 13, 23, 27, 37, 38),
                  annotation_row = ann_rows,
                  annotation_colors = ann_colors)
 save_pheatmap_pdf <- function(x, filename, width = 7, height = 12) {
@@ -3717,7 +3714,7 @@ save_pheatmap_pdf <- function(x, filename, width = 7, height = 12) {
   grid::grid.draw(x$gtable)
   dev.off()
 }
-save_pheatmap_pdf(phm1, "FigsUpdated/KO_heatmap_Stress.pdf")
+save_pheatmap_pdf(phm1, "FigsUpdated/KO_heatmap_Stress_filtered.pdf")
 
 # Figure 6
 pheatmap(gene_hm_summary,
