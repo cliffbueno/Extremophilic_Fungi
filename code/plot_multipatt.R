@@ -194,7 +194,7 @@ plot_multipatt <- function(mp_obj, input, tax_sum, group, filter, filter_vals, a
   plot_grid(top, input.l, nrow = 2, rel_heights = c(0.90, 0.10))
 }
 
-plot_multipatt_fungal <- function(mp_obj, input, tax_sum, group) {
+plot_multipatt_fungal <- function(mp_obj, input, tax_sum, group, qcut, rcut) {
   
   # Make results dataframe
   mp_obj_results <- mp_obj$sign %>%
@@ -202,6 +202,8 @@ plot_multipatt_fungal <- function(mp_obj, input, tax_sum, group) {
            Group = "NA",
            taxon = rownames(mp_obj$sign),
            num_groups = rowSums(mp_obj$sign[,1:(ncol(mp_obj$sign)-3)])) %>%
+    filter(q.value < qcut) %>%
+    filter(stat > rcut) %>%
     filter(num_groups == 1)
   
   # Make group variable and assign values
