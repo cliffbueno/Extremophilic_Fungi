@@ -186,12 +186,12 @@ metadata_final_use <- rbind(metadata_updated, metadata_cryo9) %>%
 nrow(metadata_final_use) # N.B.! n = 932 after Lara's review
 
 # write
-write.table(metadata_final_use, 
-            file = "data/metadata_final_use.txt", 
-            sep = "\t",
-            row.names = F)
+# write.table(metadata_final_use, 
+#             file = "data/metadata_final_use.txt", 
+#             sep = "\t",
+#             row.names = F)
 
-# Import
+#### _Import - Start Here ####
 tax_table_fp <- file.path("data/genus_table_mctoolsr_final.txt")
 map_fp <- file.path("data/metadata_final_use.txt")
 input = load_taxa_table(tax_table_fp, map_fp) # 932
@@ -253,7 +253,7 @@ input <- filter_taxa_from_input(input,
 
 #write_xlsx(input$map_loaded, "data/TableS1.xlsx", format_headers = F)
 
-# Check sequencing depth 
+# Check sequencing depth (# fungal assigned genes)
 sort(colSums(input$data_loaded))
 mean(colSums(input$data_loaded)) # 361621.3
 se(colSums(input$data_loaded)) # 19512.22
@@ -309,13 +309,13 @@ gs <- ggplot(input$map_loaded, aes(reorder(`Environment`, Fungi, median), Genome
 max(input$map_loaded$GenomeSize)
 min(input$map_loaded$GenomeSize)
 
-# Size vs genus reads
+# Size vs genus reads (actually genus genes)
 pdf("FigsUpdated2/AssembledMetagenomeSizes_AllGenusReads.pdf", width = 7, height = 5)
 ggplot(input$map_loaded, aes(GenomeSize, count)) +
   geom_point(size = 1.5, alpha = 0.25) +
   geom_smooth(method = "lm") +
   labs(x = "Assembled genome size", 
-       y = "Assigned genus reads") +
+       y = "Assigned genus genes") +
   theme_bw() +
   theme(axis.title = element_text(size = 14, face = "bold"),
         axis.text = element_text(size = 10))
@@ -570,7 +570,7 @@ nrow(input$taxonomy_loaded) # 5943 total
 nrow(input_euk$taxonomy_loaded) # 439 euks
 nrow(input_fungi$taxonomy_loaded) # 326 fungi
 
-# Now check reads again
+# Now check reads again (not actually reads, but fungal assigned CDS counts)
 sort(colSums(input_fungi$data_loaded))
 # Note lots of samples with 0 or very few fungi
 # Purposefully not filtering those out those as 0's are interesting in this analysis
@@ -596,13 +596,13 @@ ggplot(input_fungi$map_loaded, aes(reorder(`Environment`, fung_count, mean), fun
         axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
 
-# Check genome size vs fungal genus reads
-pdf("FigsUpdated2/AssembledMetagenomeSizes_FungalGenusReads.pdf", width = 7, height = 5)
+# Check genome size vs fungal genus gene counts
+pdf("FigsUpdated2/AssembledMetagenomeSizes_FungalGenusGeneCount.pdf", width = 7, height = 5)
 ggplot(input_fungi$map_loaded, aes(GenomeSize, fung_count)) +
   geom_point(size = 1.5, alpha = 0.25) +
   geom_smooth(method = "lm") +
   labs(x = "Assembled genome size", 
-       y = "Assigned fungal genus reads") +
+       y = "Assigned fungal gene count") +
   theme_bw() +
   theme(axis.title = element_text(size = 14, face = "bold"),
         axis.text = element_text(size = 10))
@@ -659,6 +659,7 @@ ggplot(env_prev_long, aes(reorder(Environment, value, mean), value,
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
 dev.off()
 
+#### __ Figure 1 ####
 # Make multipanel Figure 1
 n <- ggplot(env_prev_long, aes(reorder(Environment, value, mean), value, 
                           group = Environment, fill = variable)) +
@@ -732,7 +733,10 @@ ntax <- 15
 mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(ntax)
 
 # Phyla
-tax_sum_Phyla <- summarize_taxonomy(input_fungi_CPM, level = 2, report_higher_tax = F, relative = F)
+tax_sum_Phyla <- summarize_taxonomy(input_fungi_CPM, 
+                                    level = 2, 
+                                    report_higher_tax = F, 
+                                    relative = F)
 barsPhyla <- plot_taxa_bars(tax_sum_Phyla,
                             input_fungi_CPM$map_loaded,
                             type_header = "Environment",
@@ -2324,8 +2328,8 @@ length(levels(env[[2]]$map_loaded$`Study.Name2`)) # 9 Cryo soil
 length(levels(env[[3]]$map_loaded$`Study.Name2`)) # 8 Cryo water
 length(levels(env[[4]]$map_loaded$`Study.Name2`)) # 5 Desert
 length(levels(env[[5]]$map_loaded$`Study.Name2`)) # 5 Glacial forefield
-length(levels(env[[6]]$map_loaded$`Study.Name2`)) # 24 Hot spring
-length(levels(env[[7]]$map_loaded$`Study.Name2`)) # 18 Hydro
+length(levels(env[[6]]$map_loaded$`Study.Name2`)) # 18 Hot spring
+length(levels(env[[7]]$map_loaded$`Study.Name2`)) # 39 Hydro
 length(levels(env[[8]]$map_loaded$`Study.Name2`)) # 17 Hypersaline
 length(levels(env[[9]]$map_loaded$`Study.Name2`)) # 2 Soda Lake
 
@@ -2368,8 +2372,19 @@ for (i in 1:length(df)) {
   df[[i]]$map_loaded$Location <- paste(loc_n$Location[i],"\n", "(n = ", loc_n$n[i], ")", sep = "")
 }
 # Manually update some long ones if needed
+df[[1]]$map_loaded$Location <- "USA: Iron Mountain, CA\n(n = 17)"
+df[[4]]$map_loaded$Location <- "USA: Akron, OH\n(n = 1)"
+df[[12]]$map_loaded$Location <- "Antarctica: Canada Glacier\n(n = 3)"
+df[[14]]$map_loaded$Location <- "USA: Jornada LTER, NM\n(n = 18)"
+df[[16]]$map_loaded$Location <- "USA: Green Butte, UT\n(n = 7)"
+df[[17]]$map_loaded$Location <- "Russell Glacier, Greenland\n(n = 24)"
+df[[18]]$map_loaded$Location <- "Midre Lovenbreen, Norway\n(n = 12)"
+df[[19]]$map_loaded$Location <- "Storglaciaren, Sweden\n(n = 8)"
+df[[20]]$map_loaded$Location <- "Rabots glacier, Sweden\n(n = 4)"
+df[[28]]$map_loaded$Location <- "Anemone Vent, Axial Seamount\n(n = 12)"
 df[[29]]$map_loaded$Location <- "Garden Lake, Australia\n(n = 117)"
 df[[30]]$map_loaded$Location <- "Eisfeld solar saltern, Namibia\n(n = 7)"
+
 
 
 #### __Phyla ####
@@ -2406,8 +2421,8 @@ for (i in 1:nrow(studies)) {
     theme_void() +
     ggtitle(t) +
     theme(legend.position = "none",
-          plot.title = element_text(size = 5, hjust = 0.5),
-          plot.margin = margin(0, 0, 0, 0, "pt"))
+          plot.title = element_text(size = 5, hjust = 0.5, vjust = -5),
+          plot.margin = margin(0, -50, -15, -50, "pt"))
 }
 
 # Get legend - use one with all 7 phyla
@@ -2511,7 +2526,7 @@ pies <- plot_grid(l1, p[[1]], p[[2]], p[[3]], p[[4]],
 pies
 
 # Add legend
-pdf("FigsUpdated2/Pies_Phyla.pdf", width = 9, height = 7)
+pdf("FigsUpdated2/Pies_Phyla.pdf", width = 8, height = 10)
 plot_grid(pies, pie_leg, rel_widths = c(4, 1))
 dev.off()
 
@@ -2553,8 +2568,8 @@ for (i in 1:nrow(studies)) {
     theme_void() +
     ggtitle(t) +
     theme(legend.position = "none",
-          plot.title = element_text(size = 5, hjust = 0.5),
-          plot.margin = margin(0, 0, 0, 0, "pt"))
+          plot.title = element_text(size = 5, hjust = 0.5, vjust = -5),
+          plot.margin = margin(0, -50, -15, -50, "pt"))
 }
 
 # Get legend - use one with all 37 classes
@@ -2568,7 +2583,8 @@ c_forleg <- plot_taxa_bars(cla[[9]], df[[9]]$map_loaded, "Study.Name2", 37) +
   ggtitle(t) +
   guides(fill = guide_legend(ncol = 1)) +
   theme(legend.position = "right",
-        legend.key.size = unit(0.25, "cm"),
+        legend.key.size = unit(0.5, "cm"),
+        legend.text = element_text(size = 10),
         plot.title = element_text(size = 10, hjust = 0.5, vjust = -15),
         plot.margin = margin(0,0,0,0, "pt"))
 c_forleg
@@ -2589,13 +2605,13 @@ pies_c <- plot_grid(l1, c[[1]], c[[2]], c[[3]], c[[4]],
 pies_c
 
 # Add legend
-pdf("FigsUpdated2/Pies_Classes.pdf", width = 9, height = 7)
-plot_grid(pies_c, pie_leg_c, rel_widths = c(4, 1))
+pdf("FigsUpdated2/Pies_Classes.pdf", width = 8, height = 10)
+plot_grid(pies_c, pie_leg_c, rel_widths = c(3.85, 1.15))
 dev.off()
 
 # Figure 4
-png("FinalFigs/Figure4.png", width = 9, height = 7, units = "in", res = 300)
-plot_grid(pies_c, pie_leg_c, rel_widths = c(4, 1))
+png("FinalFigs/Figure4.png", width = 8, height = 10, units = "in", res = 300)
+plot_grid(pies_c, pie_leg_c, rel_widths = c(3.85, 1.15))
 dev.off()
 
 
@@ -3189,6 +3205,8 @@ max(ko_meta$richness_KO)
 mean(ko_meta$richness_KO)
 se(ko_meta$richness_KO)
 ncol(ko_comm)
+ncol(ko_comm_DESeq)
+
 
 
 #### _KO Beta ####
@@ -3260,9 +3278,19 @@ cor.test(ko_meta$GenomeSize, ko_meta$richness_KO, method = "pearson")
 plot(ko_meta$fung_count, ko_meta$richness_KO)
 pdf("FigsUpdated2/KO_richness_total.pdf", width = 7, height = 5)
 ggplot(ko_meta, aes(fung_count, richness_KO)) +
+  geom_hline(yintercept = 750, linetype = "dashed") +
   geom_point(size = 3, alpha = 0.5) +
   geom_smooth(method = "lm", formula = y ~ x + I(x^2)) +
-  labs(x = "Total number of fungal metagenomic reads",
+  labs(x = "Number of fungal protein coding sequences",
+       y = "KO richness") +
+  theme_classic()
+dev.off()
+png("FigsUpdated2/KO_richness_total.png", width = 7, height = 5, units = "in", res = 300)
+ggplot(ko_meta, aes(fung_count, richness_KO)) +
+  geom_hline(yintercept = 750, linetype = "dashed") +
+  geom_point(size = 3, alpha = 0.5) +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2)) +
+  labs(x = "Number of fungal protein coding sequences",
        y = "KO richness") +
   theme_classic()
 dev.off()
@@ -3954,7 +3982,7 @@ phm1 <- pheatmap(gene_hm_summary,
                  cluster_rows = F,
                  cluster_cols = T,
                  method = "ward.D2",
-                 fontsize_row = 5,
+                 fontsize_row = 8,
                  gaps_row = c(1, 13, 23, 27, 37, 38),
                  annotation_row = ann_rows,
                  annotation_colors = ann_colors)
@@ -3981,7 +4009,7 @@ pheatmap(gene_hm_summary,
          cluster_rows = F,
          cluster_cols = T,
          clustering_method = "ward.D2",
-         fontsize_row = 4,
+         fontsize_row = 8,
          gaps_row = c(1, 13, 23, 27, 37, 38),
          annotation_row = ann_rows,
          annotation_colors = ann_colors,
@@ -4019,15 +4047,21 @@ nrow(input$map_loaded)
 input$map_loaded$Latitude <- as.numeric(input$map_loaded$Latitude)
 input$map_loaded$Longitude <- as.numeric(input$map_loaded$Longitude)
 
+no_coord <- input$map_loaded %>%
+  filter(is.na(Latitude) == T | is.na(Longitude) == T)
+table(no_coord$Environment)
+
 # 10 missing
 pdf("FigsUpdated2/SampleMap.pdf", width = 8, height = 5)
 ggplot() +
   geom_map(data = world, map = world,
            aes(long, lat, map_id = region),
-           color = "white", fill = "lightgray", size = 0.1) +
-  geom_point(data = input$map_loaded, aes(x = Longitude, y = Latitude,
-                                          colour = Environment),
-             size = 1, alpha = 0.5) +
+           color = "white", fill = "lightgray", linewidth = 0.1) +
+  geom_point(data = input$map_loaded, 
+             aes(x = Longitude, y = Latitude,
+                 colour = Environment, shape = Environment),
+             size = 2, alpha = 0.75) +
+  scale_shape_manual(values = c(16, 17, 16, 17, 16, 17, 16, 17, 16)) +
   theme_void() +
   labs(x = NULL,
        y = NULL) +
@@ -4041,10 +4075,12 @@ png("FinalFigs/FigureS1.png", width = 8, height = 5, units = "in", res = 300)
 ggplot() +
   geom_map(data = world, map = world,
            aes(long, lat, map_id = region),
-           color = "white", fill = "lightgray", size = 0.1) +
-  geom_point(data = input$map_loaded, aes(x = Longitude, y = Latitude,
-                                          colour = Environment),
-             size = 1, alpha = 0.5) +
+           color = "white", fill = "lightgray", linewidth = 0.1) +
+  geom_point(data = input$map_loaded, 
+             aes(x = Longitude, y = Latitude,
+                 colour = Environment, shape = Environment),
+             size = 2, alpha = 0.75) +
+  scale_shape_manual(values = c(16, 17, 16, 17, 16, 17, 16, 17, 16)) +
   theme_void() +
   labs(x = NULL,
        y = NULL) +
