@@ -7,15 +7,15 @@
 # Click the "Show document outline" button in the top right corner to view document outline
 # Sections are:
 # 1. Retrieving Data
+## - Notes on processing
 # 2. Setup
-# 3. Postprocessing
-# 4. Taxonomic analyses
-# 5. Functional analyses
-# 6. Other
+# 3. Taxonomic analyses
+# 4. Functional analyses
+# 5. Other
 
 
 
-#### Retrieving Data ####
+#### 1. Retrieving Data ####
 # Info on assembling the IMG dataset is in the Data Acquisition.text file
 # Ecosystems of interest were searched by ecosystem or name
 # Domain = *Microbiome
@@ -35,7 +35,7 @@
 
 
 
-#### Setup ####
+#### 2. Setup ####
 # Libraries
 suppressWarnings(suppressMessages(library(readxl))) # For read_xlsx
 suppressWarnings(suppressMessages(library(janitor))) # For cleaning
@@ -83,7 +83,7 @@ suppressWarnings(suppressMessages(library(writexl))) # Write Excel spreadsheets
 # Working directory (GitHub repository)
 setwd("~/Documents/GitHub/Extremophilic_Fungi/")
 
-# Note directory now is organized into subfolders for code and data
+# Note directory is organized into folders for code and data
 
 # Functions
 find_hull <- function(df) df[chull(df$Axis01, df$Axis02),]
@@ -101,6 +101,19 @@ save_pheatmap_pdf <- function(x, filename, width = 7, height = 5) {
 source("code/plot_multipatt.R")
 source("code/compareBC.R")
 
+# Custom color palette from Benjamin Young
+color_mapping <- c(
+  "Acid mine drainage" = "darkorange",
+  "Cryosphere - soil" = "lightskyblue3",
+  "Cryosphere - water" = "royalblue",
+  "Desert" = "burlywood2",
+  "Glacial forefield" = "grey70",
+  "Hot spring" = "red",
+  "Hydrothermal vent" = "firebrick4",
+  "Hypersaline" = "plum2",
+  "Soda lake" = "magenta3"
+)
+
 # So far used Kruskal-Wallis + Nemenyi posthoc
 # May want to update some stats to zero-inflated negative binomial regression instead
 # If using ANOVA and Tukey, can use this code to get sig. letters
@@ -112,7 +125,7 @@ source("code/compareBC.R")
 
 
 #### ..........................####
-#### Taxonomic ####
+#### 3. Taxonomic ####
 
 # Metadata ("mapping file") downloaded from IMG
 
@@ -191,7 +204,9 @@ nrow(metadata_final_use) # N.B.! n = 932 after Lara's review
 #             sep = "\t",
 #             row.names = F)
 
-#### _Import - Start Here ####
+
+
+#### _Start Here ####
 tax_table_fp <- file.path("data/genus_table_mctoolsr_final.txt")
 map_fp <- file.path("data/metadata_final_use.txt")
 input = load_taxa_table(tax_table_fp, map_fp) # 932
@@ -292,19 +307,29 @@ ggplot(input$map_loaded, aes(reorder(`Environment`, GenomeSize, median), log10(G
         axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
 
-# Log axis - use this, add to Figure 1.
-gs <- ggplot(input$map_loaded, aes(reorder(`Environment`, Fungi, median), GenomeSize)) +
+# Log axis - use this, old Figure 1d, now Figure S1
+# To sort by "Fungi" need to run some code below first (line 426)
+#### ___Figure S1 ####
+gs <- ggplot(input$map_loaded, aes(reorder(`Environment`, Fungi, median), GenomeSize,
+                                   colour = Environment)) +
   geom_boxplot(outlier.shape = NA) +
-  geom_jitter(size = 1.5, alpha = 0.25, width = 0.25) +
+  geom_jitter(size = 2, alpha = 0.5, width = 0.25, shape = 16) +
+  scale_colour_manual(values = color_mapping) +
   labs(x = NULL, 
-       y = "Assembly size") +
+       y = "Assembly size (bp)") +
   scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x),
                 labels = scales::trans_format("log10", scales::math_format(10^.x))) +
-  annotation_logticks(sides = "l", outside = T, short = unit(1,"mm"), mid = unit(1,"mm"), long = unit(2,"mm")) +
+  annotation_logticks(sides = "l", outside = T, short = unit(1,"mm"), mid = unit(1,"mm"), 
+                      long = unit(2,"mm")) +
   theme_bw() +
-  theme(axis.title = element_text(size = 12),
+  theme(legend.position = "none",
+        axis.title = element_text(size = 12),
         axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
+gs
+png("FinalFigs/FigureS1.png", width = 7, height = 5, units = "in", res = 300)
+gs
+dev.off()
 
 max(input$map_loaded$GenomeSize)
 min(input$map_loaded$GenomeSize)
@@ -522,18 +547,19 @@ tuk <- emmeans(object = b1, specs = "Environment") %>%
   mutate(name = "rich",
          y = rep(11, nrow(.))) %>%
   mutate(label = c("a", "a", "abc", "ab", "bc", "abc", "c", "abc", "bc"))
-br_plot <- ggplot(input$map_loaded, aes(reorder(Environment, Fungi, median), Fungi*100)) +
-  geom_jitter(size = 1, alpha = 0.2, width = 0.4) +
+br_plot <- ggplot(input$map_loaded, aes(reorder(Environment, Fungi, median), Fungi*100,
+                                        colour = Environment)) +
+  geom_jitter(size = 2, alpha = 0.5, width = 0.4, shape = 16) +
   geom_text(data = tuk, aes(Environment, y, label = label), 
             size = 4, color = "black", hjust = 0.5) +
   labs(x = NULL, y = "Fungal % abund.") +
   scale_y_continuous(breaks = c(0, 2, 4, 6, 8, 10)) +
+  scale_colour_manual(values = color_mapping) +
   theme_bw() +
   theme(legend.position = "none",
         axis.title = element_text(size = 12),
         axis.text.y = element_text(size = 10),
-        #axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
-        axis.text.x = element_blank(),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
         strip.text = element_text(size = 10))
 br_plot
 
@@ -659,8 +685,11 @@ ggplot(env_prev_long, aes(reorder(Environment, value, mean), value,
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
 dev.off()
 
-#### __ Figure 1 ####
+
+
+#### ___Figure 1 ####
 # Make multipanel Figure 1
+# Update - make map a panel and move genome size to Figure S1
 n <- ggplot(env_prev_long, aes(reorder(Environment, value, mean), value, 
                           group = Environment, fill = variable)) +
   geom_bar(stat = "identity") +
@@ -683,25 +712,28 @@ n <- ggplot(env_prev_long, aes(reorder(Environment, value, mean), value,
         axis.text.y = element_text(size = 10),
         axis.text.x = element_blank())
 
-prev <- ggplot(env_prev, aes(reorder(Environment, num_samples, mean), prevalence)) +
+prev <- ggplot(env_prev, aes(reorder(Environment, num_samples, mean), prevalence,
+                             fill = Environment)) +
   geom_bar(stat = "identity") +
+  scale_fill_manual(values = color_mapping) +
   labs(x = NULL, 
        y = "Fungal % prev.") +
   theme_classic() +
-  theme(axis.title = element_text(size = 12),
+  theme(legend.position = "none",
+        axis.title = element_text(size = 12),
         axis.text.y = element_text(size = 10),
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
 
-f1a <- plot_grid(n, prev, ncol = 1, rel_heights = c(0.4, 0.6), labels = "AUTO")
-f1a
+f1bd <- plot_grid(n, prev, ncol = 1, rel_heights = c(0.4, 0.6), labels = c("B", "D"))
+f1bd
 
-f1b <- plot_grid(br_plot, gs, ncol = 1, rel_heights = c(0.4, 0.6), align = "v",
-                 labels = c("C", "D"))
-f1b
+f1ac <- plot_grid(fig1a, br_plot, ncol = 1, rel_heights = c(0.4, 0.6), align = "v",
+                 labels = c("A", "C"))
+f1ac
 
 #f1 <- plot_grid(f1a, br_plot, ncol = 2, labels = "AUTO")
 #f1
-f1 <- plot_grid(f1a, f1b, ncol = 2)
+f1 <- plot_grid(f1ac, f1bd, ncol = 2)
 f1
 
 png("FinalFigs/Figure1.png", width = 7, height = 5, units = "in", res = 300)
@@ -712,7 +744,7 @@ dev.off()
 #### _CPM ####
 input_fungi_CPM <- input_fungi
 # Replace counts in "data_loaded" with CPM transformed counts
-# This is CPM assembled metagenomic reads
+# This is CPM assembled metagenomic base pairs
 # Do (count*1000000)/GenomeSize
 # i is samples 1 to 1142
 # j is taxa 1 to 304
@@ -1188,15 +1220,11 @@ g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   #geom_polygon(data = micro.hulls, 
   #             aes(colour = Environment, fill = Environment),
   #             alpha = 0.1, show.legend = F) +
-  geom_point(size = 2, alpha = 0.5, aes(colour = Environment, 
-                                        #shape = Environment
-                                        ),
+  geom_point(size = 2, alpha = 0.5, shape = 16, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
        y = paste("PC2: ", pcoaA2, "%", sep = "")) +
-  #scale_shape_manual(values = c(16, 17, 15, 3, 7, 8, 18, 6, 11)) +
-  #scale_shape_manual(values = c(15, 16, 16, 16, 16, 17, 17, 17, 17)) +
-  #scale_colour_brewer(palette = "Set1") +
+  scale_colour_manual(values = color_mapping) +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
   theme_bw() +  
   theme(legend.position = "right",
@@ -1206,7 +1234,7 @@ g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
 g
 dev.off()
 
-# Try ellipse? Bad
+# Try ellipse? Bad. Ellipses are huge. Too messy.
 ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   stat_ellipse(mapping = aes(x = Axis01, y = Axis02, color = Environment), alpha = 0.8) +
   geom_point(size = 2, alpha = 0.5, aes(colour = Environment),
@@ -1383,7 +1411,8 @@ nrow(input_arc$data_loaded) # 187
 input_arc_CPM <- input_arc
 for (i in 1:ncol(input_arc$data_loaded)) {
   for (j in 1:nrow(input_arc$data_loaded)) {
-    input_arc_CPM$data_loaded[j, i] <- (input_arc$data_loaded[j, i]*1000000)/input_arc$map_loaded$GenomeSize[i]
+    input_arc_CPM$data_loaded[j, i] <- (input_arc$data_loaded[j, i]*1000000
+                                        )/input_arc$map_loaded$GenomeSize[i]
   }
 }
 
@@ -1409,10 +1438,12 @@ g_arc <- ggplot(input_arc_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F, size = 0.25) +
-  geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
+  geom_point(size = 2, alpha = 0.75, shape = 16, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1arc, "%", sep = ""), 
        y = paste("PC2: ", pcoaA2arc, "%", sep = "")) +
+  scale_fill_manual(values = color_mapping) +
+  scale_colour_manual(values = color_mapping) +
   ggtitle("Archaea") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
   theme_bw() +  
@@ -1427,11 +1458,12 @@ g_arc
 input_bac <- filter_taxa_from_input(input,
                                     taxa_to_keep = "Bacteria",
                                     at_spec_level = 1)
-nrow(input_bac$data_loaded) # 5317
+nrow(input_bac$data_loaded) # 5317 (minus 2 (unclassified, unknown) = 5315 known)
 input_bac_CPM <- input_bac
 for (i in 1:ncol(input_bac$data_loaded)) {
   for (j in 1:nrow(input_bac$data_loaded)) {
-    input_bac_CPM$data_loaded[j, i] <- (input_bac$data_loaded[j, i]*1000000)/input_bac$map_loaded$GenomeSize[i]
+    input_bac_CPM$data_loaded[j, i] <- (input_bac$data_loaded[j, i]*1000000
+                                        )/input_bac$map_loaded$GenomeSize[i]
   }
 }
 
@@ -1454,10 +1486,12 @@ g_bac <- ggplot(input_bac_CPM$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F, size = 0.25) +
-  geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
+  geom_point(size = 2, alpha = 0.75, shape = 16, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1bac, "%", sep = ""), 
        y = paste("PC2: ", pcoaA2bac, "%", sep = "")) +
+  scale_fill_manual(values = color_mapping) +
+  scale_colour_manual(values = color_mapping) +
   ggtitle("Bacteria") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
   theme_bw() +  
@@ -1476,10 +1510,12 @@ g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F, size = 0.25) +
-  geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
+  geom_point(size = 2, alpha = 0.75, shape = 16, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
        y = paste("PC2: ", pcoaA2, "%", sep = "")) +
+  scale_fill_manual(values = color_mapping) +
+  scale_colour_manual(values = color_mapping) +
   ggtitle("Fungi") +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
   theme_bw() +  
@@ -1617,19 +1653,40 @@ dev.off()
 # Let's dig into the archaeal, bacterial, fungal communities a bit more
 # How does Bray-Curtis dissimilarity compare for within or between sample type comparisons?
 # Note, the length of the long dataframe should equal (n*(n-1))/2
+# Make archaea and bacteria datasets same as fungal for fair comparison
+nrow(input_fungi_CPM_nz$map_loaded) # 732
+nrow(input_arc_CPM_nz$map_loaded) # 813
+nrow(input_bac_CPM$map_loaded) # 855 (all)
+sum(input_fungi_CPM_nz$map_loaded$sampleID %in% input_arc_CPM_nz$map_loaded$sampleID)
+# 718 samples have all 3 domains. Do for these
+
+bc_comp_fun <- filter_data(input_fungi_CPM_nz,
+                           "sampleID",
+                           keep_vals = input_arc_CPM_nz$map_loaded$sampleID)
+bc_comp_bac <- filter_data(input_bac_CPM,
+                           "sampleID",
+                           keep_vals = bc_comp_fun$map_loaded$sampleID)
+bc_comp_arc <- filter_data(input_arc_CPM_nz,
+                           "sampleID",
+                           keep_vals = bc_comp_fun$map_loaded$sampleID)
+
+# BC
+bc_fun <- calc_dm(bc_comp_fun$data_loaded)
+bc_bac <- calc_dm(bc_comp_bac$data_loaded)
+bc_arc <- calc_dm(bc_comp_arc$data_loaded)
 
 
 
 #### __Genus ####
 # Fungi
-fun_bray_mat <- as.matrix(bc)
+fun_bray_mat <- as.matrix(bc_fun)
 fun_bray_mat[upper.tri(fun_bray_mat, diag = TRUE)] <- NA
 fun_bray_df <- as.data.frame(fun_bray_mat)
 fun_bray_df$sampleID <- rownames(fun_bray_df)
 fun_bray_df_long <- melt(fun_bray_df, id.vars = "sampleID")
 fun_bray_df_long <- na.omit(fun_bray_df_long)
 fun_bray_df_long$sampleID <- as.factor(fun_bray_df_long$sampleID)
-env <- dplyr::select(input_arc_CPM_nz$map_loaded, sampleID, Environment)
+env <- dplyr::select(bc_comp_fun$map_loaded, sampleID, Environment)
 fun_bray_df_long <- inner_join(fun_bray_df_long, env, 
                                by = c("sampleID" = "sampleID"))
 fun_bray_df_long <- inner_join(fun_bray_df_long, env, 
@@ -1653,7 +1710,7 @@ bac_bray_df$sampleID <- rownames(bac_bray_df)
 bac_bray_df_long <- melt(bac_bray_df, id.vars = "sampleID")
 bac_bray_df_long <- na.omit(bac_bray_df_long)
 bac_bray_df_long$sampleID <- as.factor(bac_bray_df_long$sampleID)
-env <- dplyr::select(input_arc_CPM_nz$map_loaded, sampleID, Environment)
+env <- dplyr::select(bc_comp_bac$map_loaded, sampleID, Environment)
 bac_bray_df_long <- inner_join(bac_bray_df_long, env, 
                                by = c("sampleID" = "sampleID"))
 bac_bray_df_long <- inner_join(bac_bray_df_long, env, 
@@ -1677,7 +1734,7 @@ arc_bray_df$sampleID <- rownames(arc_bray_df)
 arc_bray_df_long <- melt(arc_bray_df, id.vars = "sampleID")
 arc_bray_df_long <- na.omit(arc_bray_df_long)
 arc_bray_df_long$sampleID <- as.factor(arc_bray_df_long$sampleID)
-env <- dplyr::select(input_arc_CPM_nz$map_loaded, sampleID, Environment)
+env <- dplyr::select(bc_comp_arc$map_loaded, sampleID, Environment)
 arc_bray_df_long <- inner_join(arc_bray_df_long, env, 
                                by = c("sampleID" = "sampleID"))
 arc_bray_df_long <- inner_join(arc_bray_df_long, env, 
@@ -1817,19 +1874,21 @@ plot_grid(g1, g2, g3,
           labels = c("a) Archaea", "b) Bacteria", "c) Fungi"),
           rel_widths = c(0.4, 0.3, 0.3))
 
+#### ___Figure 3 ####
 # Best option is probably violin plot!
 png("FigsUpdated2/CompareBrayCurtis_genus.png", width = 7, height = 3, units = "in", res = 300)
-f3b <- ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
+f3b <- ggplot(data = combined, aes(comparison, value)) +
   #geom_jitter(size = 0.5, alpha = 0.01, aes(colour = taxcomp)) + # don't show, too many
   geom_violin() +
-  geom_boxplot(width = 0.1, outlier.shape = NA) +
+  geom_boxplot(width = 0.15, outlier.shape = NA) +
   stat_summary(fun.y = mean, geom = "point", shape = 23, size = 2) +
   geom_text(data = label.df, aes(x = comparison, y = Value, label = Sig, group = NULL),
             inherit.aes = F) +
   geom_text(data = label.B,
-            aes(x = -Inf, y = Inf, label = Sig, group = NULL, hjust = -0.5, vjust = 2, fontface = "bold"), 
+            aes(x = -Inf, y = Inf, label = Sig, group = NULL, hjust = -0.5, 
+                vjust = 2, fontface = "bold"), 
             check_overlap = T, size = 5, inherit.aes = F) +
-  scale_colour_manual(values = brewer.pal(6, "Paired")[1:6]) +
+  #scale_colour_manual(values = brewer.pal(6, "Paired")[1:6]) +
   labs(x = "Environment comparison",
        y = "Bray-Curtis dissimilarity") +
   facet_wrap(~ taxon, ncol = 3) +
@@ -1842,8 +1901,6 @@ f3b <- ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
 f3b
 dev.off()
 
-
-
 # Make multipanel Figure 3
 # Get fungal PCoA, genus level, no title, but A label
 # Remake first one with fungi title
@@ -1854,12 +1911,13 @@ g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   #geom_polygon(data = micro.hulls, 
   #             aes(colour = Environment, fill = Environment),
   #             alpha = 0.1, show.legend = F, size = 0.25) +
-  geom_point(size = 2, alpha = 0.5, aes(colour = Environment),
+  geom_point(size = 2, alpha = 0.75, shape = 16, aes(colour = Environment),
              show.legend = T) +
   geom_text(aes(x = -Inf, y = Inf, label = "A", hjust = -0.5, vjust = 2, fontface = "bold"),
             size = 5, check_overlap = T) +
   labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
        y = paste("PC2: ", pcoaA2, "%", sep = "")) +
+  scale_colour_manual(values = color_mapping) +
   guides(colour = guide_legend(override.aes = list(alpha = 1))) +
   theme_bw() +  
   theme(legend.position = "right",
@@ -2307,7 +2365,7 @@ dev.off()
 # Use samples with at least 1 fungal count
 
 # Need to do several for loops
-# For subseting, summarizing, plotting, store dfs in a list to enable for loop/indexing
+# For subsetting, summarizing, plotting, store dfs in a list to enable for loop/indexing
 env <- list()
 studyN <- list()
 df <- list()
@@ -2475,39 +2533,39 @@ pies
 
 # Add labels
 l1 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
-  geom_text(aes(label = "Acid mine\ndrainage", angle = 90, fontface = "bold"), size = 2.5) +
+  geom_text(aes(label = "Acid mine\ndrainage", angle = 0, fontface = "bold"), size = 2.5) +
   theme_void() +
   theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
 l2 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
-  geom_text(aes(label = "Cryosphere\nsoil", angle = 90, fontface = "bold"), size = 2.5) +
+  geom_text(aes(label = "Cryosphere\nsoil", angle = 0, fontface = "bold"), size = 2.5) +
   theme_void() +
   theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
 l3 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
-  geom_text(aes(label = "Cryosphere\nwater", angle = 90, fontface = "bold"), size = 2.5) +
+  geom_text(aes(label = "Cryosphere\nwater", angle = 0, fontface = "bold"), size = 2.5) +
   theme_void() +
   theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
 l4 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
-  geom_text(aes(label = "Desert", angle = 90, fontface = "bold"), size = 2.5) +
+  geom_text(aes(label = "Desert", angle = 0, fontface = "bold"), size = 2.5) +
   theme_void() +
   theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
 l5 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
-  geom_text(aes(label = "Glacial\nforefield", angle = 90, fontface = "bold"), size = 2.5) +
+  geom_text(aes(label = "Glacial\nforefield", angle = 0, fontface = "bold"), size = 2.5) +
   theme_void() +
   theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
 l6 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
-  geom_text(aes(label = "Hot\nspring", angle = 90, fontface = "bold"), size = 2.5) +
+  geom_text(aes(label = "Hot\nspring", angle = 0, fontface = "bold"), size = 2.5) +
   theme_void() +
   theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
 l7 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
-  geom_text(aes(label = "Hydrothermal\nvent", angle = 90, fontface = "bold"), size = 2.5) +
+  geom_text(aes(label = "Hydrothermal\nvent", angle = 0, fontface = "bold"), size = 2.5) +
   theme_void() +
   theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
 l8 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
-  geom_text(aes(label = "Hypersaline", angle = 90, fontface = "bold"), size = 2.5) +
+  geom_text(aes(label = "Hypersaline", angle = 0, fontface = "bold"), size = 2.5) +
   theme_void() +
   theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
 l9 <- ggplot(data = NULL, aes(x = 1, y = 1)) +
-  geom_text(aes(label = "Soda lake", angle = 90, fontface = "bold"), size = 2.5) +
+  geom_text(aes(label = "Soda lake", angle = 0, fontface = "bold"), size = 2.5) +
   theme_void() +
   theme(plot.margin = margin(0, 0, 0, 0, unit = "pt"))
 
@@ -2537,34 +2595,92 @@ cla <- list()
 c_colors <- list()
 c <- list()
 
-# Classes
-for (i in 1:nrow(studies)) {
-  cla[[i]] <- summarize_taxonomy(df[[i]], level = 3, report_higher_tax = F, relative = T)
-}
+# Get classes with max abundance cutoff
+# 37 classes total, need to get this down to 24 max
+input_fungi_nz
+colMax <- function(data) apply(data, 1, max, na.rm = TRUE)
+class_summary <- summarize_taxonomy(input_fungi_nz, level = 3,
+                                    report_higher_tax = F, relative = T) %>%
+  mutate(maxes = colMax(.))
 
+class_top <- summarize_taxonomy(input_fungi_nz, level = 3,
+                                   report_higher_tax = F, relative = T) %>%
+  mutate(maxes = colMax(.)) %>%
+  filter(maxes > 0.25)
+top_classes <- rownames(class_top)
+class_bottom <- summarize_taxonomy(input_fungi_nz, level = 3,
+                                report_higher_tax = F, relative = T) %>%
+  mutate(maxes = colMax(.)) %>%
+  filter(maxes <= 0.25) %>%
+  t() %>%
+  as.data.frame() %>%
+  mutate(Other = rowSums(.)) %>%
+  t() %>%
+  as.data.frame()
+
+class_top_wO <- summarize_taxonomy(input_fungi_nz, level = 3,
+                                report_higher_tax = F, relative = T) %>%
+  mutate(maxes = colMax(.)) %>%
+  filter(maxes > 0.25) %>%
+  add_row(class_bottom[18,])
+rownames(class_top)[nrow(class_top)] <- "Other"
+
+# Classes
+# Studies with 1 sample need to be treated differently
 for (i in 1:nrow(studies)) {
-  if (nrow(cla[[i]]) == 1) {
-    cla[[i]] <- as.data.frame(t(cla[[i]]))
-    colnames(cla[[i]]) <- rownames(cla[[i]]$map_loaded)
+  if (nrow(df[[i]]$map_loaded) == 1) {
+    csb <- summarize_taxonomy(df[[i]], level = 3, report_higher_tax = F, relative = T) %>%
+      t() %>%
+      as.data.frame() %>%
+      set_names(rownames(df[[i]]$map_loaded)) %>%
+      filter(rownames(.) %notin% top_classes) %>%
+      t() %>%
+      as.data.frame() %>%
+      mutate(Other = rowSums(.)) %>%
+      t() %>%
+      as.data.frame() %>%
+      filter(rownames(.) == "Other")
+    cst <- summarize_taxonomy(df[[i]], level = 3, report_higher_tax = F, relative = T) %>%
+      t() %>%
+      as.data.frame() %>%
+      set_names(rownames(df[[i]]$map_loaded)) %>%
+      filter(rownames(.) %in% top_classes)
+    cst <- rbind(cst,csb)
+    cla[[i]] <- cst
+  }
+  
+  if (nrow(df[[i]]$map_loaded > 1)) {
+   csb <- summarize_taxonomy(df[[i]], level = 3, report_higher_tax = F, relative = T) %>%
+            filter(rownames(.) %notin% top_classes) %>%
+            t() %>%
+            as.data.frame() %>%
+            mutate(Other = rowSums(.)) %>%
+            t() %>%
+            as.data.frame()
+    cst <- summarize_taxonomy(df[[i]], level = 3, report_higher_tax = F, relative = T) %>%
+      filter(rownames(.) %in% top_classes) %>%
+      add_row(csb[nrow(csb),])
+    rownames(cst)[nrow(cst)] <- "Other"
+    cla[[i]] <- cst
   }
 }
 
 # Colors
-classes_present <- as.data.frame(table(input_fungi_nz$taxonomy_loaded$taxonomy3)) %>%
-  mutate(Var1 = as.character(Var1))
+classes_present <- c(top_classes[1:18],"Ustilaginomycetes","unclassified","Other")
 for (i in 1:length(df)) {
-  c_colors[[i]] <- colorRampPalette(brewer.pal(12, "Paired"))(nrow(classes_present))
+  c_colors[[i]] <- data.frame("class" = classes_present,
+                "color" = c(colorRampPalette(brewer.pal(12, "Paired"))(length(classes_present)-2),
+                                          "grey75", "grey90"))
   c_colors[[i]] <- subset(c_colors[[i]],
-                          classes_present$Var1 %in% df[[i]]$taxonomy_loaded$taxonomy3)
+                          class %in% rownames(cla[[i]]))
 }
 
 # Pies
 for (i in 1:nrow(studies)) {
   t <- df[[i]]$map_loaded$Location
   c[[i]] <- plot_taxa_bars(cla[[i]], df[[i]]$map_loaded, "Study.Name2", 37) +
-    # geom_bar(stat = "identity", width = 1, color = "white") +
     coord_polar("y", start=0) +
-    scale_fill_manual(values = c_colors[[i]]) +
+    scale_fill_manual(values = c_colors[[i]]$color) +
     theme_void() +
     ggtitle(t) +
     theme(legend.position = "none",
@@ -2572,12 +2688,12 @@ for (i in 1:nrow(studies)) {
           plot.margin = margin(0, -50, -15, -50, "pt"))
 }
 
-# Get legend - use one with all 37 classes
-t <- df[[9]]$map_loaded$Location
-c_forleg <- plot_taxa_bars(cla[[9]], df[[9]]$map_loaded, "Study.Name2", 37) +
+# Get legend - top 20 (unclassified last), plus Other
+t <- df[[34]]$map_loaded$Location
+c_forleg <- plot_taxa_bars(cla[[34]], df[[34]]$map_loaded, "Study.Name2", 37) +
   geom_bar(stat = "identity", width = 1, color = "white") +
   coord_polar("y", start=0) +
-  scale_fill_manual(values = c_colors[[9]]) +
+  scale_fill_manual(values = c_colors[[34]]$color) +
   labs(fill = "Classes") +
   theme_void() +
   ggtitle(t) +
@@ -2604,14 +2720,27 @@ pies_c <- plot_grid(l1, c[[1]], c[[2]], c[[3]], c[[4]],
                     rel_widths = c(0.04, 0.24, 0.24, 0.24, 0.24))
 pies_c
 
+# No text and no n = 1
+pies_c <- plot_grid(c[[1]], c[[2]], NULL, NULL,
+                    c[[5]], c[[6]], c[[7]], c[[8]],
+                    c[[9]], c[[10]], c[[11]], c[[12]],
+                    c[[13]], c[[14]], c[[15]], c[[16]],
+                    c[[17]], c[[18]], c[[19]], c[[20]],
+                    c[[21]], c[[22]], c[[23]], c[[24]],
+                    c[[25]], c[[26]], c[[27]], c[[28]],
+                    c[[29]], c[[30]], c[[31]], c[[32]],
+                    c[[33]], c[[34]], NULL, NULL, NULL,
+                    ncol = 4)
+pies_c
+
 # Add legend
 pdf("FigsUpdated2/Pies_Classes.pdf", width = 8, height = 10)
 plot_grid(pies_c, pie_leg_c, rel_widths = c(3.85, 1.15))
 dev.off()
 
-# Figure 4
-png("FinalFigs/Figure4.png", width = 8, height = 10, units = "in", res = 300)
-plot_grid(pies_c, pie_leg_c, rel_widths = c(3.85, 1.15))
+#### ___Figure 4 ####
+png("FinalFigs/Figure4forPPT.png", width = 7, height = 9, units = "in", res = 300)
+plot_grid(pies_c, pie_leg_c, rel_widths = c(3.73, 1.27))
 dev.off()
 
 
@@ -2711,6 +2840,7 @@ for (i in 1:length(levels(input_fungi_CPM_nz$map_loaded$Environment))) {
     arrange(desc(mean_value))
 }
 
+#### ___Table S4 ####
 # Combine
 top_taxa <- rbind(top_phy[[1]], top_phy[[2]], top_phy[[3]],
                   top_phy[[4]], top_phy[[5]], top_phy[[6]],
@@ -2810,6 +2940,9 @@ ggplot(input_fungi$map_loaded, aes(reorder(Environment, rich, median), rich)) +
         strip.background = element_rect(fill = "white"),
         plot.margin = margin(1, 1, 1, 15))
 
+
+
+#### ___Figure 2 ####
 label_df <- rbind(nyi_let3, nyi_let4) %>%
   mutate(Environment = factor(Environment,
                               levels = c("Acid mine drainage",
@@ -2837,14 +2970,15 @@ alpha_long <- input_fungi$map_loaded %>%
                                          "Desert")))
 
 pdf("FigsUpdated2/AlphaDiversity.pdf", width = 6, height = 3)
-f2 <- ggplot(alpha_long, aes(Environment, value)) +
+f2 <- ggplot(alpha_long, aes(Environment, value, colour = Environment)) +
   geom_boxplot(outlier.shape = NA) +
-  #geom_violin() +
-  geom_jitter(size = 0.5, alpha = 0.2, width = 0.3) +
-  stat_summary(fun.y = mean, geom = "point", shape = 23, size = 3, colour = "red") +
+  geom_jitter(size = 1, alpha = 0.25, shape = 16, width = 0.3) +
+  stat_summary(fun.y = mean, geom = "point", shape = 23, 
+               size = 4, colour = "black") +
   geom_text(data = label_df, aes(Environment, y, label = label), 
             size = 4, color = "black") +
   labs(x = NULL, y = NULL) +
+  scale_colour_manual(values = color_mapping) +
   facet_wrap(~ name, ncol = 2, scales = "free_y", labeller = as_labeller(facet_df)) +
   theme_bw() +
   theme(legend.position = "none",
@@ -2940,7 +3074,7 @@ plot_multipatt_fungal(mp_obj = mp_family,
                       rcut = 0)
 dev.off()
 
-# Figure S4
+#### ___Figure S4 ####
 png("FinalFigs/FigureS4.png", width = 5, height = 10, units = "in", res = 300)
 plot_multipatt_fungal(mp_obj = mp_family, 
                       input = input_fungi_CPM,
@@ -2971,7 +3105,7 @@ dev.off()
 
 
 #### ..........................####
-#### Functional ####
+#### 4. Functional ####
 # Sent Dongying Wu of IMG staff list of taxonoids and list of fungal phyla
 # Dongying ran custom python scripts on JGI super computer to pull out KOs of only fungal phyla
 # Folder FungalKOs has a file for each metagenome with the KO hits of the fungal phyla scaffolds
@@ -3294,6 +3428,15 @@ ggplot(ko_meta, aes(fung_count, richness_KO)) +
        y = "KO richness") +
   theme_classic()
 dev.off()
+png("FinalFigs/FigureS5.png", width = 7, height = 5, units = "in", res = 300)
+ggplot(ko_meta, aes(fung_count, richness_KO)) +
+  geom_hline(yintercept = 750, linetype = "dashed") +
+  geom_point(size = 3, alpha = 0.5) +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2)) +
+  labs(x = "Number of fungal protein coding sequences",
+       y = "KO richness") +
+  theme_classic()
+dev.off()
 summary(lm(richness_KO ~ fung_count, data = ko_meta))
 summary(lm(richness_KO ~ poly(fung_count, 2, raw = TRUE), data = ko_meta))
 cor.test(ko_meta$fung_count, ko_meta$richness_KO, method = "pearson")
@@ -3429,6 +3572,7 @@ pdf("FigsUpdated2/KO_PCoA_min100KOs.pdf", width = 8.5, height = 5)
 plot_grid(g5_ko, g6_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1.1))
 dev.off()
 
+#### __750 ####
 # Now increase the cutoff even more - 750!
 sum(ko_richness$richness_KO > 750) # 44 with > 750
 ko_meta_filt <- ko_meta %>%
@@ -3453,14 +3597,15 @@ micro.hulls <- ddply(ko_meta_filt, c("Environment"), find_hull)
 g5_ko <- ggplot(ko_meta_filt, aes(Axis01, Axis02, colour = Environment)) +
   geom_polygon(data = micro.hulls, aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F) +
-  geom_point(aes(size = richness_KO), alpha = 0.5) +
+  geom_point(aes(size = richness_KO), shape = 16, alpha = 0.75) +
   scale_size(range = c(1, 10)) +
   labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
        y = paste("PC2: ", pcoaA2, "%", sep = ""),
        colour = "Environment",
        size = "Number of KOs",
        title = "KO Bray-Curtis") +
-  scale_colour_manual(values = c(hue_pal()(9)[1:5], hue_pal()(9)[7:9])) +
+  scale_fill_manual(values = color_mapping) +
+  scale_colour_manual(values = color_mapping) +
   xlim(-0.2, 0.29) +
   ylim(-0.3, 0.12) +
   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
@@ -3487,14 +3632,15 @@ micro.hullsj <- ddply(ko_meta_filt, c("Environment"), find_hullj)
 g6_ko <- ggplot(ko_meta_filt, aes(Axis01j, Axis02j, colour = Environment)) +
   geom_polygon(data = micro.hullsj, aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F) +
-  geom_point(aes(size = richness_KO), alpha = 0.5) +
+  geom_point(aes(size = richness_KO), shape = 16, alpha = 0.75) +
   scale_size(range = c(1, 10)) +
   labs(x = paste("PC1: ", pcoa1A1, "%", sep = ""), 
        y = paste("PC2: ", pcoa1A2, "%", sep = ""),
        colour = "Environment",
        size = "Number of KOs",
        title = "KO Jaccard") +
-  scale_colour_manual(values = c(hue_pal()(9)[1:5], hue_pal()(9)[7:9])) +
+  scale_fill_manual(values = color_mapping) +
+  scale_colour_manual(values = color_mapping) +
   xlim(-0.2, 0.29) +
   ylim(-0.3, 0.12) +
   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
@@ -3511,6 +3657,7 @@ plot_grid(g5_ko, g6_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1.1),
           labels = c("A", "B"))
 dev.off()
 
+#### ___Figure 5 ####
 png("FinalFigs/Figure5.png", width = 8.5, height = 5, units = "in", res = 300)
 plot_grid(g5_ko, g6_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1.1),
           labels = c("A", "B"))
@@ -4038,10 +4185,11 @@ phm2 <- pheatmap(gene_hm_summary,
 
 
 #### ..........................####
-#### Other ####
+#### 5. Other ####
 #### _Map ####
 # Sample map with ggplot, color by environment
 # Need to adjust color scheme here and throughout
+# Map will now be Figure 1a
 world <- map_data("world")
 nrow(input$map_loaded)
 input$map_loaded$Latitude <- as.numeric(input$map_loaded$Latitude)
@@ -4056,12 +4204,13 @@ pdf("FigsUpdated2/SampleMap.pdf", width = 8, height = 5)
 ggplot() +
   geom_map(data = world, map = world,
            aes(long, lat, map_id = region),
-           color = "white", fill = "lightgray", linewidth = 0.1) +
+           color = "white", fill = "gray90", linewidth = 0.1, alpha = 0.75) +
   geom_point(data = input$map_loaded, 
              aes(x = Longitude, y = Latitude,
                  colour = Environment, shape = Environment),
-             size = 2, alpha = 0.75) +
+             size = 2, alpha = 1) +
   scale_shape_manual(values = c(16, 17, 16, 17, 16, 17, 16, 17, 16)) +
+  scale_color_manual(values = color_mapping) +
   theme_void() +
   labs(x = NULL,
        y = NULL) +
@@ -4070,24 +4219,32 @@ ggplot() +
         panel.grid.minor = element_blank())
 dev.off()
 
-# Figure S1
-png("FinalFigs/FigureS1.png", width = 8, height = 5, units = "in", res = 300)
-ggplot() +
+fig1a <- ggplot() +
   geom_map(data = world, map = world,
            aes(long, lat, map_id = region),
-           color = "white", fill = "lightgray", linewidth = 0.1) +
+           color = "white", fill = "gray90", linewidth = 0.1, alpha = 0.75) +
   geom_point(data = input$map_loaded, 
              aes(x = Longitude, y = Latitude,
-                 colour = Environment, shape = Environment),
-             size = 2, alpha = 0.75) +
-  scale_shape_manual(values = c(16, 17, 16, 17, 16, 17, 16, 17, 16)) +
+                 colour = Environment),
+             size = 2, alpha = 1) +
+  #scale_shape_manual(values = c(16, 17, 16, 17, 16, 17, 16, 17, 16)) +
+  scale_color_manual(values = color_mapping) +
   theme_void() +
   labs(x = NULL,
        y = NULL) +
   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 2))) +
   theme(panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank())
-dev.off()
+        panel.grid.minor = element_blank(),
+        legend.position = "none",
+        legend.key.size = unit(0.2, "cm"),
+        legend.text = element_text(size = 8),
+        legend.title = element_blank(),
+        legend.margin = margin(c(0,5,5,5)),
+        legend.box.margin = margin(c(0,0,0,0)),
+        legend.background = element_rect(linewidth = 0.1))
+fig1a
+
+
 
 #### _Geog. Distance ####
 # Calculate geodesic distance among samples
@@ -4172,7 +4329,7 @@ input_fungi_CPM_nz_44 <- filter_data(input_fungi_CPM_nz,
 # BC
 bc <- calc_dm(input_fungi_CPM_nz_44$data_loaded)
 set.seed(1150)
-adonis2(bc ~ Environment, data = input_fungi_CPM_nz_44$map_loaded) # R2 = 0.48, p = 0.001
+adonis2(bc ~ Environment, data = input_fungi_CPM_nz_44$map_loaded) # R2 = 0.49, p = 0.001
 anova(betadisper(bc, input_fungi_CPM_nz_44$map_loaded$Environment)) # Dispersion homogeneous
 pcoa <- cmdscale(bc, k = nrow(input_fungi_CPM_nz_44$map_loaded) - 1, eig = T)
 pcoaA1 <- round((eigenvals(pcoa)/sum(eigenvals(pcoa)))[1]*100, digits = 1)
@@ -4184,12 +4341,13 @@ bc44 <- ggplot(input_fungi_CPM_nz_44$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F) +
-  geom_point(size = 2, alpha = 0.5, aes(colour = Environment), show.legend = T) +
+  geom_point(size = 3, alpha = 0.75, shape = 16, aes(colour = Environment), show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
        y = paste("PC2: ", pcoaA2, "%", sep = ""),
        title = "Bray-Curtis",
        colour = "Environment") +
-  scale_colour_manual(values = c(hue_pal()(9)[1:5], hue_pal()(9)[7:9])) +
+  scale_fill_manual(values = color_mapping) +
+  scale_colour_manual(values = color_mapping) +
   xlim(-0.48, 0.35) +
   ylim(-0.31, 0.34) +
   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
@@ -4218,11 +4376,12 @@ jac44 <- ggplot(input_fungi_CPM_nz_44$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F) +
-  geom_point(size = 2, alpha = 0.5, aes(colour = Environment), show.legend = T) +
+  geom_point(size = 3, alpha = 0.75, shape = 16, aes(colour = Environment), show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
        y = paste("PC2: ", pcoaA2, "%", sep = ""),
        title = "Jaccard") +
-  scale_colour_manual(values = c(hue_pal()(9)[1:5], hue_pal()(9)[7:9])) +
+  scale_fill_manual(values = color_mapping) +
+  scale_colour_manual(values = color_mapping) +
   xlim(-0.48, 0.35) +
   ylim(-0.31, 0.34) +
   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
@@ -4236,7 +4395,8 @@ jac44
 range(input_fungi_CPM_nz_44$map_loaded$Axis01) # -0.48 to 0.35
 range(input_fungi_CPM_nz_44$map_loaded$Axis02) # -0.16 to 0.18
 
-png("FinalFigs/FigureS5.png", width = 8.5, height = 5, units = "in", res = 300)
+#### ___Figure S6 ####
+png("FinalFigs/FigureS6.png", width = 8.5, height = 5, units = "in", res = 300)
 plot_grid(bc44, jac44, leg44, ncol = 3, rel_widths = c(2.5,2.5,1.1),
           labels = c("A", "B"))
 dev.off()
