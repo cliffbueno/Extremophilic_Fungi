@@ -3273,6 +3273,7 @@ dev.off()
 #### _Start here ####
 ko_comm_DESeq <- readRDS("data/ko_comm_DESeq_updated2.rds")
 ko_meta <- readRDS("data/ko_meta_final.rds")
+table(ko_meta$Environment)
 
 
 
@@ -4109,18 +4110,16 @@ rownames(gene_hm_summary) <- stress_genes_sorted$KOsymb
 ann_rows <- data.frame(row.names = rownames(gene_hm_summary), 
                        Stress = stress_genes_sorted$Stress)
 # Shortened list
-ann_colors <- list(Stress = c("Cellular" = viridis_pal()(7)[1],
-                              "Cold" = viridis_pal()(7)[2],
-                              "General" = viridis_pal()(7)[3],
-                              "Heat" = viridis_pal()(7)[4],
-                              "Osmotic" = viridis_pal()(7)[5],
-                              "Osmotic, Low pH" = viridis_pal()(7)[6],
-                              "Oxidative" = viridis_pal()(7)[7]))
+ann_colors <- list(Stress = c("Cold" = viridis_pal()(5)[1],
+                              "General" = viridis_pal()(5)[2],
+                              "Heat" = viridis_pal()(5)[3],
+                              "Osmotic" = viridis_pal()(5)[4],
+                              "Oxidative" = viridis_pal()(5)[5]))
 
 phm1 <- pheatmap(gene_hm_summary,
                  color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdBu")))(100),
                  legend = T,
-                 legend_breaks = c(-2, -1, 0, 1, 2, 2.65),
+                 legend_breaks = c(-2, -1, 0, 1, 2, 2.66),
                  legend_labels = c("-2", "-1", "0", "1", "2", "Abund."),
                  border_color = NA,
                  scale = "row",
@@ -4130,7 +4129,7 @@ phm1 <- pheatmap(gene_hm_summary,
                  cluster_cols = T,
                  method = "ward.D2",
                  fontsize_row = 8,
-                 gaps_row = c(1, 13, 23, 27, 37, 38),
+                 gaps_row = c(12, 25, 29, 38),
                  annotation_row = ann_rows,
                  annotation_colors = ann_colors)
 save_pheatmap_pdf <- function(x, filename, width = 7, height = 12) {
@@ -4147,7 +4146,7 @@ save_pheatmap_pdf(phm1, "FigsUpdated2/KO_heatmap_Stress_filtered.pdf")
 pheatmap(gene_hm_summary,
          color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdBu")))(100),
          legend = T,
-         legend_breaks = c(-2, -1, 0, 1, 2, 2.65),
+         legend_breaks = c(-2, -1, 0, 1, 2, 2.66),
          legend_labels = c("-2", "-1", "0", "1", "2", "Abund."),
          border_color = NA,
          scale = "row",
@@ -4156,14 +4155,16 @@ pheatmap(gene_hm_summary,
          cluster_rows = F,
          cluster_cols = T,
          clustering_method = "ward.D2",
-         fontsize_row = 8,
-         gaps_row = c(1, 13, 23, 27, 37, 38),
+         fontsize_row = 10,
+         gaps_row = c(12, 25, 29, 38),
          annotation_row = ann_rows,
          annotation_colors = ann_colors,
          file = "FinalFigs/Figure6.png",
          height = 12,
          width = 7)
 dev.off()
+dev.set(dev.next())
+dev.set(dev.next())
 
 # Explore clustering by rows too
 phm2 <- pheatmap(gene_hm_summary,
