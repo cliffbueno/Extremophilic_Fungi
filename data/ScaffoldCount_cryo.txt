@@ -1,0 +1,4 @@
+taxon_oid	Domain	Sequencing Status	Study Name	Genome Name / Sample Name	Sequencing Center	IMG Genome ID 	Genome Size   * assembled	Gene Count   * assembled	Scaffold Count   * assembled	
+3300038653	*Microbiome	Permanent Draft	Cryoconite microbiome from cyroconite holes in Resolute Bay, NU, Canada	Cryoconite microbial community from Resolute Bay, Canada - ClaremontCryo	McGill University	3300038653	16379373	21863	3360	
+3300039023	*Microbiome	Permanent Draft	Cryoconite microbiome from cyroconite holes in Resolute Bay, NU, Canada	Cryoconite microbial community from Resolute Bay, Canada - FullCryo	McGill University	3300039023	1077334084	1712913	318038	
+3300039024	*Microbiome	Permanent Draft	Cryoconite microbiome from cyroconite holes in Resolute Bay, NU, Canada	Cryoconite microbial community from Resolute Bay, Canada - ClaremontCryo ClaremontCryo_2	McGill University	3300039024	12482383	16570	2604	

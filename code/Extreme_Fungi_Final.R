@@ -4402,6 +4402,28 @@ plot_grid(bc44, jac44, leg44, ncol = 3, rel_widths = c(2.5,2.5,1.1),
           labels = c("A", "B"))
 dev.off()
 
+#### _Table S1 ####
+# Add number of scaffolds
+scaff_cryo <- read.delim("data/ScaffoldCount_cryo.txt") %>%
+  dplyr::select(taxon_oid, Scaffold.Count.....assembled)
+scaff <- read.delim("data/ScaffoldCount.txt") %>%
+  dplyr::select(taxon_oid, Scaffold.Count.....assembled) %>%
+  rbind(., scaff_cryo)
+ts1 <- read_excel("data/TableS1_noscaff.xlsx") %>%
+  left_join(., scaff, by = "taxon_oid") %>%
+  mutate(ScaffoldCount = Scaffold.Count.....assembled) %>%
+  dplyr::select(-Scaffold.Count.....assembled, -IMG.Genome.ID, -Day, -Month, -Year, -sampleID,
+                -GenomeSize, -Study.Name2, -Location2, -EnvGeo) %>%
+  arrange(Environment, Study.Name, Genome.Name...Sample.Name)
+#write_xlsx(ts1, "data/TableS1.xlsx", format_headers = F)
+
+names(ts1)
+ts1$ScaffoldCount
+sum(is.na(ts1$ScaffoldCount))
+check <- ts1 %>%
+  filter(is.na(ScaffoldCount) == T)
+# Don't have 6 from Schmidt Lab. 
+
 
 
 #### End Script ####
