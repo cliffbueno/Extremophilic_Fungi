@@ -266,7 +266,7 @@ input <- filter_taxa_from_input(input,
                                                    "unknown"),
                                 at_spec_level = 1) # 1243 taxa removed
 
-#write_xlsx(input$map_loaded, "data/TableS1.xlsx", format_headers = F)
+#write_xlsx(input$map_loaded, "data/TableS1_noScaff.xlsx", format_headers = F)
 
 # Check sequencing depth (# fungal assigned genes)
 sort(colSums(input$data_loaded))
@@ -1023,6 +1023,51 @@ countFun <- as.data.frame(sort(colSums(input_fungi_CPM$data_loaded))) %>%
 input_fungi_nz <- filter_data(input_fungi,
                               filter_cat = "sampleID",
                               filter_vals = rownames(countFun))
+
+# Check Glacial Forefields (for Fusarium)
+source("~/Documents/GitHub/EastCoast/code/cliffplot_taxa_bars.R")
+glac_rel <- filter_data(input_fungi_nz, 
+                        filter_cat = "Environment",
+                        keep_vals = "Glacial forefield") # n = 51
+glac_cpm <- filter_data(input_fungi_CPM, 
+                        filter_cat = "Environment",
+                        keep_vals = "Glacial forefield") # n = 53
+cliffplot_taxa_bars(input = glac_rel, level = 6, variable = "sampleID")
+cliffplot_taxa_bars(input = glac_cpm, level = 6, variable = "sampleID")
+cliffplot_taxa_bars(input = glac_cpm, level = 6, variable = "Isolation.Country")
+cliffplot_taxa_bars(input = glac_cpm, level = 6, variable = "Study.Name")
+
+# How many is Fusarium present in?
+fus <- summarize_taxonomy(input = glac_rel, level = 6, report_higher_tax = F) %>%
+  filter(rownames(.) == "Fusarium") %>%
+  t() %>%
+  as.data.frame()
+sum(fus$Fusarium > 0)
+
+# Check most abundant genera
+glac_rel_gen <- summarize_taxonomy(input = glac_rel, level = 6, report_higher_tax = F) %>%
+  mutate(mean = rowMeans(.)) %>%
+  rownames_to_column(var = "Genus") %>%
+  arrange(desc(mean)) %>%
+  dplyr::select(Genus, mean)
+# Slightly different than CPM
+glac_cpm_gen <- summarize_taxonomy(input = glac_cpm, level = 6, relative = F, report_higher_tax = F) %>%
+  dplyr::select(-X3300011174, -X3300011176) %>%
+  mutate(mean = rowMeans(.)) %>%
+  rownames_to_column(var = "Genus") %>%
+  arrange(desc(mean)) %>%
+  dplyr::select(Genus, mean)
+# This agrees with Table 2.
+glac_cpm_gen <- summarize_taxonomy(input = glac_cpm, level = 6, relative = F, report_higher_tax = F)
+plot_taxa_bars(glac_cpm_gen, 
+               metadata_map = glac_cpm$map_loaded, 
+               type_header = "sampleID",
+               num_taxa = 12, 
+               data_only = F) +
+  scale_fill_brewer(palette = "Paired") +
+  theme_classic() +
+  theme(axis.text.x = element_text(size = 4, angle = 45, hjust = 1))
+
 
 # Calculate relative abundance of fungi, only for samples with fungi (n = 732)
 # Make relative abundance stacked bar plots by taxonomic level
@@ -3934,7 +3979,11 @@ not_present <- read.csv("data/stress_genes_wDef.csv") %>%
 # Updated file annotated by Lara
 # From 157, filtered to 56
 stress_genes <- read.csv("data/stress_genes_sorted_5.19.23_LV.csv") %>%
-  filter(Notes == "ok")
+  filter(Notes == "ok") %>%
+  dplyr::select(-Notes, -X)
+
+# Table S5
+#write_xlsx(stress_genes, path = "data/TableS5.xlsx", format_headers = F)
 
 # Data frame
 gene_plot <- ko_comm_DESeq %>%
