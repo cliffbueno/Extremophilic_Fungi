@@ -206,7 +206,7 @@ nrow(metadata_final_use) # N.B.! n = 932 after Lara's review
 
 
 
-#### _Start Here ####
+#### _Filter ####
 tax_table_fp <- file.path("data/genus_table_mctoolsr_final.txt")
 map_fp <- file.path("data/metadata_final_use.txt")
 input = load_taxa_table(tax_table_fp, map_fp) # 932
@@ -266,12 +266,165 @@ input <- filter_taxa_from_input(input,
                                                    "unknown"),
                                 at_spec_level = 1) # 1243 taxa removed
 
-#write_xlsx(input$map_loaded, "data/TableS1_noScaff.xlsx", format_headers = F)
+# Filter out taxa that were deleted from IMG because they were BSGs , not real genomes (n = 6)
+# Filter out a bacterial MAG that was classified as Gigaspora fungus (n = 1)
+deleted <- read_xlsx("data/IMG_database_issue_notes.xlsx") %>%
+  filter(Action == "Delete from taxonomic and KO analysis")
 
-# Check sequencing depth (# fungal assigned genes)
+input <- filter_taxa_from_input(input,
+                                taxa_to_remove = deleted$Genus,
+                                at_spec_level = 6) # 7 taxa removed
+
+# Now, let's deal with renaming issues. We are presenting the current IMG-NR database as Table S1
+# Some genera in our dataset, annotated with previous versions, have changed
+# n = 13
+renamed <- read_xlsx("data/IMG_database_issue_notes.xlsx") %>%
+  filter(Action == "Rename") %>%
+  separate(`New Name`, into = c("NewPhylum", "NewClass", "NewOrder", 
+                                "NewFamily", "NewGenus", "NewSpecies"),
+           sep = ";")
+
+sum(renamed$Genus %in% input$taxonomy_loaded$taxonomy6) # 13
+
+for (i in 1:nrow(input$taxonomy_loaded)) {
+  for (j in 1:nrow(renamed)) {
+  if (input$taxonomy_loaded$taxonomy6[i] %in% renamed$Genus[j]) {
+    input$taxonomy_loaded$taxonomy6[i] <- renamed$NewGenus[j]
+    input$taxonomy_loaded$taxonomy5[i] <- renamed$NewFamily[j]
+    input$taxonomy_loaded$taxonomy4[i] <- renamed$NewOrder[j]
+    input$taxonomy_loaded$taxonomy3[i] <- renamed$NewClass[j]
+    input$taxonomy_loaded$taxonomy2[i] <- renamed$NewPhylum[j]
+  }
+  }
+}
+
+# Check (should be 1, not 13)
+sum(renamed$Genus %in% input$taxonomy_loaded$taxonomy6) # 1 (good, unclassified Saccharomycetatceae)
+
+# Lastly, there are also some discrepancies from versions where higher taxonomy is not the same for the same genus
+fungal_phyla_names <- c("Ascomycota", "Basidiomycota", "Blastocladiomycota", 
+                        "Chytridiomycota","Cryptomycota", "Microsporidia", 
+                        "Mucoromycota", "Nephridiophagidae", "Olpidiomycota", 
+                        "Sanchytriomycota", "Zoopagomycota")
+
+checkTax <- input$taxonomy_loaded %>%
+  filter(taxonomy2 %in% fungal_phyla_names) %>%
+  group_by(taxonomy6) %>%
+  summarize(nFam = length(unique(taxonomy5)),
+            nOrd = length(unique(taxonomy4)),
+            nCla = length(unique(taxonomy3)),
+            nPhy = length(unique(taxonomy2)))
+sum(checkTax == 2) # 18
+
+# No phylum issues
+# 1 class issue (Symbiotaphrina)
+# 4 order issues (Amorphotheca, Pseudocercospora, Teratosphaeria, Zasmidium)
+# 13 family issues (Amorphotheca, Adustoporia, Babjeviella, Batrachochytrium, 
+# Coccidioides, Cronartium, Gymnopilus, Hebeloma, Ophiobolus, Pilatotrama, Podospora,
+# Postia, Wolfiporia)
+
+# Manually fix. View data table. Search for genus. Choose updated taxonomy. Assign.
+View(input$taxonomy_loaded)
+
+for (i in 1:nrow(input$taxonomy_loaded)) {
+  # Class issue
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_6874") {
+    input$taxonomy_loaded$taxonomy3[i] <- "Xylonomycetes"
+  }
+  
+  # Order issues
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_216") {
+    input$taxonomy_loaded$taxonomy4[i] <- "Helotiales"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_2889") {
+    input$taxonomy_loaded$taxonomy4[i] <- "Mycosphaerellales"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_3489") {
+    input$taxonomy_loaded$taxonomy4[i] <- "Mycosphaerellales"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_3840") {
+    input$taxonomy_loaded$taxonomy4[i] <- "Mycosphaerellales"
+  }
+  
+  # Family issues
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_216") {
+    input$taxonomy_loaded$taxonomy5[i] <- "Amorphothecaceae"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_76") {
+    input$taxonomy_loaded$taxonomy5[i] <- "Adustoporiaceae"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_4390") {
+    input$taxonomy_loaded$taxonomy5[i] <- "Debaryomycetaceae"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_421") {
+    input$taxonomy_loaded$taxonomy5[i] <- "unclassified Rhizophydiales"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_877") {
+    input$taxonomy_loaded$taxonomy5[i] <- "Onygenaceae"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_952") {
+    input$taxonomy_loaded$taxonomy5[i] <- "Coleosporiaceae"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_1503") {
+    input$taxonomy_loaded$taxonomy5[i] <- "Hymenogastraceae"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_1603") {
+    input$taxonomy_loaded$taxonomy5[i] <- "Hymenogastraceae"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_2513") {
+    input$taxonomy_loaded$taxonomy5[i] <- "Phaeosphaeriaceae"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_2759") {
+    input$taxonomy_loaded$taxonomy5[i] <- "Polyporaceae"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_2801") {
+    input$taxonomy_loaded$taxonomy5[i] <- "Podosporaceae"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_2830") {
+    input$taxonomy_loaded$taxonomy5[i] <- "Postiaceae"
+  }
+  
+  if (rownames(input$taxonomy_loaded)[i] == "ASV_3801") {
+    input$taxonomy_loaded$taxonomy5[i] <- "Phaeolaceae"
+  }
+}
+
+# Check 
+checkTax2 <- input$taxonomy_loaded %>%
+  filter(taxonomy2 %in% fungal_phyla_names) %>%
+  group_by(taxonomy6) %>%
+  summarize(nFam = length(unique(taxonomy5)),
+            nOrd = length(unique(taxonomy4)),
+            nCla = length(unique(taxonomy3)),
+            nPhy = length(unique(taxonomy2)))
+sum(checkTax2 == 2) # 0, good!
+
+#write_xlsx(input$map_loaded, "data/TableS2_noScaff.xlsx", format_headers = F)
+#saveRDS(input, "data/input.rds")
+
+
+
+#### _Start Here  ####
+input <- readRDS("data/input.rds")
+
+# Check sequencing depth
 sort(colSums(input$data_loaded))
-mean(colSums(input$data_loaded)) # 361621.3
-se(colSums(input$data_loaded)) # 19512.22
+mean(colSums(input$data_loaded)) # 361620.7
+se(colSums(input$data_loaded)) # 19512.19
 input$map_loaded$count <- colSums(input$data_loaded)
 
 # Genus reads
@@ -308,7 +461,7 @@ ggplot(input$map_loaded, aes(reorder(`Environment`, GenomeSize, median), log10(G
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
 
 # Log axis - use this, old Figure 1d, now Figure S1
-# To sort by "Fungi" need to run some code below first (line 426)
+# To sort by "Fungi" need to run some code below first (line 598)
 #### ___Figure S1 ####
 gs <- ggplot(input$map_loaded, aes(reorder(`Environment`, Fungi, median), GenomeSize,
                                    colour = Environment)) +
@@ -331,11 +484,11 @@ png("FinalFigs/FigureS1.png", width = 7, height = 5, units = "in", res = 300)
 gs
 dev.off()
 
-max(input$map_loaded$GenomeSize)
-min(input$map_loaded$GenomeSize)
+max(input$map_loaded$GenomeSize) # > 1 billion
+min(input$map_loaded$GenomeSize) # 380429
 
 # Size vs genus reads (actually genus genes)
-pdf("FigsUpdated2/AssembledMetagenomeSizes_AllGenusReads.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/AssembledMetagenomeSizes_AllGenusReads.pdf", width = 7, height = 5)
 ggplot(input$map_loaded, aes(GenomeSize, count)) +
   geom_point(size = 1.5, alpha = 0.25) +
   geom_smooth(method = "lm") +
@@ -402,7 +555,7 @@ eukabund <- data.frame("Euks" = input$map_loaded$Euks,
 topeuk <- filter_data(input,
                       filter_cat = "sampleID",
                       keep_vals = rownames(eukabund))
-pdf("FigsUpdated2/EukTopSamples.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/EukTopSamples.pdf", width = 7, height = 5)
 ggplot(topeuk$map_loaded, aes(reorder(sampleID, Euks, mean), Euks, fill = Environment)) +
   geom_bar(stat = "identity", color = NA) +
   geom_hline(yintercept = 0.05, linetype = "dashed") +
@@ -461,7 +614,7 @@ funabund <- data.frame("Fungi" = input$map_loaded$Fungi,
 topfun <- filter_data(input,
                       filter_cat = "sampleID",
                       keep_vals = rownames(funabund))
-pdf("FigsUpdated2/FungalTopSamples.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/FungalTopSamples.pdf", width = 7, height = 5)
 ggplot(topfun$map_loaded, aes(reorder(sampleID, Fungi, mean), Fungi, fill = Environment)) +
   geom_bar(stat = "identity", color = NA) +
   geom_hline(yintercept = 0.01, linetype = "dashed") +
@@ -495,7 +648,7 @@ nyi_let1 <- as.data.frame(nyi_list1$Letters) %>%
   mutate(label = `nyi_list1$Letters`,
          y = rep(0.12, nrow(.))) %>%
   rownames_to_column(var = "Environment")
-pdf("FigsUpdated2/FungalRel.pdf", width = 5, height = 4)
+pdf("InitialFigs/FigsUpdated2/FungalRel.pdf", width = 5, height = 4)
 ggplot(input$map_loaded, aes(reorder(Environment, Fungi, mean), Fungi)) +
   #geom_boxplot(outlier.shape = NA) +
   geom_jitter(size = 1, alpha = 0.2, width = 0.4) +
@@ -563,10 +716,10 @@ br_plot <- ggplot(input$map_loaded, aes(reorder(Environment, Fungi, median), Fun
         strip.text = element_text(size = 10))
 br_plot
 
-min(input$map_loaded$Fungi)
-max(input$map_loaded$Fungi)
-mean(input$map_loaded$Fungi)
-se(input$map_loaded$Fungi)
+min(input$map_loaded$Fungi) # 0
+max(input$map_loaded$Fungi) # 10.4%
+mean(input$map_loaded$Fungi) # 0.18%
+se(input$map_loaded$Fungi) # 0.03%
 
 
 
@@ -587,14 +740,18 @@ fungal_phyla_names <- c("Ascomycota", "Basidiomycota", "Blastocladiomycota",
 input_fungi <- filter_taxa_from_input(input_euk,
                                       taxa_to_keep = fungal_phyla_names,
                                       at_spec_level = 2)
-# Filter out plasmids (2 removed)
+# Filter out plasmids (2 removed in earlier version. now not found)
 input_fungi <- filter_taxa_from_input(input_fungi,
                                       taxa_to_remove = "Plasmid:Eukaryota",
                                       at_spec_level = 1)
 
-nrow(input$taxonomy_loaded) # 5943 total
-nrow(input_euk$taxonomy_loaded) # 439 euks
-nrow(input_fungi$taxonomy_loaded) # 326 fungi
+nrow(input$taxonomy_loaded) # 5936 total
+nrow(input_euk$taxonomy_loaded) # 432 euks
+nrow(input_fungi$taxonomy_loaded) # 319 rows
+unique(input_fungi$taxonomy_loaded$taxonomy6) # 293 unique genera
+# Some genera are listed twice if their higher taxonomy changed
+# This has now been fixed but there are still multiple rows
+# Always summarize taxonomy by genus, don't just use $data_loaded
 
 # Now check reads again (not actually reads, but fungal assigned CDS counts)
 sort(colSums(input_fungi$data_loaded))
@@ -602,8 +759,8 @@ sort(colSums(input_fungi$data_loaded))
 # Purposefully not filtering those out those as 0's are interesting in this analysis
 # These are extreme environments, some may have few to no fungi
 # Further below, however, some analyses will be done with zeroes removed
-mean(colSums(input_fungi$data_loaded)) # 556.2304
-se(colSums(input_fungi$data_loaded)) # 63.54668
+mean(colSums(input_fungi$data_loaded)) # 555.6409
+se(colSums(input_fungi$data_loaded)) # 63.5079
 input_fungi$map_loaded$fung_count <- colSums(input_fungi$data_loaded)
 input_fungi$map_loaded$present <- ifelse(input_fungi$map_loaded$fung_count > 0,
                                          1,
@@ -623,7 +780,7 @@ ggplot(input_fungi$map_loaded, aes(reorder(`Environment`, fung_count, mean), fun
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
 
 # Check genome size vs fungal genus gene counts
-pdf("FigsUpdated2/AssembledMetagenomeSizes_FungalGenusGeneCount.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/AssembledMetagenomeSizes_FungalGenusGeneCount.pdf", width = 7, height = 5)
 ggplot(input_fungi$map_loaded, aes(GenomeSize, fung_count)) +
   geom_point(size = 1.5, alpha = 0.25) +
   geom_smooth(method = "lm") +
@@ -643,15 +800,15 @@ env_prev <- input_fungi$map_loaded %>%
             num_samples = n(),
             prevalence = round(num_present/num_samples * 100, digits = 2)) %>%
   mutate(num_absent = num_samples - num_present)
-sum(env_prev$num_samples)
-sum(env_prev$num_present)
+sum(env_prev$num_samples) # 855
+sum(env_prev$num_present) # 731
 
 # Melt for stacked bar
 env_prev_long <- melt(env_prev,
                       id.vars = "Environment",
                       measure.vars = c("num_present", "num_absent"))
 
-pdf("FigsUpdated2/FungalPrevalence.pdf", width = 5, height = 4)
+pdf("InitialFigs/FigsUpdated2/FungalPrevalence.pdf", width = 5, height = 4)
 ggplot(env_prev, aes(reorder(Environment, prevalence, mean), prevalence)) +
   geom_bar(stat = "identity") +
   labs(x = NULL, 
@@ -662,7 +819,7 @@ ggplot(env_prev, aes(reorder(Environment, prevalence, mean), prevalence)) +
         axis.text.x = element_text(size = 10, angle = 45, hjust = 1))
 dev.off()
 
-pdf("FigsUpdated2/SampleSize.pdf", width = 5, height = 4.5)
+pdf("InitialFigs/FigsUpdated2/SampleSize.pdf", width = 5, height = 4.5)
 ggplot(env_prev_long, aes(reorder(Environment, value, mean), value, 
                           group = Environment, fill = variable)) +
   geom_bar(stat = "identity") +
@@ -696,7 +853,7 @@ n <- ggplot(env_prev_long, aes(reorder(Environment, value, mean), value,
   geom_text(data = env_prev, 
             aes(reorder(Environment, num_samples, mean), num_samples+15, 
                 label = num_samples), inherit.aes = F) +
-  geom_text(aes(x = "Cryosphere - soil", y = 235, label = "total n = 855\nn with fungi = 732"),
+  geom_text(aes(x = "Cryosphere - soil", y = 235, label = "total n = 855\nn with fungi = 731"),
             hjust = 0.5, check_overlap = T, size = 3) +
   scale_fill_manual(values = c("#F8766D", "#619CFF"),
                     breaks = c("num_absent", "num_present"),
@@ -727,12 +884,11 @@ prev <- ggplot(env_prev, aes(reorder(Environment, num_samples, mean), prevalence
 f1bd <- plot_grid(n, prev, ncol = 1, rel_heights = c(0.4, 0.6), labels = c("B", "D"))
 f1bd
 
+# Run map code way below to make fig1a
 f1ac <- plot_grid(fig1a, br_plot, ncol = 1, rel_heights = c(0.4, 0.6), align = "v",
                  labels = c("A", "C"))
 f1ac
 
-#f1 <- plot_grid(f1a, br_plot, ncol = 2, labels = "AUTO")
-#f1
 f1 <- plot_grid(f1ac, f1bd, ncol = 2)
 f1
 
@@ -741,13 +897,231 @@ f1
 dev.off()
 
 
+
+#### __Check IMG-NR ####
+# This section was run once to diagnose problems with the IMG database.
+# All issues have now been fixed!
+# # Check that all of these genera are in the IMG database. This confirms that this was the DB used.
+# # Also get DB stats
+# img_nr <- read.delim("data/IMG-NR.txt")
+# length(unique(img_nr$Class)) # 39
+# length(unique(img_nr$Order)) # 84
+# length(unique(img_nr$Family)) # 196
+# length(unique(img_nr$Genus)) # 293
+# 
+# # Our dataset
+# length(unique(input_fungi$taxonomy_loaded$taxonomy6)) # 309
+# 
+# # Hmm. There are at least 16 genera in our taxonomy table that aren't in the IMG database.
+# # Actually there are 21 genera not in the IMG database.
+# # Only 5 genera from IMG DB not in our dataset. Is this because low % identity cutoff?
+# # Could this be to changes over time? Genomes removed from database?
+# sum(unique(img_nr$Genus) %in% unique(input_fungi$taxonomy_loaded$taxonomy6)) # 288
+# sum(unique(img_nr$Genus) %notin% unique(input_fungi$taxonomy_loaded$taxonomy6)) # 5
+# sum(unique(input_fungi$taxonomy_loaded$taxonomy6) %notin% unique(img_nr$Genus)) # 21
+# # Which are they?
+# noDB <- input_fungi$taxonomy_loaded %>%
+#   filter(taxonomy6 %notin% img_nr$Genus) %>%
+#   arrange(taxonomy2, taxonomy3, taxonomy4, taxonomy5, taxonomy6)
+# #write.csv(noDB, "data/fungal_genera_not_in_current_IMG.csv", row.names = F)
+# # Search IMG/M online to make sure there's no discrepancy between search and download
+# # Gigaspora found in search (it has 1 MAG, no isolates)
+# # Genome name is C. Glomerobacter gigasporarum. It's bacterial. Should be removed.
+# # Need to ask Dongying/Natalia for the 936 Euk genomes on IMG/MER, not the 591 on IMG/M
+# # Dongying says 320 private Euk genomes
+# img_nr_priv <- read.delim("data/euk_IMG_private.txt") # 321 private euk
+# img_nr_priv_fung <- img_nr_priv %>%
+#   filter(Phylum %in% fungal_phyla_names) # 117 private fungi
+# length(unique(img_nr_priv_fung$Genus)) # 54 unique private fungal genera. some overlap though. 
+# # What is total unique fungal genera in public + private?
+# total_genus_list <- c(unique(img_nr$Genus), unique(img_nr_priv_fung$Genus))
+# length(unique(total_genus_list)) # 320
+# # Natalia says that only public genomes are used, but some have switched between private and public!
+# 
+# # Check dataset genera.
+# sum(noDB$taxonomy6 %in% img_nr_priv$Genus) # 4
+# noDB$taxonomy6
+# noDB$taxonomy6 %in% img_nr_priv$Genus 
+# # Exophiala (was deleted), Glarea, Cordyceps (was deleted), Rhizoclosmatium
+# unaccounted <- noDB %>%
+#   filter(taxonomy6 %notin% img_nr_priv$Genus)
+# # Still 17 unaccounted for! Check how abundant, which samples, which years.
+# input_fungi_unaccounted <- filter_taxa_from_input(input_fungi,
+#                                                   taxa_to_keep = unaccounted$taxonomy6,
+#                                                   at_spec_level = 6)
+# nrow(input_fungi_unaccounted$taxonomy_loaded) # 17
+# View(input_fungi_unaccounted$data_loaded)
+# # Get just samples that have at least 1 of these 17 genera
+# check_presence <- as.data.frame(colSums(input_fungi_unaccounted$data_loaded)) %>%
+#   set_names("colSum") %>%
+#   filter(colSum > 0) 
+# nrow(check_presence) # 327 of 855 samples have one of these!
+# input_fungi_unaccounted_present <- filter_data(input_fungi_unaccounted,
+#                                                filter_cat = "sampleID",
+#                                                keep_vals = rownames(check_presence))
+# table(input_fungi_unaccounted_present$map_loaded$Year) # Across all years
+# View(input_fungi_unaccounted_present$data_loaded)
+# 
+# # Filtered KO list to those 17 genera. Actually only 14 had KOs.
+# # Dongying says some taxa have changed. Checked specific gene IDs of the 14 genera.
+# # Need to document what changed to what
+# # Hopefully each genus only changed to one thing, not multiple things
+# ko_table_unaccounted <- read.csv("data/ko_table_unaccounted.csv")
+# ko_table_unaccounted_uniq <- read.csv("data/ko_table_unaccounted.csv") %>%
+#   distinct(Genus) # n = 14
+# ko_table_unaccounted_update <- read.delim("data/ko_update.list")
+# new_taxa <- read.delim("data/ko_update.list") %>%
+#   separate(new_taxa, into = c("Domain", "Phylum", "Class", "Order", "Family", 
+#                               "Genus", "Species"), sep = ";")
+# unique(new_taxa$Genus) # 13 and NA
+# 
+# # Are those 13 in IMG-NR?
+# unique(new_taxa$Genus) %in% img_nr$Genus
+# # 12 are there but Gigaspora is not. In private? 
+# unique(new_taxa$Genus) %in% total_genus_list
+# # Still no Gigaspora! Later discovered it's a bacterial MAG.
+# 
+# # Check the actual changes
+# new_taxa <- read.delim("data/ko_update.list") %>%
+#   separate(new_taxa, into = c("Domain", "Phylum", "Class", "Order", "Family", 
+#                               "Genus", "Species"), sep = ";", remove = F) %>%
+#   dplyr::distinct(Phylum.Class.Order.Family.Genus.Species, new_taxa)
+# # 1. Meliniomyces -> Hyaloscypha
+# # 2. Pezoloma -> Hyaloscypha
+# # 3. Chalara -> Stipitochalara
+# # 4. Phialocephala -> Mollisia
+# # 5. Acremonium -> Sodiomyces
+# # 6. Claviceps -> Not in IMG (in deleted list)
+# # 7. Hypomyces -> Not in IMG (in deleted list)
+# # 8. Sarocladium -> Not in IMG (in deleted list)
+# # 9. Magnaporthe -> Pyricularia
+# # 10. Thielavia_antarctica -> Trichocladium_antarcticum
+# # 10. Thielavia_appendiculata -> Parathielavia_appendiculata
+# # 10. Thielavia_arenaria -> Canariomyces_arenarius
+# # 10. Thielavia_hyrcaniae -> Parathielavia_hyrcaniae
+# # 10. Thielavia_terrestris -> Thermothielavioides_terrestris
+# # 11. Cortinarius -> Phlegmacium
+# # 12. Nosema -> Vairimorpha
+# # 13. Gigaspora -> Gigaspora (no change! Can't find in IMG-NR public, private, or deleted)
+# # 14. Mortierella -> Linnemannia
+# 
+# # Now Dongying, Amy, Natalia say that some genomes have been removed for various reasons
+# # List can be found on IMG/M, Find Genomes -> Deleted Genomes.
+# # Select Domain Eukaryota and export the table
+# img_nr_deleted <- read.delim("data/euk_IMG_deleted.txt") %>%
+#   separate(Genome.Name, into = c("Genus", "Species", "Strain", "StrainNumber"),
+#            remove = F, sep = " ")
+# # See if the 21 unaccounted for were in the deleted list
+# sum(noDB$taxonomy6 %in% img_nr_deleted$Genus) # 7 of 21 were deleted
+# noDB$taxonomy6 %in% img_nr_deleted$Genus
+# img_nr_deleted_7 <- img_nr_deleted %>%
+#   filter(Genus %in% noDB$taxonomy6)
+# # Cordyceps, Claviceps, Exophiala, Hypomyces, Glarea, Sarocladium, Thielavia
+# # Thielavia deleted 2018, the rest 2023.
+# # Still no Gigaspora
+# # How many samples have those 7, and how many hits?
+# input_fungi_d7 <- filter_taxa_from_input(input_fungi,
+#                                           taxa_to_keep = img_nr_deleted_7$Genus,
+#                                           at_spec_level = 6)
+# nrow(input_fungi_d7$taxonomy_loaded) # 1
+# View(input_fungi_d7$data_loaded)
+# rowSums(input_fungi_d7$data_loaded) # 4 of these with only 1 hit! Thielavia only meaningful one.
+# check_presence_d7 <- as.data.frame(colSums(input_fungi_d7$data_loaded)) %>%
+#   set_names("colSum") %>%
+#   filter(colSum > 0)
+# nrow(check_presence_d7) # 127 of 855 samples have Gigaspora!
+# input_fungi_gig_present <- filter_data(input_fungi_d7,
+#                                        filter_cat = "sampleID",
+#                                        keep_vals = rownames(check_presence_d7))
+# table(input_fungi_gig_present$map_loaded$Year) # 2018 and later
+# 
+# # How many samples have Gigaspora, and how many hits?
+# input_fungi_Gig <- filter_taxa_from_input(input_fungi,
+#                                           taxa_to_keep = "Gigaspora",
+#                                           at_spec_level = 6)
+# nrow(input_fungi_Gig$taxonomy_loaded) # 1
+# View(input_fungi_Gig$data_loaded)
+# rowSums(input_fungi_Gig$data_loaded) # 461 total
+# # How many samples have Gigaspora?
+# check_presence_gig <- as.data.frame(colSums(input_fungi_Gig$data_loaded)) %>%
+#   set_names("colSum") %>%
+#   filter(colSum > 0)
+# nrow(check_presence_gig) # 123 of 855 samples have Gigaspora!
+# input_fungi_gig_present <- filter_data(input_fungi_Gig,
+#                                        filter_cat = "sampleID",
+#                                        keep_vals = rownames(check_presence_gig))
+# table(input_fungi_gig_present$map_loaded$Year) # Only 2018 and after!
+# View(input_fungi_gig_present$data_loaded)
+# sum(input_fungi_gig_present$data_loaded == 1) # 42
+# sum(input_fungi_gig_present$data_loaded == 2) # 30. So 72 of the 123 only have 1 or 2 hits.
+# sum(input_fungi_gig_present$data_loaded == 3) # 14
+# # Note, this is not actually Gigaspora! It was a bacterial MAG from Gigaspora.
+# 
+# # Make supplemental table of the database with notes
+# # Public + private + deleted + renamed
+# img_nr$Collection <- "Public"
+# img_nr_priv_fung$Collection <- "Private"
+# img_nr_priv_fung$X <- NULL
+# img_nr_deleted
+# 
+# # Add rename taxa and date column
+# 
+# # Get same columns
+# 
+# # So:
+# # 21 genera not in IMG-NR public
+# # 7 of these were deleted. Of the deleted ones, 
+# # 4 of these are in IMG-NR private
+# # 1 of these is actually a bacterial MAG
+# # 10 of these have been renamed, and the renamed taxa are in IMG-NR public
+# # That leaves 3 that didn't have KO geneIDs for Dongying to check.
+# # Pleosporaceae; Setosphaeria
+# # Saccharomycetaceae; unclassified Saccharomycetaceae
+# # Fomitopsidaceae; Antrodia
+# # Check for those families. Maybe the genus was renamed.
+# pleo <- img_nr %>%
+#   filter(Family == "Pleosporaceae")
+# # Anamorph is Exserohilum turcicum which is in IMG-NR public
+# sacc <- img_nr %>%
+#   filter(Family == "Saccharomycetaceae")
+# # 32 Saccharomycetaceae genomes in IMG-NR public. We will assume it was later given a genus name.
+# fomi <- img_nr %>%
+#   filter(Family == "Fomitopsidaceae")
+# # Likely renamed to Fomitopsis schrenkii
+# 
+# # Read in the original Table S4 to see if any of the top genera in that list were deleted or renamed
+# # This will be remade
+# tableS4 <- read_excel("data/TableS4_orig.xlsx")
+# tableS4_gen <- tableS4 %>%
+#   filter(Level == "Genus")
+# unique(tableS4_gen$taxon) # 44
+# sum(tableS4_gen$taxon %in% noDB$taxonomy6) # 2. Which ones?
+# sum(tableS4_gen$taxon %in% unaccounted$taxonomy6) # 1
+# sum(tableS4_gen$taxon %in% img_nr_deleted$Genus)
+# tableS4_gen_noDB <- tableS4_gen %>%
+#   filter(taxon %in% noDB$taxonomy6)
+# # Meliniomyces (renamed Hyaloscypha)
+# # Rhizoclosmatium (must have been public at some point but now private)
+# 
+# # TO SUMMARIZE:
+# # Of the 21 issues:
+# # 1 now private
+# # 13 renamed
+# # 6 deleted
+# # 1 soon to be deleted
+# # Need to delete and rename those and then rerun the whole script
+# # Rename all taxonomic levels if necessary, not just genus.
+# # While I'm at it, should make sure anything with the same genus has the same (most recent) higher-level taxonomy. That way summarize_taxonomy() is accurate.
+
+
+
 #### _CPM ####
 input_fungi_CPM <- input_fungi
 # Replace counts in "data_loaded" with CPM transformed counts
 # This is CPM assembled metagenomic base pairs
 # Do (count*1000000)/GenomeSize
-# i is samples 1 to 1142
-# j is taxa 1 to 304
+# i is samples 1 to 855
+# j is taxa 1 to 319
 for (i in 1:ncol(input_fungi$data_loaded)) {
   for (j in 1:nrow(input_fungi$data_loaded)) {
     input_fungi_CPM$data_loaded[j, i] <- (input_fungi$data_loaded[j, i]*1000000)/input_fungi$map_loaded$GenomeSize[i]
@@ -776,9 +1150,9 @@ barsPhyla <- plot_taxa_bars(tax_sum_Phyla,
                             data_only = T) %>%
   mutate(taxon = fct_rev(taxon))
 
-pdf("FigsUpdated2/CPM_Phyla.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/CPM_Phyla.pdf", width = 7, height = 5)
 fs3a <- ggplot(barsPhyla, aes(reorder(group_by, mean_value, mean), mean_value, fill = taxon)) +
-  geom_bar(stat = "identity", colour = NA, size = 0.25) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
   labs(x = "Environment", y = "Abundance (CPM)", fill = "Phylum") +
   scale_fill_manual(values = brewer.pal(12, "Paired")[7:1]) +
   scale_y_continuous(expand = c(0.01, 0.01)) +
@@ -799,8 +1173,10 @@ ts_p <- taxa_summary_by_sample_type(tax_sum_Phyla,
                                     input_fungi_CPM$map_loaded, 
                                     'Environment', 
                                     0.0001, 
-                                    'KW')
-#write_xlsx(ts_p, "data/TableS2.xlsx", format_headers = F)
+                                    'KW') %>%
+  rownames_to_column(var = "Phylum") %>%
+  dplyr::select(Phylum, everything())
+#write_xlsx(ts_p, "data/TableS3.xlsx", format_headers = F)
 
 # Class
 tax_sum_Class <- summarize_taxonomy(input_fungi_CPM, level = 3, report_higher_tax = T, relative = F)
@@ -825,9 +1201,9 @@ barsClass <- plot_taxa_bars(tax_sum_Class,
   mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
   mutate(taxon = fct_rev(taxon))
 
-pdf("FigsUpdated2/CPM_Class.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/CPM_Class.pdf", width = 7, height = 5)
 fs3b <- ggplot(barsClass, aes(reorder(group_by, mean_value, mean), mean_value, fill = taxon)) +
-  geom_bar(stat = "identity", colour = NA, size = 0.25) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
   labs(x = "Environment", y = "Abundance (CPM)", fill = "Class") +
   scale_fill_manual(values = c("grey90", mycolors[15:1])) +
   scale_y_continuous(expand = c(0.01, 0.01)) +
@@ -848,8 +1224,10 @@ ts_c <- taxa_summary_by_sample_type(tax_sum_Class,
                                     input_fungi_CPM$map_loaded, 
                                     'Environment', 
                                     0.0001, 
-                                    'KW')
-# write_xlsx(ts_c, "data/TableS3.xlsx", format_headers = F)
+                                    'KW') %>%
+  rownames_to_column(var = "Class") %>%
+  dplyr::select(Class, everything())
+#write_xlsx(ts_c, "data/TableS4.xlsx", format_headers = F)
 
 # Multipanel Figure S3
 # Horizontal
@@ -874,9 +1252,9 @@ barsOrder <- plot_taxa_bars(tax_sum_Order,
   mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
   mutate(taxon = fct_rev(taxon))
 
-pdf("FigsUpdated2/CPM_Order.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/CPM_Order.pdf", width = 7, height = 5)
 ggplot(barsOrder, aes(group_by, mean_value, fill = taxon)) +
-  geom_bar(stat = "identity", colour = NA, size = 0.25) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
   labs(x = "Environment", y = "Abundance (CPM)", fill = "Order") +
   scale_fill_manual(values = c("grey75", "grey90", mycolors[14:1])) +
   scale_y_continuous(expand = c(0.01, 0.01)) +
@@ -901,9 +1279,9 @@ barsFamily <- plot_taxa_bars(tax_sum_Family,
   mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
   mutate(taxon = fct_rev(taxon))
 
-pdf("FigsUpdated2/CPM_Family.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/CPM_Family.pdf", width = 7, height = 5)
 ggplot(barsFamily, aes(group_by, mean_value, fill = taxon)) +
-  geom_bar(stat = "identity", colour = NA, size = 0.25) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
   labs(x = "Environment", y = "Abundance (CPM)", fill = "Family") +
   scale_fill_manual(values = c("grey75", "grey90", mycolors[14:1])) +
   scale_y_continuous(expand = c(0.01, 0.01)) +
@@ -928,9 +1306,9 @@ barsGenus <- plot_taxa_bars(tax_sum_Genus,
   # mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
   mutate(taxon = fct_rev(taxon))
 
-pdf("FigsUpdated2/CPM_Genus.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/CPM_Genus.pdf", width = 7, height = 5)
 ggplot(barsGenus, aes(group_by, mean_value, fill = taxon)) +
-  geom_bar(stat = "identity", colour = NA, size = 0.25) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
   labs(x = "Environment", y = "Abundance (CPM)", fill = "Genus") +
   scale_fill_manual(values = c("grey90", mycolors[15:1])) +
   scale_y_continuous(expand = c(0.01, 0.01)) +
@@ -960,7 +1338,7 @@ nyi_let2 <- as.data.frame(nyi_list2$Letters) %>%
   mutate(label = `nyi_list2$Letters`,
          y = rep(175, nrow(.))) %>%
   rownames_to_column(var = "Environment")
-pdf("FigsUpdated2/FungalCPM.pdf", width = 5, height = 4)
+pdf("InitialFigs/FigsUpdated2/FungalCPM.pdf", width = 5, height = 4)
 ggplot(input_fungi_CPM$map_loaded, aes(reorder(Environment, totalFun, mean), totalFun)) +
   # geom_boxplot(outlier.shape = NA) +
   geom_jitter(size = 1, alpha = 0.2, width = 0.4) +
@@ -989,9 +1367,9 @@ barsPhyla <- plot_taxa_bars(tax_sum_Phyla,
   mutate(taxon = fct_rev(taxon)) %>%
   separate(group_by, into = c("Environment", "Location"), sep = "_")
 
-pdf("FigsUpdated2/CPM_Phyla_EnvGeo.pdf", width = 12, height = 8)
+pdf("InitialFigs/FigsUpdated2/CPM_Phyla_EnvGeo.pdf", width = 12, height = 8)
 ggplot(barsPhyla, aes(reorder(Location, -mean_value, mean), mean_value, fill = taxon)) +
-  geom_bar(stat = "identity", colour = NA, size = 0.25) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
   labs(x = NULL, y = "Abundance (CPM)", fill = "Phylum") +
   scale_fill_manual(values = brewer.pal(12, "Paired")[7:1]) +
   scale_y_continuous(expand = c(0, 0)) +
@@ -1014,62 +1392,983 @@ ggplot(barsPhyla, aes(reorder(Location, -mean_value, mean), mean_value, fill = t
         plot.margin = unit(c(0.1, 0.1, 0.1, 0.5), "cm"))
 dev.off()
 
+# Check how consistent within geographic location too
+amd <- filter_data(input_fungi_CPM,
+                   filter_cat = "Environment",
+                   keep_vals = "Acid mine drainage")
+tax_sum_Class <- summarize_taxonomy(amd, level = 3, report_higher_tax = T, relative = F)
+rownames(tax_sum_Class) <- substring(rownames(tax_sum_Class), 12)
+barsClass <- plot_taxa_bars(tax_sum_Class,
+                            input_fungi_CPM$map_loaded,
+                            type_header = "sampleID",
+                            num_taxa = 12,
+                            data_only = T) %>%
+  mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+  mutate(taxon = fct_rev(taxon)) %>%
+  left_join(., input_fungi_CPM$map_loaded, by = c("group_by" = "sampleID"))
+ggplot(barsClass, aes(reorder(group_by, mean_value, mean), mean_value, fill = taxon)) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+  labs(x = "Sample", y = "Abundance (CPM)", fill = "Class") +
+  scale_fill_manual(values = c("grey90", brewer_pal(palette = "Paired")(12))) +
+  scale_y_continuous(expand = c(0.01, 0.01)) +
+  facet_grid(~ Location2, scales = "free", space = "free") +
+  theme_classic() +
+  theme(axis.title.y = element_text(size = 12),
+        axis.title.x = element_blank(), 
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"),
+        legend.position = c(0,1),
+        legend.justification = c(0,1),
+        legend.background = element_blank())
+
+crs <- filter_data(input_fungi_CPM,
+                   filter_cat = "Environment",
+                   keep_vals = "Cryosphere - soil")
+tax_sum_Class <- summarize_taxonomy(crs, level = 3, report_higher_tax = T, relative = F)
+rownames(tax_sum_Class) <- substring(rownames(tax_sum_Class), 12)
+barsClass <- plot_taxa_bars(tax_sum_Class,
+                            input_fungi_CPM$map_loaded,
+                            type_header = "sampleID",
+                            num_taxa = 12,
+                            data_only = T) %>%
+  mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+  mutate(taxon = fct_rev(taxon)) %>%
+  left_join(., input_fungi_CPM$map_loaded, by = c("group_by" = "sampleID"))
+ggplot(barsClass, aes(reorder(group_by, mean_value, mean), mean_value, fill = taxon)) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+  labs(x = "Sample", y = "Abundance (CPM)", fill = "Class") +
+  scale_fill_manual(values = c("grey90", brewer_pal(palette = "Paired")(12))) +
+  scale_y_continuous(expand = c(0.01, 0.01)) +
+  facet_grid(~ Location2, scales = "free", space = "free") +
+  theme_classic() +
+  theme(axis.title.y = element_text(size = 12),
+        axis.title.x = element_blank(), 
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"),
+        legend.position = c(0,1),
+        legend.justification = c(0,1),
+        legend.background = element_blank())
+
+crw <- filter_data(input_fungi_CPM,
+                   filter_cat = "Environment",
+                   keep_vals = "Cryosphere - water")
+tax_sum_Class <- summarize_taxonomy(crw, level = 3, report_higher_tax = T, relative = F)
+rownames(tax_sum_Class) <- substring(rownames(tax_sum_Class), 12)
+barsClass <- plot_taxa_bars(tax_sum_Class,
+                            input_fungi_CPM$map_loaded,
+                            type_header = "sampleID",
+                            num_taxa = 12,
+                            data_only = T) %>%
+  mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+  mutate(taxon = fct_rev(taxon)) %>%
+  left_join(., input_fungi_CPM$map_loaded, by = c("group_by" = "sampleID"))
+ggplot(barsClass, aes(reorder(group_by, mean_value, mean), mean_value, fill = taxon)) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+  labs(x = "Sample", y = "Abundance (CPM)", fill = "Class") +
+  scale_fill_manual(values = c("grey90", brewer_pal(palette = "Paired")(12))) +
+  scale_y_continuous(expand = c(0.01, 0.01)) +
+  facet_grid(~ Location2, scales = "free", space = "free") +
+  theme_classic() +
+  theme(axis.title.y = element_text(size = 12),
+        axis.title.x = element_blank(), 
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"),
+        legend.position = c(0,1),
+        legend.justification = c(0,1),
+        legend.background = element_blank())
+
+des <- filter_data(input_fungi_CPM,
+                   filter_cat = "Environment",
+                   keep_vals = "Desert")
+tax_sum_Class <- summarize_taxonomy(des, level = 3, report_higher_tax = T, relative = F)
+rownames(tax_sum_Class) <- substring(rownames(tax_sum_Class), 12)
+barsClass <- plot_taxa_bars(tax_sum_Class,
+                            input_fungi_CPM$map_loaded,
+                            type_header = "sampleID",
+                            num_taxa = 12,
+                            data_only = T) %>%
+  mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+  mutate(taxon = fct_rev(taxon)) %>%
+  left_join(., input_fungi_CPM$map_loaded, by = c("group_by" = "sampleID"))
+ggplot(barsClass, aes(reorder(group_by, mean_value, mean), mean_value, fill = taxon)) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+  labs(x = "Sample", y = "Abundance (CPM)", fill = "Class") +
+  scale_fill_manual(values = c("grey90", brewer_pal(palette = "Paired")(12))) +
+  scale_y_continuous(expand = c(0.01, 0.01)) +
+  facet_grid(~ Location2, scales = "free", space = "free") +
+  theme_classic() +
+  theme(axis.title.y = element_text(size = 12),
+        axis.title.x = element_blank(), 
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"),
+        legend.position = c(0,1),
+        legend.justification = c(0,1),
+        legend.background = element_blank())
+
+gla <- filter_data(input_fungi_CPM,
+                   filter_cat = "Environment",
+                   keep_vals = "Glacial forefield")
+tax_sum_Class <- summarize_taxonomy(gla, level = 3, report_higher_tax = T, relative = F)
+rownames(tax_sum_Class) <- substring(rownames(tax_sum_Class), 12)
+barsClass <- plot_taxa_bars(tax_sum_Class,
+                            input_fungi_CPM$map_loaded,
+                            type_header = "sampleID",
+                            num_taxa = 12,
+                            data_only = T) %>%
+  mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+  mutate(taxon = fct_rev(taxon)) %>%
+  left_join(., input_fungi_CPM$map_loaded, by = c("group_by" = "sampleID"))
+ggplot(barsClass, aes(reorder(group_by, mean_value, mean), mean_value, fill = taxon)) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+  labs(x = "Sample", y = "Abundance (CPM)", fill = "Class") +
+  scale_fill_manual(values = c("grey90", brewer_pal(palette = "Paired")(12))) +
+  scale_y_continuous(expand = c(0.01, 0.01)) +
+  facet_grid(~ Location2, scales = "free", space = "free") +
+  theme_classic() +
+  theme(axis.title.y = element_text(size = 12),
+        axis.title.x = element_blank(), 
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"),
+        legend.position = c(0,1),
+        legend.justification = c(0,1),
+        legend.background = element_blank())
+
+hot <- filter_data(input_fungi_CPM,
+                   filter_cat = "Environment",
+                   keep_vals = "Hot spring")
+tax_sum_Class <- summarize_taxonomy(hot, level = 3, report_higher_tax = T, relative = F)
+rownames(tax_sum_Class) <- substring(rownames(tax_sum_Class), 12)
+barsClass <- plot_taxa_bars(tax_sum_Class,
+                            input_fungi_CPM$map_loaded,
+                            type_header = "sampleID",
+                            num_taxa = 12,
+                            data_only = T) %>%
+  mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+  mutate(taxon = fct_rev(taxon)) %>%
+  left_join(., input_fungi_CPM$map_loaded, by = c("group_by" = "sampleID"))
+ggplot(barsClass, aes(reorder(group_by, mean_value, mean), mean_value, fill = taxon)) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+  labs(x = "Sample", y = "Abundance (CPM)", fill = "Class") +
+  scale_fill_manual(values = c("grey90", brewer_pal(palette = "Paired")(12))) +
+  scale_y_continuous(expand = c(0.01, 0.01)) +
+  facet_grid(~ Location2, scales = "free", space = "free") +
+  theme_classic() +
+  theme(axis.title.y = element_text(size = 12),
+        axis.title.x = element_blank(), 
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"),
+        legend.position = c(0,1),
+        legend.justification = c(0,1),
+        legend.background = element_blank())
+
+hyd <- filter_data(input_fungi_CPM,
+                   filter_cat = "Environment",
+                   keep_vals = "Hydrothermal vent")
+tax_sum_Class <- summarize_taxonomy(hyd, level = 3, report_higher_tax = T, relative = F)
+rownames(tax_sum_Class) <- substring(rownames(tax_sum_Class), 12)
+barsClass <- plot_taxa_bars(tax_sum_Class,
+                            input_fungi_CPM$map_loaded,
+                            type_header = "sampleID",
+                            num_taxa = 12,
+                            data_only = T) %>%
+  mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+  mutate(taxon = fct_rev(taxon)) %>%
+  left_join(., input_fungi_CPM$map_loaded, by = c("group_by" = "sampleID"))
+ggplot(barsClass, aes(reorder(group_by, mean_value, mean), mean_value, fill = taxon)) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+  labs(x = "Sample", y = "Abundance (CPM)", fill = "Class") +
+  scale_fill_manual(values = c("grey90", brewer_pal(palette = "Paired")(12))) +
+  scale_y_continuous(expand = c(0.01, 0.01)) +
+  facet_grid(~ Location2, scales = "free", space = "free") +
+  theme_classic() +
+  theme(axis.title.y = element_text(size = 12),
+        axis.title.x = element_blank(), 
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"),
+        legend.position = c(0,1),
+        legend.justification = c(0,1),
+        legend.background = element_blank())
+
+sal <- filter_data(input_fungi_CPM,
+                   filter_cat = "Environment",
+                   keep_vals = "Hypersaline")
+tax_sum_Class <- summarize_taxonomy(sal, level = 3, report_higher_tax = T, relative = F)
+rownames(tax_sum_Class) <- substring(rownames(tax_sum_Class), 12)
+barsClass <- plot_taxa_bars(tax_sum_Class,
+                            input_fungi_CPM$map_loaded,
+                            type_header = "sampleID",
+                            num_taxa = 12,
+                            data_only = T) %>%
+  mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+  mutate(taxon = fct_rev(taxon)) %>%
+  left_join(., input_fungi_CPM$map_loaded, by = c("group_by" = "sampleID"))
+ggplot(barsClass, aes(reorder(group_by, mean_value, mean), mean_value, fill = taxon)) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+  labs(x = "Sample", y = "Abundance (CPM)", fill = "Class") +
+  scale_fill_manual(values = c("grey90", brewer_pal(palette = "Paired")(12))) +
+  scale_y_continuous(expand = c(0.01, 0.01)) +
+  facet_grid(~ Location2, scales = "free", space = "free") +
+  theme_classic() +
+  theme(axis.title.y = element_text(size = 12),
+        axis.title.x = element_blank(), 
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"),
+        legend.position = c(0,1),
+        legend.justification = c(0,1),
+        legend.background = element_blank())
+
+sod <- filter_data(input_fungi_CPM,
+                   filter_cat = "Environment",
+                   keep_vals = "Soda lake")
+tax_sum_Class <- summarize_taxonomy(sod, level = 3, report_higher_tax = T, relative = F)
+rownames(tax_sum_Class) <- substring(rownames(tax_sum_Class), 12)
+barsClass <- plot_taxa_bars(tax_sum_Class,
+                            input_fungi_CPM$map_loaded,
+                            type_header = "sampleID",
+                            num_taxa = 12,
+                            data_only = T) %>%
+  mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+  mutate(taxon = fct_rev(taxon)) %>%
+  left_join(., input_fungi_CPM$map_loaded, by = c("group_by" = "sampleID"))
+ggplot(barsClass, aes(reorder(group_by, mean_value, mean), mean_value, fill = taxon)) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+  labs(x = "Sample", y = "Abundance (CPM)", fill = "Class") +
+  scale_fill_manual(values = c("grey90", brewer_pal(palette = "Paired")(12))) +
+  scale_y_continuous(expand = c(0.01, 0.01)) +
+  facet_grid(~ Location2, scales = "free", space = "free") +
+  theme_classic() +
+  theme(axis.title.y = element_text(size = 12),
+        axis.title.x = element_blank(), 
+        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+        legend.text = element_text(size = 8),
+        legend.key.size = unit(0.5, "cm"),
+        plot.margin = margin(0.1, 0.1, 0.1, 0.5, unit = "cm"),
+        legend.position = c(0,1),
+        legend.justification = c(0,1),
+        legend.background = element_blank())
+
 
 
 #### _Relative ####
-# Remove zeroes (123 removed, 732 remaining)
+# Remove zeroes (123 removed, 731 remaining)
 countFun <- as.data.frame(sort(colSums(input_fungi_CPM$data_loaded))) %>%
   filter(`sort(colSums(input_fungi_CPM$data_loaded))` == 0)
 input_fungi_nz <- filter_data(input_fungi,
                               filter_cat = "sampleID",
                               filter_vals = rownames(countFun))
 
-# Check Glacial Forefields (for Fusarium)
-source("~/Documents/GitHub/EastCoast/code/cliffplot_taxa_bars.R")
-glac_rel <- filter_data(input_fungi_nz, 
-                        filter_cat = "Environment",
-                        keep_vals = "Glacial forefield") # n = 51
-glac_cpm <- filter_data(input_fungi_CPM, 
-                        filter_cat = "Environment",
-                        keep_vals = "Glacial forefield") # n = 53
-cliffplot_taxa_bars(input = glac_rel, level = 6, variable = "sampleID")
-cliffplot_taxa_bars(input = glac_cpm, level = 6, variable = "sampleID")
-cliffplot_taxa_bars(input = glac_cpm, level = 6, variable = "Isolation.Country")
-cliffplot_taxa_bars(input = glac_cpm, level = 6, variable = "Study.Name")
+# Note: The check and compare sections were done to check for consistency with other methods and to investigate the presence of Fusarium in glacial forefields
 
-# How many is Fusarium present in?
-fus <- summarize_taxonomy(input = glac_rel, level = 6, report_higher_tax = F) %>%
-  filter(rownames(.) == "Fusarium") %>%
-  t() %>%
-  as.data.frame()
-sum(fus$Fusarium > 0)
+# #### _Check glacial forefields ####
+# # Check distribution of Fusarium
+# source("~/Documents/GitHub/EastCoast/code/cliffplot_taxa_bars.R")
+# glac_rel <- filter_data(input_fungi_nz, 
+#                         filter_cat = "Environment",
+#                         keep_vals = "Glacial forefield") # n = 51
+# glac_cpm <- filter_data(input_fungi_CPM, 
+#                         filter_cat = "Environment",
+#                         keep_vals = "Glacial forefield") # n = 53
+# cliffplot_taxa_bars(input = glac_rel, level = 6, variable = "sampleID")
+# cliffplot_taxa_bars(input = glac_cpm, level = 6, variable = "Isolation.Country")
+# cliffplot_taxa_bars(input = glac_cpm, level = 6, variable = "Study.Name")
+# 
+# # How many is Fusarium present in?
+# fus <- summarize_taxonomy(input = glac_rel, level = 6, report_higher_tax = F) %>%
+#   filter(rownames(.) == "Fusarium") %>%
+#   t() %>%
+#   as.data.frame()
+# sum(fus$Fusarium > 0)
+# 
+# # Check most abundant genera
+# glac_rel_gen <- summarize_taxonomy(input = glac_rel, level = 6, report_higher_tax = F) %>%
+#   mutate(mean = rowMeans(.)) %>%
+#   rownames_to_column(var = "Genus") %>%
+#   arrange(desc(mean)) %>%
+#   dplyr::select(Genus, mean)
+# # Slightly different than CPM
+# glac_cpm_gen <- summarize_taxonomy(input = glac_cpm, level = 6, relative = F, report_higher_tax = F) %>%
+#   dplyr::select(-X3300011174, -X3300011176) %>%
+#   mutate(mean = rowMeans(.)) %>%
+#   rownames_to_column(var = "Genus") %>%
+#   arrange(desc(mean)) %>%
+#   dplyr::select(Genus, mean)
+# # This agrees with Table 2.
+# glac_cpm_gen <- summarize_taxonomy(input = glac_cpm, level = 6, relative = F, report_higher_tax = F)
+# plot_taxa_bars(glac_cpm_gen, 
+#                metadata_map = glac_cpm$map_loaded, 
+#                type_header = "sampleID",
+#                num_taxa = 12, 
+#                data_only = F) +
+#   scale_fill_brewer(palette = "Paired") +
+#   theme_classic() +
+#   theme(axis.text.x = element_text(size = 4, angle = 45, hjust = 1))
+# 
+# # Svalbard (Schmidt Lab, n = 3)
+# sval_rel <- filter_data(input_fungi_nz, 
+#                         filter_cat = "sampleID",
+#                         keep_vals = c("X3300061230", "X3300061231", "X3300061232"))
+# png("InitialFigs/CompareKaiju_SvalbardGenus.png", width = 7, height = 5, units = "in", res = 300)
+# cliffplot_taxa_bars(input = sval_rel, level = 6, variable = "sampleID")
+# dev.off()
+# 
+# png("InitialFigs/CompareKaiju_SvalbardClass.png", width = 7, height = 5, units = "in", res = 300)
+# cliffplot_taxa_bars(input = sval_rel, level = 3, variable = "sampleID")
+# dev.off()
+# # Top 9 Kaiju classes all in top 12 IMG classes!
+# # In general should probably stick to class level with IMG, stay away from strong claims about genera.
+# 
+# 
+# 
+# #### _Compare IMG ####
+# # Ran Kaiju v1.9.0 classifer on KBase with database "Fungi" updated 29-Mar-2022.
+# # Uses unassembled reads
+# # Did on 17 samples sequenced at JGI
+# # Note: 301/855 were sequenced at JGI
+# # Subset those and make taxa plots to compare to the Kaiju plots
+# test <- read_excel("data/JGIsequenced.xlsx", sheet = 2) %>%
+#   filter(FilteredData == "Yes") %>%
+#   arrange(KaijuOrder) %>%
+#   mutate(sampleID = paste("X", taxon_oid, sep = "")) %>%
+#   dplyr::select(KaijuOrder, ShortName, taxon_oid, sampleID)
+# testmerge <- test %>%
+#   dplyr::select(-sampleID)
+# input_fungi$map_loaded <- input_fungi$map_loaded %>%
+#   left_join(., testmerge, by = "taxon_oid")
+# rownames(input_fungi$map_loaded) <- input_fungi$map_loaded$sampleID
+# kaiju <- filter_data(input_fungi,
+#                      filter_cat = "taxon_oid",
+#                      keep_vals = test$taxon_oid)
+# 
+# tax_sum_Phyla <- summarize_taxonomy(kaiju, level = 2, report_higher_tax = F, relative = T) %>%
+#   replace(is.na(.), 0)
+# barsPhyla <- plot_taxa_bars(tax_sum_Phyla,
+#                             kaiju$map_loaded,
+#                             type_header = "ShortName",
+#                             num_taxa = 7,
+#                             data_only = T) %>%
+#   mutate(group_by = factor(group_by,
+#                            levels = test$ShortName)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# topPhyla <- barsPhyla %>%
+#   group_by(taxon) %>%
+#   summarise(mean = mean(mean_value)) %>%
+#   arrange(-mean)
+# barsPhyla <- barsPhyla %>%
+#   # mutate(taxon = factor(taxon, levels = topPhyla$taxon))
+#   mutate(taxon = factor(taxon, levels = c("Blastocladiomycota", "Ascomycota",
+#                                           "Basidiomycota", "Chytridiomycota", 
+#                                           "Mucoromycota", "Microsporidia", "Zoopagomycota")))
+# png("InitialFigs/CompareKaiju_Phyla.png", width = 7, height = 5, units = "in", res = 300)
+# ggplot(barsPhyla, aes(group_by, mean_value, fill = taxon)) +
+#   geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+#   labs(x = "sampleID", y = "Relative abundance", fill = "Phylum") +
+#   #scale_fill_manual(values = brewer.pal(12, "Paired")[7:1]) +
+#   scale_fill_manual(values = c("grey", "royalblue", "pink", "aquamarine",
+#                                "cornflowerblue", "cyan", "lightpink3"
+#                                )) +
+#   scale_y_continuous(expand = c(0.01, 0.01)) +
+#   theme_classic() +
+#   theme(axis.title.y = element_text(size = 12), 
+#         axis.title.x = element_blank(),
+#         axis.text.y = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+#         legend.text = element_text(size = 8),
+#         legend.key.size = unit(0.5, "cm"))
+# dev.off()
+# 
+# tax_sum_Class <- summarize_taxonomy(kaiju, level = 3, report_higher_tax = F, relative = T) %>%
+#   replace(is.na(.), 0)
+# barsClass <- plot_taxa_bars(tax_sum_Class,
+#                             kaiju$map_loaded,
+#                             type_header = "ShortName",
+#                             num_taxa = 27,
+#                             data_only = T) %>%
+#   mutate(group_by = factor(group_by,
+#                            levels = test$ShortName)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# topClass <- barsClass %>%
+#   group_by(taxon) %>%
+#   summarise(mean = mean(mean_value)) %>%
+#   arrange(-mean)
+# barsClass <- barsClass %>%
+#   mutate(taxon = factor(taxon, levels = rev(topClass$taxon))) %>%
+#   mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+#   mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# ntax <- 26
+# mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(ntax)
+# png("InitialFigs/CompareKaiju_Class.png", width = 7, height = 5, units = "in", res = 300)
+# ggplot(barsClass, aes(group_by, mean_value, fill = taxon)) +
+#   geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+#   labs(x = "sampleID", y = "Relative abundance", fill = "Class") +
+#   scale_fill_manual(values = c("grey75", "grey90", mycolors[26:1])) +
+#   scale_y_continuous(expand = c(0.01, 0.01)) +
+#   guides(fill = guide_legend(ncol = 1)) +
+#   theme_classic() +
+#   theme(axis.title.y = element_text(size = 12), 
+#         axis.title.x = element_blank(),
+#         axis.text.y = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+#         legend.text = element_text(size = 6),
+#         legend.key.size = unit(0.25, "cm"))
+# dev.off()
+# 
+# tax_sum_Order <- summarize_taxonomy(kaiju, level = 4, report_higher_tax = F, relative = T) %>%
+#   replace(is.na(.), 0)
+# barsOrder <- plot_taxa_bars(tax_sum_Order,
+#                             kaiju$map_loaded,
+#                             type_header = "ShortName",
+#                             num_taxa = 50,
+#                             data_only = T) %>%
+#   mutate(group_by = factor(group_by,
+#                            levels = test$ShortName)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# topOrder <- barsOrder %>%
+#   group_by(taxon) %>%
+#   summarise(mean = mean(mean_value)) %>%
+#   arrange(-mean)
+# barsOrder <- barsOrder %>%
+#   mutate(taxon = factor(taxon, levels = rev(topOrder$taxon))) %>%
+#   mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+#   mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# ntax <- 49
+# mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(ntax)
+# png("InitialFigs/CompareKaiju_Order.png", width = 7, height = 7, units = "in", res = 300)
+# ggplot(barsOrder, aes(group_by, mean_value, fill = taxon)) +
+#   geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+#   labs(x = "sampleID", y = "Relative abundance", fill = "Order") +
+#   scale_fill_manual(values = c("grey75", "grey90", mycolors[49:1])) +
+#   scale_y_continuous(expand = c(0.01, 0.01)) +
+#   guides(fill = guide_legend(ncol = 1)) +
+#   theme_classic() +
+#   theme(axis.title.y = element_text(size = 12), 
+#         axis.title.x = element_blank(),
+#         axis.text.y = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+#         legend.text = element_text(size = 6),
+#         legend.key.size = unit(0.25, "cm"))
+# dev.off()
+# 
+# tax_sum_Family <- summarize_taxonomy(kaiju, level = 5, report_higher_tax = F, relative = T) %>%
+#   replace(is.na(.), 0)
+# barsFamily <- plot_taxa_bars(tax_sum_Family,
+#                             kaiju$map_loaded,
+#                             type_header = "ShortName",
+#                             num_taxa = 50,
+#                             data_only = T) %>%
+#   mutate(group_by = factor(group_by,
+#                            levels = test$ShortName)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# topFamily <- barsFamily %>%
+#   group_by(taxon) %>%
+#   summarise(mean = mean(mean_value)) %>%
+#   arrange(-mean)
+# barsFamily <- barsFamily %>%
+#   mutate(taxon = factor(taxon, levels = rev(topFamily$taxon))) %>%
+#   mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+#   mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# ntax <- 49
+# mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(ntax)
+# png("InitialFigs/CompareKaiju_Family.png", width = 7, height = 7, units = "in", res = 300)
+# ggplot(barsFamily, aes(group_by, mean_value, fill = taxon)) +
+#   geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+#   labs(x = "sampleID", y = "Relative abundance", fill = "Family") +
+#   scale_fill_manual(values = c("grey75", "grey90", mycolors[49:1])) +
+#   scale_y_continuous(expand = c(0.01, 0.01)) +
+#   guides(fill = guide_legend(ncol = 1)) +
+#   theme_classic() +
+#   theme(axis.title.y = element_text(size = 12), 
+#         axis.title.x = element_blank(),
+#         axis.text.y = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+#         legend.text = element_text(size = 6),
+#         legend.key.size = unit(0.25, "cm"))
+# dev.off()
+# 
+# tax_sum_Genus <- summarize_taxonomy(kaiju, level = 6, report_higher_tax = F, relative = T) %>%
+#   replace(is.na(.), 0)
+# barsGenus <- plot_taxa_bars(tax_sum_Genus,
+#                              kaiju$map_loaded,
+#                              type_header = "ShortName",
+#                              num_taxa = 50,
+#                              data_only = T) %>%
+#   mutate(group_by = factor(group_by,
+#                            levels = test$ShortName)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# topGenus <- barsGenus %>%
+#   group_by(taxon) %>%
+#   summarise(mean = mean(mean_value)) %>%
+#   arrange(-mean)
+# barsGenus <- barsGenus %>%
+#   mutate(taxon = factor(taxon, levels = rev(topGenus$taxon))) %>%
+#   mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+#   #mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# ntax <- 50
+# mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(ntax)
+# png("InitialFigs/CompareKaiju_Genus.png", width = 7, height = 7, units = "in", res = 300)
+# ggplot(barsGenus, aes(group_by, mean_value, fill = taxon)) +
+#   geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+#   labs(x = "sampleID", y = "Relative abundance", fill = "Genus") +
+#   scale_fill_manual(values = c("grey90", mycolors[50:1])) +
+#   scale_y_continuous(expand = c(0.01, 0.01)) +
+#   guides(fill = guide_legend(ncol = 1)) +
+#   theme_classic() +
+#   theme(axis.title.y = element_text(size = 12), 
+#         axis.title.x = element_blank(),
+#         axis.text.y = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+#         legend.text = element_text(size = 6),
+#         legend.key.size = unit(0.25, "cm"))
+# dev.off()
+# 
+# 
+# 
+# #### _Compare mTAGs ####
+# # Next, ran mTAGs on those 17 samples
+# # Uses unassembled data
+# # Extracts SSU and annotates with SILVA v138.1
+# # Import and make similar plots to compare to IMG and Kaiju (see above)
+# # Need to make mctoolsr object from the merged mTAGs output
+# # Input file and reformat everything
+# # Separate euks and proks
+# p <- read.delim("data/merged_profile/merged_profile.otu.tsv") %>%
+#   set_names(substr(names(.), 1, nchar(names(.))-5)) %>%
+#   rename(taxonomy = X.ta) %>%
+#   filter(., !grepl("Eukaryota", taxonomy)) %>%
+#   mutate(taxonomy = gsub("root__Root;", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("domain__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("phylum__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("class__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("order__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("family__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("genus__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("otu__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("silva_138_complink_cons_", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("unknown", "NA", taxonomy)) %>%
+#   mutate(taxonomy = gsub("otu_", "NA;otu_", taxonomy)) %>%
+#   filter(taxonomy != "Unassigned") %>%
+#   filter(taxonomy != "Unaligned") %>%
+#   separate(taxonomy, into = c("a","s","d","f","g","h","j","otu"), remove = F, sep = ";") %>%
+#   dplyr::select(-c(a,s,d,f,g,h,j)) %>%
+#   dplyr::select(otu, everything()) %>%
+#   dplyr::select(-taxonomy, taxonomy)
+# 
+# e <- read.delim("data/merged_profile/merged_profile.otu.tsv") %>%
+#   set_names(substr(names(.), 1, nchar(names(.))-5)) %>%
+#   rename(taxonomy = X.ta) %>%
+#   filter(., grepl("Eukaryota", taxonomy)) %>%
+#   mutate(taxonomy = gsub("root__Root;", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("domain__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("phylum__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("class__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("order__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("family__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("genus__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("otu__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("silva_138_complink_cons_", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("unknown", "NA", taxonomy)) %>%
+#   mutate(taxonomy = gsub("otu_", "NA;otu_", taxonomy)) %>%
+#   filter(taxonomy != "Unassigned") %>%
+#   filter(taxonomy != "Unaligned") %>%
+#   separate(taxonomy, into = c("a","s","d","f","g","h","j","otu"), remove = F, sep = ";") %>%
+#   dplyr::select(-c(a,s,d,f,g,h,j)) %>%
+#   dplyr::select(otu, everything()) %>%
+#   dplyr::select(-taxonomy, taxonomy)
+# 
+# f <- read.delim("data/merged_profile/merged_profile.otu.tsv") %>%
+#   set_names(substr(names(.), 1, nchar(names(.))-5)) %>%
+#   rename(taxonomy = X.ta) %>%
+#   filter(., grepl("Ascomycota|Basidiomycota|Blastocladiomycota|Chytridiomycota|
+#                   Cryptomycota|Microsporidia|Mucoromycota|Nephridiophagidae|Olpidiomycota|
+#                   Sanchytriomycota|Zoopagomycota", taxonomy)) %>%
+#   mutate(taxonomy = gsub("root__Root;", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("domain__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("phylum__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("class__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("order__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("family__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("genus__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("otu__", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("silva_138_complink_cons_", "", taxonomy)) %>%
+#   mutate(taxonomy = gsub("unknown", "NA", taxonomy)) %>%
+#   mutate(taxonomy = gsub("otu_", "NA;otu_", taxonomy)) %>%
+#   filter(taxonomy != "Unassigned") %>%
+#   filter(taxonomy != "Unaligned") %>%
+#   separate(taxonomy, into = c("a","s","d","f","g","h","j","otu"), remove = F, sep = ";") %>%
+#   dplyr::select(-c(a,s,d,f,g,h,j)) %>%
+#   dplyr::select(otu, everything()) %>%
+#   dplyr::select(-taxonomy, taxonomy)
+# 
+# # Sequencing info
+# mtag_output <- read.delim("data/merged_profile/merged_profile.otu.tsv") %>%
+#   set_names(substr(names(.), 1, nchar(names(.))-5)) %>%
+#   rename(taxonomy = X.ta)
+# mtag_output_t <- mtag_output %>%
+#   column_to_rownames(var = "taxonomy") %>%
+#   t() %>%
+#   as.data.frame()
+# depth_info <- data.frame("Bacteria+Archaea" = colSums(p[,2:18]),
+#                          "Eukaryota" = colSums(e[,2:18]),
+#                          "Fungi" = colSums(f[,2:18]),
+#                          "Classified" = colSums(mtag_output[1:18298, 2:18]),
+#                          "Unclassified" = mtag_output_t$Unassigned,
+#                          "Unaligned" = mtag_output_t$Unaligned) %>%
+#   mutate(sampleID = rownames(.))
+# mean(depth_info$Bacteria.Archaea)
+# mean(depth_info$Eukaryota)
+# mean(depth_info$Fungi)
+# mean(depth_info$Classified)
+# mean(depth_info$Unclassified)
+# mean(depth_info$Unaligned)
+# depth_info_rel <- depth_info %>%
+#   #mutate(Total = Bacteria.Archaea + Eukaryota + Unclassified + Unaligned) %>%
+#   mutate(Total = Bacteria.Archaea + Eukaryota) %>%
+#   mutate(BacArcRel = round(Bacteria.Archaea/Total*100, digits = 2),
+#          EukRel = round(Eukaryota/Total*100, digits = 2),
+#          FunRel = round(Fungi/Total*100, digits = 2))
+# range(depth_info_rel$EukRel) # 0.01 to 26.4%
+# range(depth_info_rel$FunRel) # Fungi range from 0 to 9.29%
+# depth_info_rel$ShortName <- gsub("X1", "1", depth_info_rel$sampleID)
+# 
+# # Compare to IMG/M
+# kaiju_all <- filter_data(input,
+#                          filter_cat = "taxon_oid",
+#                          keep_vals = test$taxon_oid)
+# tax_sum_Domain <- summarize_taxonomy(kaiju_all, level = 1, report_higher_tax = T, relative = TRUE)
+# range(tax_sum_Domain[3,]) # 0 to 16.38% euk
+# # Plot
+# 
+# # Check and write files
+# sum(names(f) %in% depth_info$sampleID)
+# names(f) <- gsub("X1", "1", )
+# out_fp <- "data/merged_profile/seqtab_wTax_mctoolsr_mtagFungi.txt"
+# names(f)[1] = "#OTU_ID"
+# write("#Exported for mctoolsr", out_fp)
+# suppressWarnings(write.table(f, out_fp, sep = "\t", row.names = FALSE, append = TRUE))
+# write.table(kaiju$map_loaded, "data/metadata_kaiju.txt", sep = "\t")
+# tax_table_fp <- file.path("data/merged_profile/seqtab_wTax_mctoolsr_mtagFungi.txt")
+# map_fp <- file.path("data/metadata_kaiju.txt")
+# mtags = load_taxa_table(tax_table_fp, map_fp) # 17
+# mtags$map_loaded$ShortName <- rownames(mtags$map_loaded)
+# mtags$map_loaded$ShortName <- gsub("X1", "1", mtags$map_loaded$ShortName)
+# mtags$map_loaded$ShortName %in% test$ShortName
+# 
+# tax_sum_Phyla <- summarize_taxonomy(mtags, level = 2, report_higher_tax = F, relative = T) %>%
+#   replace(is.na(.), 0)
+# # Note - No Microsporidia. And no Fungi in Mar14336cm, Mar14436cm, OV2TP1
+# barsPhyla <- plot_taxa_bars(tax_sum_Phyla,
+#                             mtags$map_loaded,
+#                             type_header = "ShortName",
+#                             num_taxa = 7,
+#                             data_only = T) %>%
+#   mutate(group_by = factor(group_by,
+#                            levels = test$ShortName)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# topPhyla <- barsPhyla %>%
+#   group_by(taxon) %>%
+#   summarise(mean = mean(mean_value)) %>%
+#   arrange(-mean)
+# barsPhyla <- barsPhyla %>%
+#   # mutate(taxon = factor(taxon, levels = topPhyla$taxon))
+#   mutate(taxon = factor(taxon, levels = c("Blastocladiomycota", "Ascomycota",
+#                                           "Basidiomycota", "Chytridiomycota", 
+#                                           "Mucoromycota", "Microsporidia", "Zoopagomycota")))
+# png("InitialFigs/Compare_mtags_Phyla.png", width = 7, height = 5, units = "in", res = 300)
+# ggplot(barsPhyla, aes(group_by, mean_value, fill = taxon)) +
+#   geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+#   labs(x = "sampleID", y = "Relative abundance", fill = "Phylum") +
+#   #scale_fill_manual(values = brewer.pal(12, "Paired")[7:1]) +
+#   scale_fill_manual(values = c("grey", "royalblue", "pink", "aquamarine",
+#                                "cornflowerblue", "cyan", "lightpink3")) +
+#   scale_y_continuous(expand = c(0.01, 0.01)) +
+#   theme_classic() +
+#   theme(axis.title.y = element_text(size = 12), 
+#         axis.title.x = element_blank(),
+#         axis.text.y = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+#         legend.text = element_text(size = 8),
+#         legend.key.size = unit(0.5, "cm"))
+# dev.off()
+# 
+# tax_sum_Class <- summarize_taxonomy(mtags, level = 3, report_higher_tax = F, relative = T) %>%
+#   replace(is.na(.), 0)
+# barsClass <- plot_taxa_bars(tax_sum_Class,
+#                             mtags$map_loaded,
+#                             type_header = "ShortName",
+#                             num_taxa = 27,
+#                             data_only = T) %>%
+#   mutate(taxon = gsub("NA", "unclassified", taxon)) %>%
+#   mutate(taxon = gsub("uncultured", "unclassified", taxon)) %>%
+#   mutate(group_by = factor(group_by,
+#                            levels = test$ShortName))
+# topClass <- barsClass %>%
+#   group_by(taxon) %>%
+#   summarise(mean = mean(mean_value)) %>%
+#   arrange(-mean)
+# barsClass <- barsClass %>%
+#   mutate(taxon = factor(taxon, levels = rev(topClass$taxon))) %>%
+#   mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# ntax <- 24
+# mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(ntax)
+# png("InitialFigs/Compare_mtags_Class.png", width = 7, height = 5, units = "in", res = 300)
+# ggplot(barsClass, aes(group_by, mean_value, fill = taxon)) +
+#   geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+#   labs(x = "sampleID", y = "Relative abundance", fill = "Class") +
+#   scale_fill_manual(values = c("grey75", mycolors[24:1])) +
+#   scale_y_continuous(expand = c(0.01, 0.01)) +
+#   guides(fill = guide_legend(ncol = 1)) +
+#   theme_classic() +
+#   theme(axis.title.y = element_text(size = 12), 
+#         axis.title.x = element_blank(),
+#         axis.text.y = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+#         legend.text = element_text(size = 6),
+#         legend.key.size = unit(0.25, "cm"))
+# dev.off()
+# 
+# tax_sum_Order <- summarize_taxonomy(mtags, level = 4, report_higher_tax = F, relative = T) %>%
+#   replace(is.na(.), 0)
+# barsOrder <- plot_taxa_bars(tax_sum_Order,
+#                             mtags$map_loaded,
+#                             type_header = "ShortName",
+#                             num_taxa = 50,
+#                             data_only = T) %>%
+#   mutate(taxon = gsub("NA", "unclassified", taxon)) %>%
+#   mutate(taxon = gsub("uncultured", "unclassified", taxon)) %>%
+#   mutate(group_by = factor(group_by,
+#                            levels = test$ShortName))
+# topOrder <- barsOrder %>%
+#   group_by(taxon) %>%
+#   summarise(mean = mean(mean_value)) %>%
+#   arrange(-mean)
+# barsOrder <- barsOrder %>%
+#   mutate(taxon = factor(taxon, levels = rev(topOrder$taxon))) %>%
+#   mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+#   mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# ntax <- 48
+# mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(ntax)
+# png("InitialFigs/Compare_mtags_Order.png", width = 7, height = 7, units = "in", res = 300)
+# ggplot(barsOrder, aes(group_by, mean_value, fill = taxon)) +
+#   geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+#   labs(x = "sampleID", y = "Relative abundance", fill = "Order") +
+#   scale_fill_manual(values = c("grey75", "grey90", mycolors[48:1])) +
+#   scale_y_continuous(expand = c(0.01, 0.01)) +
+#   guides(fill = guide_legend(ncol = 1)) +
+#   theme_classic() +
+#   theme(axis.title.y = element_text(size = 12), 
+#         axis.title.x = element_blank(),
+#         axis.text.y = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+#         legend.text = element_text(size = 6),
+#         legend.key.size = unit(0.25, "cm"))
+# dev.off()
+# 
+# tax_sum_Family <- summarize_taxonomy(mtags, level = 5, report_higher_tax = F, relative = T) %>%
+#   replace(is.na(.), 0)
+# barsFamily <- plot_taxa_bars(tax_sum_Family,
+#                              mtags$map_loaded,
+#                              type_header = "ShortName",
+#                              num_taxa = 50,
+#                              data_only = T) %>%
+#   mutate(taxon = gsub("NA", "unclassified", taxon)) %>%
+#   mutate(taxon = gsub("uncultured", "unclassified", taxon)) %>%
+#   mutate(group_by = factor(group_by,
+#                            levels = test$ShortName))
+# topFamily <- barsFamily %>%
+#   group_by(taxon) %>%
+#   summarise(mean = mean(mean_value)) %>%
+#   arrange(-mean)
+# barsFamily <- barsFamily %>%
+#   mutate(taxon = factor(taxon, levels = rev(topFamily$taxon))) %>%
+#   mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+#   mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# ntax <- 48
+# mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(ntax)
+# png("InitialFigs/Compare_mtags_Family.png", width = 7, height = 7, units = "in", res = 300)
+# ggplot(barsFamily, aes(group_by, mean_value, fill = taxon)) +
+#   geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+#   labs(x = "sampleID", y = "Relative abundance", fill = "Family") +
+#   scale_fill_manual(values = c("grey75", "grey90", mycolors[48:1])) +
+#   scale_y_continuous(expand = c(0.01, 0.01)) +
+#   guides(fill = guide_legend(ncol = 1)) +
+#   theme_classic() +
+#   theme(axis.title.y = element_text(size = 12), 
+#         axis.title.x = element_blank(),
+#         axis.text.y = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+#         legend.text = element_text(size = 6),
+#         legend.key.size = unit(0.25, "cm"))
+# dev.off()
+# 
+# tax_sum_Genus <- summarize_taxonomy(mtags, level = 6, report_higher_tax = F, relative = T) %>%
+#   replace(is.na(.), 0) # 209 genera
+# barsGenus <- plot_taxa_bars(tax_sum_Genus,
+#                             mtags$map_loaded,
+#                             type_header = "ShortName",
+#                             num_taxa = 50,
+#                             data_only = T) %>%
+#   mutate(taxon = gsub("NA", "unclassified", taxon)) %>%
+#   mutate(taxon = gsub("uncultured", "unclassified", taxon)) %>%
+#   mutate(group_by = factor(group_by,
+#                            levels = test$ShortName))
+# topGenus <- barsGenus %>%
+#   group_by(taxon) %>%
+#   summarise(mean = mean(mean_value)) %>%
+#   arrange(-mean)
+# barsGenus <- barsGenus %>%
+#   mutate(taxon = factor(taxon, levels = rev(topGenus$taxon))) %>%
+#   mutate(taxon = fct_relevel(taxon, "Other", after = Inf)) %>%
+#   mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
+#   mutate(taxon = fct_rev(taxon))
+# ntax <- 48
+# mycolors <- colorRampPalette(brewer.pal(12, "Paired"))(ntax)
+# png("InitialFigs/Compare_mtags_Genus.png", width = 7, height = 7, units = "in", res = 300)
+# ggplot(barsGenus, aes(group_by, mean_value, fill = taxon)) +
+#   geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
+#   labs(x = "sampleID", y = "Relative abundance", fill = "Genus") +
+#   scale_fill_manual(values = c("grey75", "grey90", mycolors[48:1])) +
+#   scale_y_continuous(expand = c(0.01, 0.01)) +
+#   guides(fill = guide_legend(ncol = 1)) +
+#   theme_classic() +
+#   theme(axis.title.y = element_text(size = 12), 
+#         axis.title.x = element_blank(),
+#         axis.text.y = element_text(size = 10),
+#         axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+#         legend.text = element_text(size = 6),
+#         legend.key.size = unit(0.25, "cm"))
+# dev.off()
+# 
+# 
+# 
+# #### _Compare Kaiju ####
+# # KBase made plots but can also download the results data
+# # Would be helpful to look at % fungi and number of genera
+# # Kaiju website says database "Fungi" is "Fungi sequences from the NCBI RefSeq database."
+# # As of May 2023, 5.2 million sequences
+# # Read in data
+# setwd("data/kaiju_genus/")
+# list.files()
+# name <- list.files()[1]
+# k <- read.delim(name)
+# name <- list.files()[2]
+# kn <- read.delim(name)
+# sum(k$taxon_name != kn$taxon_name)
+# sum(k$taxon_name %notin% kn$taxon_name)
+# # So they are all the same 220 taxa but in different order (sorted by abundance)
+# # Why? There are more than 220 taxa in the database.
+# for (i in 2:length(list.files())) {
+#   name <- list.files()[i]
+#   kn <- read.delim(name)
+#   k <- rbind(k, kn)
+# }
+# k <- k %>%
+#   separate(file, into = c("blank", "kb", "module", "work", "temp", "output", 
+#                           "kaijuoutput", "sample"), sep = "/") %>%
+#   dplyr::select(-blank, -kb, -module, -work, -temp, -output, -kaijuoutput) %>%
+#   mutate(ShortName = gsub(".fastq.gz_reads-1.kaiju", "", sample)) %>%
+#   dplyr::select(-sample)
+# virus <- k %>%
+#   filter(taxon_name == "Viruses") # None!
+# k_fun <- k %>%
+#   filter(taxon_name == "unclassified") %>%
+#   mutate(Fungi_perc_Kaiju = 100 - percent)
+# 
+# 
+# 
+# #### _Compare 3 ####
+# # Compare all 3 methods for % fungi and genus richness
+# # % fungi
+# per_comp <- k_fun %>%
+#   left_join(., depth_info_rel, by = "ShortName") %>%
+#   dplyr::select(-Fungi) %>%
+#   left_join(., kaiju$map_loaded, by = "ShortName") %>%
+#   mutate(Fungi_perc_IMG = Fungi * 100) %>%
+#   rename(Fungi_perc_mTAGs = FunRel) %>%
+#   dplyr::select(ShortName, Environment, Fungi_perc_IMG, Fungi_perc_Kaiju, Fungi_perc_mTAGs)
+# gperfun1 <- ggplot(per_comp, aes(Fungi_perc_IMG, Fungi_perc_Kaiju)) +
+#   geom_point(size = 3) +
+#   geom_smooth(method = "lm") +
+#   theme_bw()
+# gperfun2 <- ggplot(per_comp, aes(Fungi_perc_IMG, Fungi_perc_mTAGs)) +
+#   geom_point(size = 3) +
+#   geom_smooth(method = "lm") +
+#   theme_bw()
+# gperfun3 <- ggplot(per_comp, aes(Fungi_perc_Kaiju, Fungi_perc_mTAGs)) +
+#   geom_point(size = 3) +
+#   geom_smooth(method = "lm") +
+#   theme_bw()
+# setwd("../../")
+# png("InitialFigs/CompareMethodsPerFun.png", width = 9, height = 4, units = "in", res = 300)
+# plot_grid(gperfun1, gperfun2, gperfun3, nrow = 1)
+# dev.off()
+# # At least positive trend for all, and max sample same for all
+# # IMG has less % fungi than mTAGs and Kaiju. 
+# # Perhaps due to use of unassembled vs. assembled reads and smaller database
+#   
+# # Compare genus richness in these samples
+# max(kaiju$map_loaded$rich) # 256
+# nrow(kn) - 3 # 220
+# nrow(tax_sum_Genus) - 2 # 209
+# # IMG has more genera than mTAGs and Kaiju
+# # Perhaps due to lower identity cutoff
+# # And mTAGs relies on extracting SSU
+# 
+# # Richness in Kaiju is 220 for all so don't plot
+# fun_gen_kaiju <- summarize_taxonomy(kaiju, level = 6, report_higher_tax = F, relative = F)
+# kaiju$map_loaded$rich <- specnumber(fun_gen_kaiju, MARGIN = 2)
+# range(kaiju$map_loaded$rich) # 0 to 256
+# mtags$map_loaded$rich <- specnumber(tax_sum_Genus, MARGIN = 2)
+# range(mtags$map_loaded$rich) # 0 to 131
+# rich_comp <- mtags$map_loaded %>%
+#   dplyr::select(ShortName, rich) %>%
+#   left_join(., kaiju$map_loaded, by = "ShortName") %>%
+#   dplyr::select(ShortName, rich.x, rich.y, Environment) %>%
+#   rename(mTAGs_richness = rich.x,
+#          IMG_richness = rich.y)
+# png("InitialFigs/Compare_IMG_mTAG_richness.png", width = 7, height = 5, units = "in", res = 300)
+# ggplot(rich_comp, aes(mTAGs_richness, IMG_richness)) +
+#   #geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+#   geom_point(aes(colour = Environment), size = 3) +
+#   geom_smooth(method = "lm") +
+#   ylim(0, 260) +
+#   xlim(0, 260) +
+#   theme_bw()
+# dev.off()
 
-# Check most abundant genera
-glac_rel_gen <- summarize_taxonomy(input = glac_rel, level = 6, report_higher_tax = F) %>%
-  mutate(mean = rowMeans(.)) %>%
-  rownames_to_column(var = "Genus") %>%
-  arrange(desc(mean)) %>%
-  dplyr::select(Genus, mean)
-# Slightly different than CPM
-glac_cpm_gen <- summarize_taxonomy(input = glac_cpm, level = 6, relative = F, report_higher_tax = F) %>%
-  dplyr::select(-X3300011174, -X3300011176) %>%
-  mutate(mean = rowMeans(.)) %>%
-  rownames_to_column(var = "Genus") %>%
-  arrange(desc(mean)) %>%
-  dplyr::select(Genus, mean)
-# This agrees with Table 2.
-glac_cpm_gen <- summarize_taxonomy(input = glac_cpm, level = 6, relative = F, report_higher_tax = F)
-plot_taxa_bars(glac_cpm_gen, 
-               metadata_map = glac_cpm$map_loaded, 
-               type_header = "sampleID",
-               num_taxa = 12, 
-               data_only = F) +
-  scale_fill_brewer(palette = "Paired") +
-  theme_classic() +
-  theme(axis.text.x = element_text(size = 4, angle = 45, hjust = 1))
 
 
-# Calculate relative abundance of fungi, only for samples with fungi (n = 732)
+#### _Taxa Plots ####
 # Make relative abundance stacked bar plots by taxonomic level
 # Re-sort so unassigned and other are on the top
 # Use "Paired" palette from RColorBrewer
@@ -1088,9 +2387,9 @@ barsPhyla <- plot_taxa_bars(tax_sum_Phyla,
                             data_only = T) %>%
   mutate(taxon = fct_rev(taxon))
 
-pdf("FigsUpdated2/Rel_Phyla.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/Rel_Phyla.pdf", width = 7, height = 5)
 ggplot(barsPhyla, aes(group_by, mean_value, fill = taxon)) +
-  geom_bar(stat = "identity", colour = NA, size = 0.25) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
   labs(x = "Environment", y = "Relative abundance", fill = "Phylum") +
   scale_fill_manual(values = brewer.pal(12, "Paired")[7:1]) +
   scale_y_continuous(expand = c(0.01, 0.01)) +
@@ -1126,9 +2425,9 @@ barsClass <- plot_taxa_bars(tax_sum_Class,
   mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
   mutate(taxon = fct_rev(taxon))
 
-pdf("FigsUpdated2/Rel_Class.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/Rel_Class.pdf", width = 7, height = 5)
 ggplot(barsClass, aes(group_by, mean_value, fill = taxon)) +
-  geom_bar(stat = "identity", colour = NA, size = 0.25) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
   labs(x = "Environment", y = "Relative abundance", fill = "Class") +
   scale_fill_manual(values = c("grey75", "grey90", mycolors[14:1])) +
   scale_y_continuous(expand = c(0.01, 0.01)) +
@@ -1152,9 +2451,9 @@ barsOrder <- plot_taxa_bars(tax_sum_Order,
   #mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
   mutate(taxon = fct_rev(taxon))
 
-pdf("FigsUpdated2/Rel_Order.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/Rel_Order.pdf", width = 7, height = 5)
 ggplot(barsOrder, aes(group_by, mean_value, fill = taxon)) +
-  geom_bar(stat = "identity", colour = NA, size = 0.25) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
   labs(x = "Environment", y = "Relative abundance", fill = "Order") +
   scale_fill_manual(values = c("grey90", mycolors[15:1])) +
   scale_y_continuous(expand = c(0.01, 0.01)) +
@@ -1178,9 +2477,9 @@ barsFamily <- plot_taxa_bars(tax_sum_Family,
   mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
   mutate(taxon = fct_rev(taxon))
 
-pdf("FigsUpdated2/Rel_Family.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/Rel_Family.pdf", width = 7, height = 5)
 ggplot(barsFamily, aes(group_by, mean_value, fill = taxon)) +
-  geom_bar(stat = "identity", colour = NA, size = 0.25) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
   labs(x = "Environment", y = "Relative abundance", fill = "Family") +
   scale_fill_manual(values = c("grey75", "grey90", mycolors[14:1])) +
   scale_y_continuous(expand = c(0.01, 0.01)) +
@@ -1204,9 +2503,9 @@ barsGenus <- plot_taxa_bars(tax_sum_Genus,
   # mutate(taxon = fct_relevel(taxon, "unclassified", after = Inf)) %>%
   mutate(taxon = fct_rev(taxon))
 
-pdf("FigsUpdated2/Rel_Genus.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/Rel_Genus.pdf", width = 7, height = 5)
 ggplot(barsGenus, aes(group_by, mean_value, fill = taxon)) +
-  geom_bar(stat = "identity", colour = NA, size = 0.25) +
+  geom_bar(stat = "identity", colour = NA, linewidth = 0.25) +
   labs(x = "Environment", y = "Relative abundance", fill = "Genus") +
   scale_fill_manual(values = c("grey90", mycolors[15:1])) +
   scale_y_continuous(expand = c(0.01, 0.01)) +
@@ -1225,7 +2524,7 @@ taxa_summary_by_sample_type(tax_sum_Genus, input_fungi_nz$map_loaded, 'Environme
 # PCoA and PERMANOVA by Environment
 # Also check Habitat, Ecosystem.Category, Ecosystem.Subtype, Ecosystem.Type, Specific.Ecosystem
 
-# Filter out fungal zeroes from CPM data (filters 123 samples, 732 remaining)
+# Filter out fungal zeroes from CPM data (filters 123 samples, 731 remaining)
 input_fungi_CPM_nz <- filter_data(input_fungi_CPM,
                                   filter_cat = "sampleID",
                                   filter_vals = rownames(countFun))
@@ -1234,10 +2533,11 @@ Phylum_nz <- summarize_taxonomy(input_fungi_CPM_nz, level = 2, report_higher_tax
 Class_nz <- summarize_taxonomy(input_fungi_CPM_nz, level = 3, report_higher_tax = F, relative = F)
 Order_nz <- summarize_taxonomy(input_fungi_CPM_nz, level = 4, report_higher_tax = F, relative = F)
 Family_nz <- summarize_taxonomy(input_fungi_CPM_nz, level = 5, report_higher_tax = F, relative = F)
+Genus_nz <- summarize_taxonomy(input_fungi_CPM_nz, level = 6, report_higher_tax = F, relative = F)
 
 # Do at each taxonomic level
-# Genus (lowest level)
-bc <- calc_dm(input_fungi_CPM_nz$data_loaded)
+# Genus (lowest level) - summarize taxa, don't use input$data_loaded
+bc <- calc_dm(Genus_nz)
 
 # Check some PERMANOVA models to get a sense of R2 values
 set.seed(1150)
@@ -1260,7 +2560,7 @@ input_fungi_CPM_nz$map_loaded$Axis01 <- scores(pcoa)[,1]
 input_fungi_CPM_nz$map_loaded$Axis02 <- scores(pcoa)[,2]
 input_fungi_CPM_nz$map_loaded$Axis03 <- scores(pcoa)[,3]
 micro.hulls <- ddply(input_fungi_CPM_nz$map_loaded, c("Environment"), find_hull)
-pdf("FigsUpdated2/PCoA_Genus.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/PCoA_Genus.pdf", width = 7, height = 5)
 g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   #geom_polygon(data = micro.hulls, 
   #             aes(colour = Environment, fill = Environment),
@@ -1313,7 +2613,7 @@ micro.hulls <- ddply(input_fungi_CPM_nz$map_loaded, c("Environment"), find_hull)
 g1 <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
-               alpha = 0.1, show.legend = F, size = 0.25) +
+               alpha = 0.1, show.legend = F, linewidth = 0.25) +
   geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1F, "%", sep = ""), 
@@ -1342,7 +2642,7 @@ micro.hulls <- ddply(input_fungi_CPM_nz$map_loaded, c("Environment"), find_hull)
 g2 <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, -Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
-               alpha = 0.1, show.legend = F, size = 0.25) +
+               alpha = 0.1, show.legend = F, linewidth = 0.25) +
   geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1O, "%", sep = ""), 
@@ -1371,7 +2671,7 @@ micro.hulls <- ddply(input_fungi_CPM_nz$map_loaded, c("Environment"), find_hull)
 g3 <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, -Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
-               alpha = 0.1, show.legend = F, size = 0.25) +
+               alpha = 0.1, show.legend = F, linewidth = 0.25) +
   geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1C, "%", sep = ""), 
@@ -1400,7 +2700,7 @@ micro.hulls <- ddply(input_fungi_CPM_nz$map_loaded, c("Environment"), find_hull)
 g4 <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
-               alpha = 0.1, show.legend = F, size = 0.25) +
+               alpha = 0.1, show.legend = F, linewidth = 0.25) +
   geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1P, "%", sep = ""), 
@@ -1424,7 +2724,7 @@ micro.hulls <- ddply(input_fungi_CPM_nz$map_loaded, c("Environment"), find_hull)
 g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
-               alpha = 0.1, show.legend = F, size = 0.25) +
+               alpha = 0.1, show.legend = F, linewidth = 0.25) +
   geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
@@ -1439,7 +2739,7 @@ g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
 g
 
 # Multipanel
-pdf("FigsUpdated2/PCoA_AllLevels.pdf", width = 8, height = 5)
+pdf("InitialFigs/FigsUpdated2/PCoA_AllLevels.pdf", width = 8, height = 5)
 plot_grid(g,g1,g2,g3,g4,g_leg, ncol = 3, hjust = "hv")
 dev.off()
 
@@ -1453,6 +2753,8 @@ input_arc <- filter_taxa_from_input(input,
                                     taxa_to_keep = "Archaea",
                                     at_spec_level = 1)
 nrow(input_arc$data_loaded) # 187
+length(unique(input_arc$taxonomy_loaded$taxonomy6)) # 153
+# Note some assigned "unclassified_Order" or "unclassified_Family"
 input_arc_CPM <- input_arc
 for (i in 1:ncol(input_arc$data_loaded)) {
   for (j in 1:nrow(input_arc$data_loaded)) {
@@ -1469,7 +2771,8 @@ input_arc_CPM_nz <- filter_data(input_arc_CPM,
                                 filter_vals = rownames(countArc))
 
 # BC, PERMANOVA, PERMDISP, PCoA
-bc_arc <- calc_dm(input_arc_CPM_nz$data_loaded)
+Genus_nz_arc <- summarize_taxonomy(input_arc_CPM_nz, level = 6, report_higher_tax = F, relative = F)
+bc_arc <- calc_dm(Genus_nz_arc)
 set.seed(1150)
 adonis2(bc_arc ~ Environment, data = input_arc_CPM_nz$map_loaded) # R2 = 0.22, p = 0.001
 anova(betadisper(bc_arc, input_arc_CPM_nz$map_loaded$Environment)) # Dispersion not homogeneous
@@ -1482,7 +2785,7 @@ micro.hulls <- ddply(input_arc_CPM_nz$map_loaded, c("Environment"), find_hull)
 g_arc <- ggplot(input_arc_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
-               alpha = 0.1, show.legend = F, size = 0.25) +
+               alpha = 0.1, show.legend = F, linewidth = 0.25) +
   geom_point(size = 2, alpha = 0.75, shape = 16, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1arc, "%", sep = ""), 
@@ -1504,6 +2807,8 @@ input_bac <- filter_taxa_from_input(input,
                                     taxa_to_keep = "Bacteria",
                                     at_spec_level = 1)
 nrow(input_bac$data_loaded) # 5317 (minus 2 (unclassified, unknown) = 5315 known)
+length(unique(input_bac$taxonomy_loaded$taxonomy6)) # 3017 - 2 = 3015. 
+# Note also some assigned "unclassifed_Family" where family is the family.
 input_bac_CPM <- input_bac
 for (i in 1:ncol(input_bac$data_loaded)) {
   for (j in 1:nrow(input_bac$data_loaded)) {
@@ -1517,7 +2822,8 @@ countbac <- as.data.frame(sort(colSums(input_bac_CPM$data_loaded))) %>%
   filter(`sort(colSums(input_bac_CPM$data_loaded))` == 0)
 
 # BC, PERMANOVA, PERMDISP, PCoA
-bc_bac <- calc_dm(input_bac_CPM$data_loaded)
+Genus_nz_bac <- summarize_taxonomy(input_bac_CPM, level = 6, report_higher_tax = F, relative = F)
+bc_bac <- calc_dm(Genus_nz_bac)
 set.seed(1150)
 adonis2(bc_bac ~ Environment, data = input_bac_CPM$map_loaded) # R2 = 0.21, p = 0.001
 anova(betadisper(bc_bac, input_bac_CPM$map_loaded$Environment)) # Dispersion not homogeneous
@@ -1530,7 +2836,7 @@ micro.hulls <- ddply(input_bac_CPM$map_loaded, c("Environment"), find_hull)
 g_bac <- ggplot(input_bac_CPM$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
-               alpha = 0.1, show.legend = F, size = 0.25) +
+               alpha = 0.1, show.legend = F, linewidth = 0.25) +
   geom_point(size = 2, alpha = 0.75, shape = 16, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1bac, "%", sep = ""), 
@@ -1554,7 +2860,7 @@ micro.hulls <- ddply(input_fungi_CPM_nz$map_loaded, c("Environment"), find_hull)
 g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
-               alpha = 0.1, show.legend = F, size = 0.25) +
+               alpha = 0.1, show.legend = F, linewidth = 0.25) +
   geom_point(size = 2, alpha = 0.75, shape = 16, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1, "%", sep = ""), 
@@ -1572,7 +2878,7 @@ g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
 g
 
 # Multipanel
-pdf("FigsUpdated2/PCoA_ArcBacFun.pdf", width = 8, height = 5)
+pdf("InitialFigs/FigsUpdated2/PCoA_ArcBacFun.pdf", width = 8, height = 5)
 plot_grid(g_arc,g_bac,g,g_leg, ncol = 2, hjust = "hv", 
           labels = c("A", "B", "C", ""),
           label_x = 0.1)
@@ -1623,7 +2929,7 @@ micro.hulls <- ddply(sub_arc$map_loaded, c("Environment"), find_hull)
 g_arc2 <- ggplot(sub_arc$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
-               alpha = 0.1, show.legend = F, size = 0.25) +
+               alpha = 0.1, show.legend = F, linewidth = 0.25) +
   geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1arc2, "%", sep = ""), 
@@ -1649,7 +2955,7 @@ micro.hulls <- ddply(sub_bac$map_loaded, c("Environment"), find_hull)
 g_bac2 <- ggplot(sub_bac$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
-               alpha = 0.1, show.legend = F, size = 0.25) +
+               alpha = 0.1, show.legend = F, linewidth = 0.25) +
   geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1bac2, "%", sep = ""), 
@@ -1675,7 +2981,7 @@ micro.hulls <- ddply(sub_fun$map_loaded, c("Environment"), find_hull)
 g_fun2 <- ggplot(sub_fun$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
-               alpha = 0.1, show.legend = F, size = 0.25) +
+               alpha = 0.1, show.legend = F, linewidth = 0.25) +
   geom_point(size = 1, alpha = 0.5, aes(colour = Environment),
              show.legend = T) +
   labs(x = paste("PC1: ", pcoaA1fun2, "%", sep = ""), 
@@ -1688,7 +2994,7 @@ g_fun2 <- ggplot(sub_fun$map_loaded, aes(Axis01, Axis02)) +
         plot.title = element_text(hjust = 0.5, vjust = -1))
 g_fun2
 
-pdf("FigsUpdated2/PCoA_ArcBacFun_n19.pdf", width = 8, height = 5)
+pdf("InitialFigs/FigsUpdated2/PCoA_ArcBacFun_n19.pdf", width = 8, height = 5)
 plot_grid(g_arc2,g_bac2,g_fun2,g_leg, ncol = 2, hjust = "hv")
 dev.off()
 
@@ -1699,11 +3005,11 @@ dev.off()
 # How does Bray-Curtis dissimilarity compare for within or between sample type comparisons?
 # Note, the length of the long dataframe should equal (n*(n-1))/2
 # Make archaea and bacteria datasets same as fungal for fair comparison
-nrow(input_fungi_CPM_nz$map_loaded) # 732
+nrow(input_fungi_CPM_nz$map_loaded) # 731
 nrow(input_arc_CPM_nz$map_loaded) # 813
 nrow(input_bac_CPM$map_loaded) # 855 (all)
 sum(input_fungi_CPM_nz$map_loaded$sampleID %in% input_arc_CPM_nz$map_loaded$sampleID)
-# 718 samples have all 3 domains. Do for these
+# 717 samples have all 3 domains. Do for these
 
 bc_comp_fun <- filter_data(input_fungi_CPM_nz,
                            "sampleID",
@@ -1716,9 +3022,14 @@ bc_comp_arc <- filter_data(input_arc_CPM_nz,
                            keep_vals = bc_comp_fun$map_loaded$sampleID)
 
 # BC
-bc_fun <- calc_dm(bc_comp_fun$data_loaded)
-bc_bac <- calc_dm(bc_comp_bac$data_loaded)
-bc_arc <- calc_dm(bc_comp_arc$data_loaded)
+# Summarize at genus level, don't use input$data_loaded
+bc_comp_fun_gen <- summarize_taxonomy(bc_comp_fun, level = 6, report_higher_tax = F, relative = F)
+bc_comp_bac_gen <- summarize_taxonomy(bc_comp_bac, level = 6, report_higher_tax = F, relative = F)
+bc_comp_arc_gen <- summarize_taxonomy(bc_comp_arc, level = 6, report_higher_tax = F, relative = F)
+
+bc_fun <- calc_dm(bc_comp_fun_gen)
+bc_bac <- calc_dm(bc_comp_bac_gen)
+bc_arc <- calc_dm(bc_comp_arc_gen)
 
 
 
@@ -1857,7 +3168,7 @@ p1 <- ggplot(data = arc_bray_df_long, aes(comparison, value, colour = comparison
   theme(plot.margin = unit(c(0.1,0.1,0.1,0.1),"cm"),
         legend.position = "none")
 p2 <- ggdensity(arc_bray_df_long, "value", fill = "comparison", 
-                   palette = c(brewer.pal(6, "Paired")[1:2]), size = 0.25) +
+                   palette = c(brewer.pal(6, "Paired")[1:2]), linewidth = 0.25) +
   rotate() + 
   clean_theme() + 
   rremove("legend") + 
@@ -1880,7 +3191,7 @@ p3 <- ggplot(data = bac_bray_df_long, aes(comparison, value, colour = comparison
         axis.title.y = element_blank(),
         axis.text.y = element_blank())
 p4 <- ggdensity(bac_bray_df_long, "value", fill = "comparison", 
-                palette = c(brewer.pal(6, "Paired")[3:4]), size = 0.25) +
+                palette = c(brewer.pal(6, "Paired")[3:4]), linewidth = 0.25) +
   rotate() + 
   clean_theme() + 
   rremove("legend") + 
@@ -1903,7 +3214,7 @@ p5 <- ggplot(data = fun_bray_df_long, aes(comparison, value, colour = comparison
         axis.title.y = element_blank(),
         axis.text.y = element_blank())
 p6 <- ggdensity(fun_bray_df_long, "value", fill = "comparison", 
-                palette = c(brewer.pal(6, "Paired")[5:6]), size = 0.25) +
+                palette = c(brewer.pal(6, "Paired")[5:6]), linewidth = 0.25) +
   rotate() + 
   clean_theme() + 
   rremove("legend") + 
@@ -1921,7 +3232,7 @@ plot_grid(g1, g2, g3,
 
 #### ___Figure 3 ####
 # Best option is probably violin plot!
-png("FigsUpdated2/CompareBrayCurtis_genus.png", width = 7, height = 3, units = "in", res = 300)
+png("InitialFigs/FigsUpdated2/CompareBrayCurtis_genus.png", width = 7, height = 3, units = "in", res = 300)
 f3b <- ggplot(data = combined, aes(comparison, value)) +
   #geom_jitter(size = 0.5, alpha = 0.01, aes(colour = taxcomp)) + # don't show, too many
   geom_violin() +
@@ -1955,7 +3266,7 @@ micro.hulls <- ddply(input_fungi_CPM_nz$map_loaded, c("Environment"), find_hull)
 g <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
   #geom_polygon(data = micro.hulls, 
   #             aes(colour = Environment, fill = Environment),
-  #             alpha = 0.1, show.legend = F, size = 0.25) +
+  #             alpha = 0.1, show.legend = F, linewidth = 0.25) +
   geom_point(size = 2, alpha = 0.75, shape = 16, aes(colour = Environment),
              show.legend = T) +
   geom_text(aes(x = -Inf, y = Inf, label = "A", hjust = -0.5, vjust = 2, fontface = "bold"),
@@ -2023,7 +3334,7 @@ label.df <- data.frame(taxon = c("Fungi", "Fungi",
                        Value = c(1.05,1.05,1.05,1.05,1.05,1.05),
                        Sig = c("c","f","c","d","a","b"))
 
-png("FigsUpdated2/CompareBrayCurtis_phylum.png", width = 7, height = 3, units = "in", res = 300)
+png("InitialFigs/FigsUpdated2/CompareBrayCurtis_phylum.png", width = 7, height = 3, units = "in", res = 300)
 ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
   geom_violin() +
   geom_boxplot(width = 0.1, outlier.shape = NA) +
@@ -2070,7 +3381,7 @@ shapiro.test(m$residuals[1:5000])
 kruskal.test(value ~ taxcomp, data = combined)
 kwAllPairsNemenyiTest(combined$value, as.factor(combined$taxcomp))
 
-png("FigsUpdated2/CompareBrayCurtis_class.png", width = 7, height = 3, units = "in", res = 300)
+png("InitialFigs/FigsUpdated2/CompareBrayCurtis_class.png", width = 7, height = 3, units = "in", res = 300)
 ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
   geom_violin() +
   geom_boxplot(width = 0.1, outlier.shape = NA) +
@@ -2117,7 +3428,7 @@ shapiro.test(m$residuals[1:5000])
 kruskal.test(value ~ taxcomp, data = combined)
 kwAllPairsNemenyiTest(combined$value, as.factor(combined$taxcomp))
 
-png("FigsUpdated2/CompareBrayCurtis_order.png", width = 7, height = 3, units = "in", res = 300)
+png("InitialFigs/FigsUpdated2/CompareBrayCurtis_order.png", width = 7, height = 3, units = "in", res = 300)
 ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
   geom_violin() +
   geom_boxplot(width = 0.1, outlier.shape = NA) +
@@ -2164,7 +3475,7 @@ shapiro.test(m$residuals[1:5000])
 kruskal.test(value ~ taxcomp, data = combined)
 kwAllPairsNemenyiTest(combined$value, as.factor(combined$taxcomp))
 
-png("FigsUpdated2/CompareBrayCurtis_family.png", width = 7, height = 3, units = "in", res = 300)
+png("InitialFigs/FigsUpdated2/CompareBrayCurtis_family.png", width = 7, height = 3, units = "in", res = 300)
 ggplot(data = combined, aes(comparison, value, colour = taxcomp)) +
   geom_violin() +
   geom_boxplot(width = 0.1, outlier.shape = NA) +
@@ -2360,7 +3671,7 @@ g_assem <- ggplot(input_fungi_CPM_nz$map_loaded, aes(Axis01, Axis02)) +
         plot.title = element_text(vjust = -1))
 g_assem
 
-pdf("FigsUpdated2/PCoA_Year_Assembler.pdf", width = 9, height = 4)
+pdf("InitialFigs/FigsUpdated2/PCoA_Year_Assembler.pdf", width = 9, height = 4)
 plot_grid(g_year, g_assem, ncol = 2, rel_widths = c(0.4, 0.6))
 dev.off()
 
@@ -2395,7 +3706,7 @@ g_numassem <- ggplot(assem_df, aes(reorder(Var1, Freq, mean), Freq)) +
         plot.title = element_text(vjust = -1))
 g_numassem
 
-pdf("FigsUpdated2/SampleSize_Year_Assembler.pdf", width = 9, height = 4)
+pdf("InitialFigs/FigsUpdated2/SampleSize_Year_Assembler.pdf", width = 9, height = 4)
 plot_grid(g_numyear, g_numassem, align = "hv", ncol = 2)
 dev.off()
 
@@ -2629,7 +3940,7 @@ pies <- plot_grid(l1, p[[1]], p[[2]], p[[3]], p[[4]],
 pies
 
 # Add legend
-pdf("FigsUpdated2/Pies_Phyla.pdf", width = 8, height = 10)
+pdf("InitialFigs/FigsUpdated2/Pies_Phyla.pdf", width = 8, height = 10)
 plot_grid(pies, pie_leg, rel_widths = c(4, 1))
 dev.off()
 
@@ -2667,8 +3978,8 @@ class_top_wO <- summarize_taxonomy(input_fungi_nz, level = 3,
                                 report_higher_tax = F, relative = T) %>%
   mutate(maxes = colMax(.)) %>%
   filter(maxes > 0.25) %>%
-  add_row(class_bottom[18,])
-rownames(class_top)[nrow(class_top)] <- "Other"
+  add_row(class_bottom[nrow(class_bottom),])
+rownames(class_top_wO)[nrow(class_top_wO)] <- "Other"
 
 # Classes
 # Studies with 1 sample need to be treated differently
@@ -2711,7 +4022,7 @@ for (i in 1:nrow(studies)) {
 }
 
 # Colors
-classes_present <- c(top_classes[1:18],"Ustilaginomycetes","unclassified","Other")
+classes_present <- c(top_classes[1:18],"Ustilaginomycetes","Xylonomycetes","unclassified","Other")
 for (i in 1:length(df)) {
   c_colors[[i]] <- data.frame("class" = classes_present,
                 "color" = c(colorRampPalette(brewer.pal(12, "Paired"))(length(classes_present)-2),
@@ -2734,22 +4045,35 @@ for (i in 1:nrow(studies)) {
 }
 
 # Get legend - top 20 (unclassified last), plus Other
-t <- df[[34]]$map_loaded$Location
-c_forleg <- plot_taxa_bars(cla[[34]], df[[34]]$map_loaded, "Study.Name2", 37) +
+# t <- df[[34]]$map_loaded$Location
+# c_forleg <- plot_taxa_bars(cla[[34]], df[[34]]$map_loaded, "Study.Name2", 20) +
+#   geom_bar(stat = "identity", width = 1, color = "white") +
+#   coord_polar("y", start=0) +
+#   scale_fill_manual(values = c_colors[[34]]$color) +
+#   labs(fill = "Classes") +
+#   theme_void() +
+#   ggtitle(t) +
+#   guides(fill = guide_legend(ncol = 1)) +
+#   theme(legend.position = "right",
+#         legend.key.size = unit(0.5, "cm"),
+#         legend.text = element_text(size = 10),
+#         plot.title = element_text(size = 10, hjust = 0.5, vjust = -15),
+#         plot.margin = margin(0,0,0,0, "pt"))
+# c_forleg
+# pie_leg_c <- get_legend(c_forleg)
+
+# Better way, make fake plot
+fp <- data.frame("class" = classes_present,
+                 "y" = seq(1:length(classes_present))) %>%
+  mutate(class = factor(class, levels = classes_present))
+g_fp <- ggplot(fp, aes(class, y, fill = class)) +
   geom_bar(stat = "identity", width = 1, color = "white") +
-  coord_polar("y", start=0) +
-  scale_fill_manual(values = c_colors[[34]]$color) +
-  labs(fill = "Classes") +
-  theme_void() +
-  ggtitle(t) +
-  guides(fill = guide_legend(ncol = 1)) +
-  theme(legend.position = "right",
-        legend.key.size = unit(0.5, "cm"),
-        legend.text = element_text(size = 10),
-        plot.title = element_text(size = 10, hjust = 0.5, vjust = -15),
-        plot.margin = margin(0,0,0,0, "pt"))
-c_forleg
-pie_leg_c <- get_legend(c_forleg)
+  scale_fill_manual(values = c(colorRampPalette(brewer.pal(12, "Paired"))(length(classes_present)-2),
+                    "grey75", "grey90")) +
+  labs(fill = "Class") +
+  guides(fill = guide_legend(ncol = 1))
+pie_leg_c <- get_legend(g_fp)
+
 
 # Make huge multipanel
 pies_c <- plot_grid(l1, c[[1]], c[[2]], c[[3]], c[[4]],
@@ -2779,7 +4103,7 @@ pies_c <- plot_grid(c[[1]], c[[2]], NULL, NULL,
 pies_c
 
 # Add legend
-pdf("FigsUpdated2/Pies_Classes.pdf", width = 8, height = 10)
+pdf("InitialFigs/FigsUpdated2/Pies_Classes.pdf", width = 8, height = 10)
 plot_grid(pies_c, pie_leg_c, rel_widths = c(3.85, 1.15))
 dev.off()
 
@@ -2905,25 +4229,29 @@ top_taxa <- rbind(top_phy[[1]], top_phy[[2]], top_phy[[3]],
   filter(taxon != "Other") %>%
   rename("Environment" = "group_by") %>%
   rename("mean_CPM" = "mean_value") %>%
-  mutate(mean_CPM = round(mean_CPM, digits = 2))
+  mutate(mean_CPM = round(mean_CPM, digits = 5))
+
+# Are there ties? Yes.
+sum(duplicated(top_taxa$mean_CPM))
 #write_xlsx(top_taxa, "data/top_taxa_by_env_final.xlsx", format_headers = F)
-#write_xlsx(top_taxa, "data/TableS4.xlsx", format_headers = F)
+#write_xlsx(top_taxa, "data/TableS5.xlsx", format_headers = F)
 
 
 
 #### _Alpha ####
 # Look at number of different taxa levels by environments
-# OTU Richness
-input_fungi$map_loaded$rich <- specnumber(input_fungi$data_loaded, 
+# Don't use input$data_loaded. Need to use summarize taxonomy first
+# Genus richness
+fun_gen <- summarize_taxonomy(input_fungi, level = 6, report_higher_tax = F, relative = F)
+input_fungi$map_loaded$rich <- specnumber(fun_gen, 
                                           MARGIN = 2)
-max(input_fungi$map_loaded$rich)
+max(input_fungi$map_loaded$rich) # 289
 
-
-# Shannon diversity
-input_fungi$map_loaded$shannon <- diversity(input_fungi$data_loaded, 
+# Genus Shannon diversity
+input_fungi$map_loaded$shannon <- diversity(fun_gen, 
                                             index = "shannon", 
                                             MARGIN = 2)
-max(input_fungi$map_loaded$shannon)
+max(input_fungi$map_loaded$shannon) # 5.186401
 
 # Stats and graphs
 hist(input_fungi$map_loaded$rich)
@@ -2942,7 +4270,7 @@ nyi_table3 <- fullPTable(nyi3$p.value)
 nyi_list3 <- multcompLetters(nyi_table3)
 nyi_let3 <- as.data.frame(nyi_list3$Letters) %>%
   mutate(label = `nyi_list3$Letters`,
-         y = rep(300, nrow(.)),
+         y = rep(310, nrow(.)),
          name = "rich") %>%
   dplyr::select(-`nyi_list3$Letters`) %>%
   rownames_to_column(var = "Environment")
@@ -3014,7 +4342,7 @@ alpha_long <- input_fungi$map_loaded %>%
                                          "Cryosphere - water",
                                          "Desert")))
 
-pdf("FigsUpdated2/AlphaDiversity.pdf", width = 6, height = 3)
+pdf("InitialFigs/FigsUpdated2/AlphaDiversity.pdf", width = 6, height = 3)
 f2 <- ggplot(alpha_long, aes(Environment, value, colour = Environment)) +
   geom_boxplot(outlier.shape = NA) +
   geom_jitter(size = 1, alpha = 0.25, shape = 16, width = 0.3) +
@@ -3057,7 +4385,7 @@ mp_phyla <- multipatt(t(tax_sum_phyla),
                       control = how(nperm=999))
 summary(mp_phyla) # 3 soda lake
 
-pdf("FigsUpdated2/mp_Phyla.pdf", width = 5, height = 5)
+pdf("InitialFigs/FigsUpdated2/mp_Phyla.pdf", width = 5, height = 5)
 plot_multipatt_fungal(mp_obj = mp_phyla, 
                       input = input_fungi_CPM,
                       tax_sum = tax_sum_phyla,
@@ -3076,7 +4404,7 @@ mp_class <- multipatt(t(tax_sum_class),
                       func = "r.g", 
                       control = how(nperm=999))
 summary(mp_class) # 1 AMD, 1 Desert, 22 soda lake
-pdf("FigsUpdated2/mp_Class.pdf", width = 5, height = 5)
+pdf("InitialFigs/FigsUpdated2/mp_Class.pdf", width = 5, height = 5)
 plot_multipatt_fungal(mp_obj = mp_class, 
                       input = input_fungi_CPM,
                       tax_sum = tax_sum_class,
@@ -3092,8 +4420,8 @@ mp_order <- multipatt(t(tax_sum_order),
                       input_fungi_CPM$map_loaded$Environment, 
                       func = "r.g", 
                       control = how(nperm=999))
-summary(mp_order) # Acid mine 5, Cryo water 8, Desert 1, Soda lake 37
-pdf("FigsUpdated2/mp_Order.pdf", width = 5, height = 7)
+summary(mp_order) # Acid mine 4, Cryo water 7, Desert 1, Soda lake 36
+pdf("InitialFigs/FigsUpdated2/mp_Order.pdf", width = 5, height = 7)
 plot_multipatt_fungal(mp_obj = mp_order, 
                       input = input_fungi_CPM,
                       tax_sum = tax_sum_order,
@@ -3109,8 +4437,8 @@ mp_family <- multipatt(t(tax_sum_family),
                       input_fungi_CPM$map_loaded$Environment, 
                       func = "r.g", 
                       control = how(nperm=999))
-summary(mp_family) # 92 to 1 group: Acid mine 5, cryo water 19, desert 4, GF 3, soda lake 61, 
-pdf("FigsUpdated2/mp_Family.pdf", width = 5, height = 10)
+summary(mp_family) # 94 to 1 group: Acid mine 6, cryo water 22, desert 3, GF 1, soda lake 62 
+pdf("InitialFigs/FigsUpdated2/mp_Family.pdf", width = 5, height = 10)
 plot_multipatt_fungal(mp_obj = mp_family, 
                       input = input_fungi_CPM,
                       tax_sum = tax_sum_family,
@@ -3136,9 +4464,9 @@ mp_genus <- multipatt(t(tax_sum_genus),
                       input_fungi_CPM$map_loaded$Environment, 
                       func = "r.g", 
                       control = how(nperm=999))
-summary(mp_genus) # 148 to 1 group
-# Acid mine 8, cryo water 31, desert 10, glacial forefield 2, hot spring 1, soda lake 96
-pdf("FigsUpdated2/mp_Genus.pdf", width = 5, height = 12)
+summary(mp_genus) # 142 to 1 group
+# Acid mine 8, cryo water 30, desert 8, glacial forefield 2, hot spring 1, soda lake 93
+pdf("InitialFigs/FigsUpdated2/mp_Genus.pdf", width = 5, height = 12)
 plot_multipatt_fungal(mp_obj = mp_genus, 
                       input = input_fungi_CPM,
                       tax_sum = tax_sum_genus,
@@ -3162,6 +4490,7 @@ dev.off()
 # 2 of the 9 cryos didn't have any fungal KOs
 # 3300038653 and 3300039024
 # To reload the KO table and metadata, go to "_Start here" subsection
+# Need to delete the deleted taxa as done for taxonomy
 
 # Run a for loop to read in the file for each metagenome and combine into 1
 setwd("data/FungalKOs/")
@@ -3195,10 +4524,63 @@ for (i in 1:length(list.files())) {
   ko_table_cry <- ko_table_cry %>%
     rbind(ko_cry[[i]])
 }
-setwd("~/Documents/GitHub/Extremophilic_Fungi/")
 
 ko_table <- rbind(ko_table, ko_table_cry)
 
+setwd("~/Documents/GitHub/Extremophilic_Fungi/")
+
+# # Check for IMG-NR issues. Done once and everything fixed.
+# # Get geneIDs for unaccounted genera for Dongying to check.
+# # 17 genera (actually 14)
+# ko_table_unaccounted <- ko_table %>%
+#   filter(V1 != "NA") %>%
+#   separate(V1, into = c("KOletter", "KO"), sep = ":") %>%
+#   dplyr::select(-KOletter) %>%
+#   rename("ID1" = "V2") %>%
+#   mutate(taxon_oid = substring(V3, first = 1, last = 10)) %>%
+#   separate(V3, into = c("ID2", "taxonomy"), sep = "Eukaryota;") %>%
+#   separate(ID2, into = c("Junk", "ID2"), sep = "\\|") %>%
+#   dplyr::select(-Junk) %>%
+#   separate(taxonomy, 
+#            into = c("Phylum", "Class", "Order", "Family", "Genus", "Species"), 
+#            sep = ";") %>%
+#   dplyr::select(taxon_oid, ID1, ID2, KO, everything()) %>%
+#   filter(Genus %in% unaccounted$taxonomy6)
+# write.csv(ko_table_unaccounted, "data/ko_table_unaccounted.csv", row.names = F)
+# 
+# # And 4 genera not in public but in private
+# # Exophiala (was deleted), Glarea, Cordyceps (was deleted), Rhizoclosmatium
+# ko_table_unaccounted4 <- ko_table %>%
+#   filter(V1 != "NA") %>%
+#   separate(V1, into = c("KOletter", "KO"), sep = ":") %>%
+#   dplyr::select(-KOletter) %>%
+#   rename("ID1" = "V2") %>%
+#   mutate(taxon_oid = substring(V3, first = 1, last = 10)) %>%
+#   separate(V3, into = c("ID2", "taxonomy"), sep = "Eukaryota;") %>%
+#   separate(ID2, into = c("Junk", "ID2"), sep = "\\|") %>%
+#   dplyr::select(-Junk) %>%
+#   separate(taxonomy, 
+#            into = c("Phylum", "Class", "Order", "Family", "Genus", "Species"), 
+#            sep = ";") %>%
+#   dplyr::select(taxon_oid, ID1, ID2, KO, everything()) %>%
+#   filter(Genus %in% c("Exophiala", "Glarea", "Cordyceps", "Rhizoclosmatium"))
+# unique(ko_table_unaccounted4$Genus) # only 3 with KOs. No Glarea.
+# write.csv(ko_table_unaccounted4, "data/ko_table_unaccounted3.csv", row.names = F)
+# 
+# "Glarea" %in% img_nr_deleted$Genus # Deleted
+# "Rhizoclosmatium" %in% img_nr_deleted$Genus # Not deleted
+# "Exophiala" %in% img_nr_deleted$Genus # Deleted
+# "Cordyceps" %in% img_nr_deleted$Genus # Deleted
+# 
+# # Dongying says taxonoids for ko_table_unaccounted4 are:
+# # 2761201695: Rhizoclosmatium globosum JEL800. private. must have been public at some point.
+# # 2582581374: Exophiala dermatitidis 8656. removed from IMG.
+# # 2761201792: Martensiomyces pterosporus CBS 209.56. This is present in the dataset and the IMG-NR.
+# # 2582581584: Cordyceps militaris HMAS1630. removed from IMG
+# 
+# "Martensiomyces" %in% input_fungi$taxonomy_loaded$taxonomy6
+# "Martensiomyces" %in% img_nr$Genus
+# img_nr_deleted_7
 
 # Clean up table
 ko_table_wTax <- ko_table %>%
@@ -3211,7 +4593,8 @@ ko_table_wTax <- ko_table %>%
   separate(taxonomy, 
            into = c("Phylum", "Class", "Order", "Family", "Genus", "Species"), 
            sep = ";") %>%
-  dplyr::select(taxon_oid, KO, everything())
+  dplyr::select(taxon_oid, KO, everything()) %>%
+  filter(Genus %notin% deleted$Genus) # This only removed 255 hits of 278661
 
 # KO count (abundance) by metagenome
 ko_table_MGcount <- ko_table_wTax %>%
@@ -3259,13 +4642,13 @@ ko_list$KO_def <- paste(ko_list$KO, ko_list$Definition, sep = " ")
 
 # Make community style table and metadata, match IDs
 nrow(input_fungi$map_loaded) # 855
-nrow(input_fungi_nz$map_loaded) # 732
+nrow(input_fungi_nz$map_loaded) # 731
 ko_comm <- ko_table_MGcount %>%
   t() %>%
   as.data.frame() %>%
   filter(rownames(.) %in% input_fungi$map_loaded$taxon_oid) %>%
   arrange(rownames(.))
-nrow(ko_comm) # 676. So 56 with fungi but without KO. 
+nrow(ko_comm) # 669. So 62 with fungi but without KO. 
 
 ko_meta <- input_fungi$map_loaded %>%
   filter(taxon_oid %in% rownames(ko_comm)) %>%
@@ -3280,18 +4663,20 @@ rownames(ko_comm) <- rownames(ko_meta)
 
 # Check environment sample size
 table(ko_meta$Environment) # lowest is soda lake with 18
-nrow(ko_meta) # 676
+nrow(ko_meta) # 669
 
 # Get richness and Shannon
 ko_meta$richness_KO = specnumber(ko_comm)
 ko_meta$shannon_KO = diversity(ko_comm, index = "shannon")
-range(ko_meta$richness_KO)
-range(ko_meta$shannon_KO)
+range(ko_meta$richness_KO) # 1 to 2441
+mean(ko_meta$richness_KO) # 146
+se(ko_meta$richness_KO) # 14
+range(ko_meta$shannon_KO) # 0 to 7.5
 
 # Save ko_meta
 #saveRDS(ko_meta, "data/ko_meta_final.rds")
 
-pdf("FigsUpdated2/KO_Genus_richness.pdf", width = 6, height = 4)
+pdf("InitialFigs/FigsUpdated2/KO_Genus_richness.pdf", width = 6, height = 4)
 ggplot(ko_meta, aes(rich, richness_KO)) +
   geom_point(size = 1.5, alpha = 0.25, aes(colour = Environment)) +
   geom_smooth() +
@@ -3303,15 +4688,15 @@ ggplot(ko_meta, aes(rich, richness_KO)) +
         axis.text = element_text(size = 10))
 dev.off()
 
-# DESeq Normalization (run once, then reload from saved)
+# # DESeq Normalization (run once, then reload from saved)
 # dds <- DESeqDataSetFromMatrix(countData = t(ko_comm) + 1,
-#                              colData = ko_meta,
-#                              design = ~ 1)
+#                               colData = ko_meta,
+#                               design = ~ 1)
 # dds <- estimateSizeFactors(dds)
 # dds <- estimateDispersions(dds)
 # ko_comm_DESeq <- as.data.frame(t(counts(dds, normalized = T)))
-#Save so you don't have to redo the DESeq (takes a while)
-#saveRDS(ko_comm_DESeq, "data/ko_comm_DESeq_updated2.rds")
+# # Save so you don't have to redo the DESeq (takes a while)
+# saveRDS(ko_comm_DESeq, "data/ko_comm_DESeq_updated2.rds")
 
 
 
@@ -3364,7 +4749,7 @@ facet_df_ko <- c("richness_KO" = "(a) KO richness",
                  "shannon_KO" = "(b) KO Shannon")
 alpha_long_ko <- ko_meta %>%
   pivot_longer(cols = c("richness_KO", "shannon_KO"))
-pdf("FigsUpdated2/KO_AlphaDiversity.pdf", width = 6, height = 3)
+pdf("InitialFigs/FigsUpdated2/KO_AlphaDiversity.pdf", width = 6, height = 3)
 ggplot(alpha_long_ko, aes(reorder(Environment, value, mean), value)) +
   geom_boxplot(outlier.shape = NA) +
   geom_jitter(size = 0.5, alpha = 0.2, width = 0.3) +
@@ -3446,9 +4831,9 @@ ko_richness <- ko_meta %>%
   mutate(index = seq(1:nrow(.)))
 plot(rownames(ko_list), ko_list$n)
 plot(ko_richness$index, ko_richness$richness_KO)
-sum(ko_richness$richness_KO == 1) # 45 with just 1 KO
-sum(ko_richness$richness_KO == 2) # 38 with just 2 KOs
-sum(ko_richness$richness_KO == 3) # 39 with just 3 KOs
+sum(ko_richness$richness_KO == 1) # 46 with just 1 KO
+sum(ko_richness$richness_KO == 2) # 37 with just 2 KOs
+sum(ko_richness$richness_KO == 3) # 40 with just 3 KOs
 
 # Check relationships with genome size and fungal count and genus richness
 plot(ko_meta$GenomeSize, ko_meta$richness_KO)
@@ -3456,7 +4841,7 @@ summary(lm(richness_KO ~ GenomeSize, data = ko_meta))
 cor.test(ko_meta$GenomeSize, ko_meta$richness_KO, method = "pearson")
 
 plot(ko_meta$fung_count, ko_meta$richness_KO)
-pdf("FigsUpdated2/KO_richness_total.pdf", width = 7, height = 5)
+pdf("InitialFigs/FigsUpdated2/KO_richness_total.pdf", width = 7, height = 5)
 ggplot(ko_meta, aes(fung_count, richness_KO)) +
   geom_hline(yintercept = 750, linetype = "dashed") +
   geom_point(size = 3, alpha = 0.5) +
@@ -3465,7 +4850,7 @@ ggplot(ko_meta, aes(fung_count, richness_KO)) +
        y = "KO richness") +
   theme_classic()
 dev.off()
-png("FigsUpdated2/KO_richness_total.png", width = 7, height = 5, units = "in", res = 300)
+png("InitialFigs/FigsUpdated2/KO_richness_total.png", width = 7, height = 5, units = "in", res = 300)
 ggplot(ko_meta, aes(fung_count, richness_KO)) +
   geom_hline(yintercept = 750, linetype = "dashed") +
   geom_point(size = 3, alpha = 0.5) +
@@ -3492,7 +4877,7 @@ plot(ko_meta$rich, ko_meta$richness_KO)
 # Does the 100-200 genus assigned scaffold range cause issues?
 
 # Need to find good cutoff with some KOs and still high sample size
-sum(ko_richness$richness_KO > 10) # 443 with > 10
+sum(ko_richness$richness_KO > 10) # 437 with > 10
 
 # Subset the metadata and community datasets
 ko_meta_filt <- ko_meta %>%
@@ -3550,7 +4935,7 @@ g4_ko
 plot_grid(g3_ko, g4_ko, align = "hv", ncol = 2, rel_widths = c(1,1.515))
 
 # Still looks weird, increase the cutoff and rerun
-sum(ko_richness$richness_KO > 100) # 157 with > 100
+sum(ko_richness$richness_KO > 100) # 151 with > 100
 ko_meta_filt <- ko_meta %>%
   filter(richness_KO > 100)
 ko_comm_DESeq_filt <- ko_comm_DESeq %>%
@@ -3614,13 +4999,13 @@ g6_ko <- ggplot(ko_meta_filt, aes(Axis01j, -Axis02j, colour = Environment)) +
         plot.title = element_text(vjust = 0))
 g6_ko
 
-pdf("FigsUpdated2/KO_PCoA_min100KOs.pdf", width = 8.5, height = 5)
+pdf("InitialFigs/FigsUpdated2/KO_PCoA_min100KOs.pdf", width = 8.5, height = 5)
 plot_grid(g5_ko, g6_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1.1))
 dev.off()
 
 #### __750 ####
 # Now increase the cutoff even more - 750!
-sum(ko_richness$richness_KO > 750) # 44 with > 750
+sum(ko_richness$richness_KO > 750) # 40 with > 750
 ko_meta_filt <- ko_meta %>%
   filter(richness_KO > 750)
 ko_comm_DESeq_filt <- ko_comm_DESeq %>%
@@ -3698,7 +5083,7 @@ g6_ko <- ggplot(ko_meta_filt, aes(Axis01j, Axis02j, colour = Environment)) +
         panel.grid = element_blank())
 g6_ko
 
-pdf("FigsUpdated2/KO_PCoA_min750KOs.pdf", width = 8.5, height = 5)
+pdf("InitialFigs/FigsUpdated2/KO_PCoA_min750KOs.pdf", width = 8.5, height = 5)
 plot_grid(g5_ko, g6_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1.1),
           labels = c("A", "B"))
 dev.off()
@@ -3769,7 +5154,7 @@ g8_ko <- ggplot(ko_meta_subset19, aes(Axis01j, Axis02j, colour = Environment)) +
         plot.title = element_text(vjust = 0))
 g8_ko
 
-pdf("FigsUpdated2/KO_PCoA_n19.pdf", width = 8.5, height = 3.5)
+pdf("InitialFigs/FigsUpdated2/KO_PCoA_n19.pdf", width = 8.5, height = 3.5)
 plot_grid(g7_ko, g8_ko, ko_pcoa_leg, ncol = 3, rel_widths = c(2.5,2.5,1))
 dev.off()
 
@@ -3778,14 +5163,15 @@ dev.off()
 #### __Stats ####
 # Rerun whichever richness filter you want, then run this
 # 750
+nrow(ko_comm_DESeq_filt) # 40
 bc_ko <- vegdist(ko_comm_DESeq_filt, method = "bray")
 jac_ko <- vegdist(ko_comm_DESeq_filt, method = "jaccard")
 set.seed(308)
-adonis2(bc_ko ~ Environment, data = ko_meta_filt) # R2 = 0.32, p = 0.001
-anova(betadisper(bc_ko, ko_meta_filt$Environment)) # Dispersion homogeneous
+adonis2(bc_ko ~ Environment, data = ko_meta_filt) # R2 = 0.34, p = 0.001
+anova(betadisper(bc_ko, ko_meta_filt$Environment)) # Dispersion not homogeneous
 
 set.seed(308)
-adonis2(jac_ko ~ ko_meta_filt$Environment) # R2 = 0.30, p = 0.001
+adonis2(jac_ko ~ ko_meta_filt$Environment) # R2 = 0.31, p = 0.001
 anova(betadisper(jac_ko, ko_meta_filt$Environment)) # Dispersion not homogeneous
 
 # Subset 19 (rerun that section first)
@@ -3887,7 +5273,7 @@ gene_plot_summary <- gene_plot_long %>%
   summarise(mean = mean(Abundance),
             se = std.error(Abundance))
 
-pdf("FigsUpdated2/KO_Barplot_Top.pdf", width = 8, height = 5)
+pdf("InitialFigs/FigsUpdated2/KO_Barplot_Top.pdf", width = 8, height = 5)
 ggplot(gene_plot_summary, aes(Environment, mean, fill = Gene, group = Gene)) +
   geom_bar(stat = "identity", position = position_dodge(0.75)) +
   geom_linerange(aes(x = Environment, ymin = mean - se, ymax = mean + se, 
@@ -3945,7 +5331,7 @@ phm1 <- pheatmap(gene_hm,
          cluster_rows = F,
          annotation_col = ann_cols,
          annotation_colors = ann_colors)
-save_pheatmap_pdf(phm1, "FigsUpdated2/KO_heatmap_Top.pdf")
+save_pheatmap_pdf(phm1, "InitialFigs/FigsUpdated2/KO_heatmap_Top.pdf")
 
 
 
@@ -3982,8 +5368,8 @@ stress_genes <- read.csv("data/stress_genes_sorted_5.19.23_LV.csv") %>%
   filter(Notes == "ok") %>%
   dplyr::select(-Notes, -X)
 
-# Table S5
-#write_xlsx(stress_genes, path = "data/TableS5.xlsx", format_headers = F)
+# Table S6
+#write_xlsx(stress_genes, path = "data/TableS6.xlsx", format_headers = F)
 
 # Data frame
 gene_plot <- ko_comm_DESeq %>%
@@ -4020,9 +5406,9 @@ gene_plot_long <- gene_plot %>%
   mutate(Environment = dplyr::recode_factor(Environment,
                                             "Acid mine drainage" = "Acid mine drainage (n = 23)",
                                             "Cryosphere - soil" = "Cryosphere - soil (n = 46)",
-                                            "Cryosphere - water" = "Cryosphere - water (n = 38)",
+                                            "Cryosphere - water" = "Cryosphere - water (n = 34)",
                                             "Desert" = "Desert (n = 80)",
-                                            "Glacial forefield" = "Glacial forefield (n = 49)",
+                                            "Glacial forefield" = "Glacial forefield (n = 46)",
                                             "Hot spring" = "Hot spring (n = 109)",
                                             "Hydrothermal vent" = "Hydrothermal vent (n = 174)",
                                             "Hypersaline" = "Hypersaline (n = 139)",
@@ -4189,7 +5575,7 @@ save_pheatmap_pdf <- function(x, filename, width = 7, height = 12) {
   grid::grid.draw(x$gtable)
   dev.off()
 }
-save_pheatmap_pdf(phm1, "FigsUpdated2/KO_heatmap_Stress_filtered.pdf")
+save_pheatmap_pdf(phm1, "InitialFigs/FigsUpdated2/KO_heatmap_Stress_filtered.pdf")
 
 # Figure 6
 pheatmap(gene_hm_summary,
@@ -4250,7 +5636,7 @@ no_coord <- input$map_loaded %>%
 table(no_coord$Environment)
 
 # 10 missing
-pdf("FigsUpdated2/SampleMap.pdf", width = 8, height = 5)
+pdf("InitialFigs/FigsUpdated2/SampleMap.pdf", width = 8, height = 5)
 ggplot() +
   geom_map(data = world, map = world,
            aes(long, lat, map_id = region),
@@ -4308,7 +5694,7 @@ missing <- input_fungi$map_loaded %>%
 
 dat_fun <- filter_data(input_fungi_CPM_nz,
                        filter_cat = "taxon_oid",
-                       filter_vals = missing$taxon_oid) # 730
+                       filter_vals = missing$taxon_oid) # 729
 
 dat_arc <- filter_data(input_arc_CPM_nz,
                        filter_cat = "taxon_oid",
@@ -4372,22 +5758,22 @@ qplot(gd_b, bc_b) +
 
 
 #### _KO750 Taxa ####
-# Get the same 44 samples from the KO750 comparison and make PCoA from fungal_CPM_nz
-input_fungi_CPM_nz_44 <- filter_data(input_fungi_CPM_nz,
+# Get the same 40 samples from the KO750 comparison and make PCoA from fungal_CPM_nz
+input_fungi_CPM_nz_40 <- filter_data(input_fungi_CPM_nz,
                                      filter_cat = "taxon_oid",
                                      keep_vals = ko_meta_filt$taxon_oid)
 # BC
-bc <- calc_dm(input_fungi_CPM_nz_44$data_loaded)
+bc <- calc_dm(input_fungi_CPM_nz_40$data_loaded)
 set.seed(1150)
-adonis2(bc ~ Environment, data = input_fungi_CPM_nz_44$map_loaded) # R2 = 0.49, p = 0.001
-anova(betadisper(bc, input_fungi_CPM_nz_44$map_loaded$Environment)) # Dispersion homogeneous
-pcoa <- cmdscale(bc, k = nrow(input_fungi_CPM_nz_44$map_loaded) - 1, eig = T)
+adonis2(bc ~ Environment, data = input_fungi_CPM_nz_40$map_loaded) # R2 = 0.53, p = 0.001
+anova(betadisper(bc, input_fungi_CPM_nz_40$map_loaded$Environment)) # Dispersion homogeneous
+pcoa <- cmdscale(bc, k = nrow(input_fungi_CPM_nz_40$map_loaded) - 1, eig = T)
 pcoaA1 <- round((eigenvals(pcoa)/sum(eigenvals(pcoa)))[1]*100, digits = 1)
 pcoaA2 <- round((eigenvals(pcoa)/sum(eigenvals(pcoa)))[2]*100, digits = 1)
-input_fungi_CPM_nz_44$map_loaded$Axis01 <- scores(pcoa)[,1]
-input_fungi_CPM_nz_44$map_loaded$Axis02 <- scores(pcoa)[,2]
-micro.hulls <- ddply(input_fungi_CPM_nz_44$map_loaded, c("Environment"), find_hull)
-bc44 <- ggplot(input_fungi_CPM_nz_44$map_loaded, aes(Axis01, Axis02)) +
+input_fungi_CPM_nz_40$map_loaded$Axis01 <- scores(pcoa)[,1]
+input_fungi_CPM_nz_40$map_loaded$Axis02 <- scores(pcoa)[,2]
+micro.hulls <- ddply(input_fungi_CPM_nz_40$map_loaded, c("Environment"), find_hull)
+bc40 <- ggplot(input_fungi_CPM_nz_40$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F) +
@@ -4398,7 +5784,7 @@ bc44 <- ggplot(input_fungi_CPM_nz_44$map_loaded, aes(Axis01, Axis02)) +
        colour = "Environment") +
   scale_fill_manual(values = color_mapping) +
   scale_colour_manual(values = color_mapping) +
-  xlim(-0.48, 0.35) +
+  xlim(-0.48, 0.38) +
   ylim(-0.31, 0.34) +
   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
   theme_bw() +  
@@ -4407,22 +5793,23 @@ bc44 <- ggplot(input_fungi_CPM_nz_44$map_loaded, aes(Axis01, Axis02)) +
         axis.text = element_text(size = 10),
         plot.title = element_text(vjust = 0),
         panel.grid = element_blank())
-leg44 <- get_legend(bc44)
-bc44 <- bc44 + theme(legend.position = "none")
-range(input_fungi_CPM_nz_44$map_loaded$Axis01) # -0.41 to 0.29
-range(input_fungi_CPM_nz_44$map_loaded$Axis02) # -0.31 to 0.34
+bc40
+leg40 <- get_legend(bc40)
+bc40 <- bc40 + theme(legend.position = "none")
+range(input_fungi_CPM_nz_40$map_loaded$Axis01) # -0.39 to 0.33
+range(input_fungi_CPM_nz_40$map_loaded$Axis02) # -0.32 to 0.34
 
-jac <- calc_dm(input_fungi_CPM_nz_44$data_loaded, method = "jaccard")
+jac <- calc_dm(input_fungi_CPM_nz_40$data_loaded, method = "jaccard")
 set.seed(1150)
-adonis2(jac ~ Environment, data = input_fungi_CPM_nz_44$map_loaded) # R2 = 0.54, p = 0.001
-anova(betadisper(jac, input_fungi_CPM_nz_44$map_loaded$Environment)) # Dispersion homogeneous
-pcoa <- cmdscale(jac, k = nrow(input_fungi_CPM_nz_44$map_loaded) - 1, eig = T)
+adonis2(jac ~ Environment, data = input_fungi_CPM_nz_40$map_loaded) # R2 = 0.59, p = 0.001
+anova(betadisper(jac, input_fungi_CPM_nz_40$map_loaded$Environment)) # Dispersion almost homogeneous
+pcoa <- cmdscale(jac, k = nrow(input_fungi_CPM_nz_40$map_loaded) - 1, eig = T)
 pcoaA1 <- round((eigenvals(pcoa)/sum(eigenvals(pcoa)))[1]*100, digits = 1)
 pcoaA2 <- round((eigenvals(pcoa)/sum(eigenvals(pcoa)))[2]*100, digits = 1)
-input_fungi_CPM_nz_44$map_loaded$Axis01 <- scores(pcoa)[,1]
-input_fungi_CPM_nz_44$map_loaded$Axis02 <- scores(pcoa)[,2]
-micro.hulls <- ddply(input_fungi_CPM_nz_44$map_loaded, c("Environment"), find_hull)
-jac44 <- ggplot(input_fungi_CPM_nz_44$map_loaded, aes(Axis01, Axis02)) +
+input_fungi_CPM_nz_40$map_loaded$Axis01 <- scores(pcoa)[,1]
+input_fungi_CPM_nz_40$map_loaded$Axis02 <- scores(pcoa)[,2]
+micro.hulls <- ddply(input_fungi_CPM_nz_40$map_loaded, c("Environment"), find_hull)
+jac40 <- ggplot(input_fungi_CPM_nz_40$map_loaded, aes(Axis01, Axis02)) +
   geom_polygon(data = micro.hulls, 
                aes(colour = Environment, fill = Environment),
                alpha = 0.1, show.legend = F) +
@@ -4432,7 +5819,7 @@ jac44 <- ggplot(input_fungi_CPM_nz_44$map_loaded, aes(Axis01, Axis02)) +
        title = "Jaccard") +
   scale_fill_manual(values = color_mapping) +
   scale_colour_manual(values = color_mapping) +
-  xlim(-0.48, 0.35) +
+  xlim(-0.48, 0.38) +
   ylim(-0.31, 0.34) +
   guides(colour = guide_legend(override.aes = list(alpha = 1, size = 3))) +
   theme_bw() +  
@@ -4441,35 +5828,35 @@ jac44 <- ggplot(input_fungi_CPM_nz_44$map_loaded, aes(Axis01, Axis02)) +
         axis.text = element_text(size = 10),
         plot.title = element_text(vjust = 0),
         panel.grid = element_blank())
-jac44
-range(input_fungi_CPM_nz_44$map_loaded$Axis01) # -0.48 to 0.35
-range(input_fungi_CPM_nz_44$map_loaded$Axis02) # -0.16 to 0.18
+jac40
+range(input_fungi_CPM_nz_40$map_loaded$Axis01) # -0.44 to 0.38
+range(input_fungi_CPM_nz_40$map_loaded$Axis02) # -0.24 to 0.11
 
 #### ___Figure S6 ####
 png("FinalFigs/FigureS6.png", width = 8.5, height = 5, units = "in", res = 300)
-plot_grid(bc44, jac44, leg44, ncol = 3, rel_widths = c(2.5,2.5,1.1),
+plot_grid(bc40, jac40, leg40, ncol = 3, rel_widths = c(2.5,2.5,1.1),
           labels = c("A", "B"))
 dev.off()
 
-#### _Table S1 ####
+#### _Table S2 ####
 # Add number of scaffolds
 scaff_cryo <- read.delim("data/ScaffoldCount_cryo.txt") %>%
   dplyr::select(taxon_oid, Scaffold.Count.....assembled)
 scaff <- read.delim("data/ScaffoldCount.txt") %>%
   dplyr::select(taxon_oid, Scaffold.Count.....assembled) %>%
   rbind(., scaff_cryo)
-ts1 <- read_excel("data/TableS1_noscaff.xlsx") %>%
+ts2 <- read_excel("data/TableS2_noscaff.xlsx") %>%
   left_join(., scaff, by = "taxon_oid") %>%
   mutate(ScaffoldCount = Scaffold.Count.....assembled) %>%
   dplyr::select(-Scaffold.Count.....assembled, -IMG.Genome.ID, -Day, -Month, -Year, -sampleID,
-                -GenomeSize, -Study.Name2, -Location2, -EnvGeo) %>%
+                -GenomeSize, -Study.Name2, -Location2) %>%
   arrange(Environment, Study.Name, Genome.Name...Sample.Name)
-#write_xlsx(ts1, "data/TableS1.xlsx", format_headers = F)
+#write_xlsx(ts2, "data/TableS2.xlsx", format_headers = F)
 
-names(ts1)
-ts1$ScaffoldCount
-sum(is.na(ts1$ScaffoldCount))
-check <- ts1 %>%
+names(ts2)
+ts2$ScaffoldCount
+sum(is.na(ts2$ScaffoldCount))
+check <- ts2 %>%
   filter(is.na(ScaffoldCount) == T)
 # Don't have 6 from Schmidt Lab. 
 

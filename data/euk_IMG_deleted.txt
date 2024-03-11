@@ -1,0 +1,234 @@
+Genome ID	Submission ID	JGI Data Set	Domain	Genome Name	Modified Date	Modified By	Is Public	Comments	
+651717017		 	GFragment:Eukaryota	Penicillium chrysogenum Wisconsin 54-1255	2014-08-05		Yes	marked obsolete per Nikos	
+651716809		 	GFragment:Eukaryota	Penicillium expansum	2023-04-30	Krishna Palaniappan	Yes	Gfragment replaced by IMG Taxon of whole genome: 2761201875	
+651716852		 	GFragment:Eukaryota	Botryotinia fuckeliana T4	2023-08-18	Krishna Palaniappan	Yes	Per Nikos and IMG meeting notes - 8/2/23, obsolete GFragments	
+651716878		 	GFragment:Eukaryota	Leptosphaeria maculans IBCN 18	2023-08-18	Krishna Palaniappan	Yes	Per Nikos and IMG meeting notes - 8/2/23, obsolete GFragments	
+651716928		 	GFragment:Eukaryota	Gibberella zeae PH-1	2014-08-05		Yes	marked obsolete per Nikos	
+651716996		 	GFragment:Eukaryota	Neotyphodium lolii Lp19	2023-08-18	Krishna Palaniappan	Yes	Per Nikos and IMG meeting notes - 8/2/23, obsolete GFragments	
+651717107		 	GFragment:Eukaryota	Sordaria macrospora k-hell	2023-08-18	Krishna Palaniappan	Yes	Per Nikos and IMG meeting notes - 8/2/23, obsolete GFragments	
+651717151		 	GFragment:Eukaryota	Emericella nidulans	2023-04-30	Krishna Palaniappan	Yes	Gfragment replaced by IMG Taxon of whole genome: 640281000	
+651716553		 	GFragment:Eukaryota	Aspergillus oryzae RIB40	2023-04-30	Krishna Palaniappan	Yes	Gfragment to be replaced by IMG Taxon of whole genome from AP: Ga0131349	
+651716618		 	GFragment:Eukaryota	Aspergillus terreus ATCC 20542	2023-04-30	Krishna Palaniappan	Yes	Gfragment replaced by IMG Taxon of whole genome: 2582581344	
+651716617		 	GFragment:Eukaryota	Aspergillus terreus ATCC 20542	2023-04-30	Krishna Palaniappan	Yes	Gfragment replaced by IMG Taxon of whole genome: 2582581344	
+640281001		 	Eukaryota	Entamoeba histolytica HM-1:IMSS	2014-08-05	IMG_PIPELINE	Yes	marked obsolete per Nikos	
+640281004		 	Eukaryota	Candida albicans SC5314	2017-07-11	Krishna Palaniappan	Yes	Marked obsolete per submitter request:	
+640281010		 	Eukaryota	Scheffersomyces stipitis CBS 6054	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+640281016		 	Eukaryota	Leishmania major Friedlin V1	2017-07-11	Krishna Palaniappan	Yes	Marked obsolete per submitter request:	
+2500819008	289	 	Eukaryota	Chlamydomonas reinhardtii	2017-08-01	Amy Chen	Yes	marked obsolete per Natalia	
+643280123		 	Eukaryota	Saccharomyces cerevisiae AWRI1631	2014-08-05	IMG_PIPELINE	Yes	marked obsolete per Nikos	
+643280125		 	Eukaryota	Babesia bovis T2Bo	2014-08-05	IMG_PIPELINE	Yes	marked obsolete per Nikos	
+645666421		 	Eukaryota	Postia placenta Mad-698-R	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+645666408		 	Eukaryota	Coccidioides immitis RS	2014-08-05	IMG_PIPELINE	Yes	marked obsolete per Nikos	
+645666410		 	Eukaryota	Laccaria bicolor S238N-H82	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+2502545045	1147	 	Eukaryota	Sclerotinia sclerotiorum 1980 UF-70 (S.sclerotiorum Nuclear)	2014-08-05	Victor M Markowitz	Yes	Duplicate isolate genomes, deleted after review by Nikos on Jan 30, 2014	
+651716869		 	Eukaryota	Aspergillus flavus AF70	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651717053		 	Eukaryota	Hypomyces subiculosus DSM 11932	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651717011		 	Eukaryota	Penicillium lilacinoechinulatum IBT 28164	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651717106		 	Eukaryota	Alternaria brassicicola MUCL 202097	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651717117		 	Eukaryota	Metarhizium anisopliae ARSEF 2575	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651717120		 	Eukaryota	Fusarium incarnatum	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2506210006	2917	 	Eukaryota	Cercospora sojina	2014-08-05	Victor M Markowitz	Yes	Duplicate isolate genomes (associated with the same GOLD ID) deleted after review by Nikos (March 18 2014)	
+651717054		 	Eukaryota	Pochonia chlamydosporia ATCC 16683	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716813		 	Eukaryota	Aspergillus flavus NRRL 6541	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716867		 	Eukaryota	Aspergillus flavus AF13	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651717010		 	Eukaryota	Trichoderma virens G20-4B	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716621		 	Eukaryota	Fusarium verticillioides M-3125	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716832		 	Eukaryota	Aspergillus ochraceoroseus SRRC 1432	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716868		 	Eukaryota	Aspergillus flavus BN008	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716885		 	Eukaryota	Fusarium heterosporum ATCC 74349	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716677		 	Eukaryota	Fusarium graminearum H-11	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2507149003	5946	 	Eukaryota	Selaginella moellendorfii	2014-08-05		Yes	marked obsolete per Nikos	
+651716871		 	Eukaryota	Aspergillus flavus AF36	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716801		 	Eukaryota	Cordyceps bassiana	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2507525003	6162	 	Eukaryota	Theileria annulata Ankara C9	2017-07-11	Krishna Palaniappan	Yes	Marked obsolete per submitter request:Kostas Mavrommatis	
+2507525019	6192	 	Eukaryota	Selaginella moellendorfii	2018-03-07	Amy Chen	Yes	duplicate genome -- marked obsolete per Reddy	
+648943107		 	Eukaryota	Nectria haematococca MPVI 77-13-4	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+648943110		 	Eukaryota	Schizophyllum commune H4-8	2014-08-05		Yes	marked obsolete per Nikos	
+649328901		 	Eukaryota	Babesia bovis T2Bo	2024-01-31	Supratim Mukherjee	Yes	Replaced by 2931411257 SM 1.29.24	
+649410507		 	Eukaryota	Sorghum bicolor BTx623	2014-08-05		Yes	marked obsolete per Nikos	
+2140918028	2467	 	Eukaryota	Bankia setacea BS02	2014-08-05	Victor M Markowitz	Yes	Genomes deleted per second review Nikos & al Feb 5 2014	
+2140918029	2468	 	Eukaryota	Bankia setacea BS08	2014-08-05	Victor M Markowitz	Yes	Genomes deleted per second review Nikos & al Feb 5 2014	
+2510461071	7076	 	Eukaryota	Orpinomyces sp. C1A (Transcriptome_Cellobiose)	2014-08-05	Victor M Markowitz	Yes	Deleted duplicate genomes afer a review by Nikos, Jan 30 2014	
+2509276039	6501	 	Eukaryota	Phytophthora infestans	2014-08-05	Victor M Markowitz	Yes	Per Nikos, this is dataset contains only two genes- not useful	
+651716870		 	Eukaryota	Aspergillus nomiae AN13137	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716886		 	Eukaryota	Epichloe uncinata CBS 102646	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716895		 	Eukaryota	Aspergillus fumigatus	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716945		 	Eukaryota	Monascus pilosus	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716948		 	Eukaryota	Penicillium chrysogenum AS-P-78	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651717043		 	Eukaryota	Monascus aurantiacus AS3.4384	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651717050		 	Eukaryota	Fusarium oxysporum FRC O-1890	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651717052		 	Eukaryota	Hypomyces subiculosus DSM 11931	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651717140		 	Eukaryota	Penicillium aethiopicum IBT 5753	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651717141		 	Eukaryota	Penicillium aethiopicum IBT 5753	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716535		 	Eukaryota	Penicillium citrinum ML-236B	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716549		 	Eukaryota	Alternaria alternata NAF8	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716573		 	Eukaryota	Parabodo caudatus ATCC 50361	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716574		 	Eukaryota	Neobodo saliens ATCC 50358	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716582		 	Eukaryota	Aspergillus fumigatus BM939	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716676		 	Eukaryota	Fusarium graminearum 88-1	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+651716691		 	Eukaryota	Aspergillus parasiticus SU-1	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2508501133	6435	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=403669'  >Yes</a>	Eukaryota	Hypholoma sublateritium FD-334 SS-4	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+2508501134	6436	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=403664'  >Yes</a>	Eukaryota	Botryobasidium botryosum FD-172 SS1	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+2508501135	6437	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=403665'  >Yes</a>	Eukaryota	Gymnopus luxurians FD-317 M1	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+2509601002	6576	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=403146'  >Yes</a>	Eukaryota	Nadsonia fulvescens elongata AJ 4281, DSM 6958	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+2509601003	6577	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=402674'  >Yes</a>	Eukaryota	Saitoella complicata NRRL Y-17804	2018-02-28	Amy Chen	Yes	marked obsolete per Supratim (IMGSUPP-1407)	
+2509601005	6579	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=402455'  >Yes</a>	Eukaryota	Coemansia reversa NRRL 1564	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+2509601006	6580	 	Eukaryota	Serpula lacrymans sv. lacrymans S7.9	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+2509601007	6581	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=52344'  >Yes</a>	Eukaryota	Bipolaris maydis C5	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+2509601010	6584	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=404122'  >Yes</a>	Eukaryota	Bipolaris maydis ATCC 48331	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+2517093045	10563	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=52146'  >Yes</a>	Eukaryota	Thermothelomyces thermophila ATCC 42464	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+2517093046	10567	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=52342'  >Yes</a>	Eukaryota	Thielavia terrestris NRRL 8126	2018-03-07	Amy Chen	Yes	duplicate fungal genome -- marked obsolete per Natalia and Igor Grigoriev	
+2518645572	11441	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=408873'  >Yes</a>	Eukaryota	Saccharomyces cerevisiae M3837	2014-08-05	Krishna Palaniappan	Yes	trial exercise from fungal group	
+2518645573	11442	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=408872'  >Yes</a>	Eukaryota	Saccharomyces cerevisiae M3836	2014-08-05	Krishna Palaniappan	Yes	trial exercise from fungal group	
+2518645574	11443	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=408874'  >Yes</a>	Eukaryota	Saccharomyces cerevisiae M3838	2014-08-05	Krishna Palaniappan	Yes	trial exercise from fungal group	
+2518645531	11383	<a href='https://genome.jgi.doe.gov/lookup?keyName=jgiProjectId&keyValue=408875'  >Yes</a>	Eukaryota	Saccharomyces cerevisiae M3839	2014-08-05	Krishna Palaniappan	Yes	trial exercise from fungal group	
+2521172682	12674	 	Eukaryota	Ashbya gossypii FDAG1	2014-08-05	Victor M Markowitz	Yes	Per Nikos, this is dataset contains only mitochondrial sequences which do not belong to IMG	
+2582581718	45387	 	Eukaryota	Claviceps paspali RRC-1481	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581525	45187	 	Eukaryota	Cordyceps militaris DSM1153	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581530	45192	 	Eukaryota	Epichloe coenophiala e19	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581542	45204	 	Eukaryota	Neotyphodium sp. FaTG-4	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581545	45207	 	Eukaryota	Epichloe coenophiala e4309	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581591	45253	 	Eukaryota	Penicillium aethiopicum IBT 5753	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581436	45093	 	Eukaryota	Aspergillus terreus AH-02-30-F7	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581531	45193	 	Eukaryota	Epichloe festucae E2368	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581535	45197	 	Eukaryota	Epichloe funkii e4096	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581553	45215	 	Eukaryota	Epichloe aotearoae e899	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581652	45319	 	Eukaryota	Lasiodiplodia theobromae NBRC 31059	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581666	45333	 	Eukaryota	Fusarium bulbicola NRRL 13618	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581327	44975	 	Eukaryota	Monascus purpureus TNC21	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581341	44990	 	Eukaryota	Aspergillus fumigatus B-5233	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581342	44991	 	Eukaryota	Cercospora nicotianae	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581348	44997	 	Eukaryota	Aspergillus nidulans FGSC4	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581404	45060	 	Eukaryota	Alternaria solani	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581546	45208	 	Eukaryota	Epichloe coenophiala e4309	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581552	45214	 	Eukaryota	Epichloe aotearoae e899	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581573	45235	 	Eukaryota	Aspergillus flavus GA10-18s	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581587	45249	 	Eukaryota	Periglandula ipomoeae IasaF13	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581333	44982	 	Eukaryota	Dothistroma septosporum	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581576	45238	 	Eukaryota	Aspergillus nidulans Glasgow G051	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581673	45340	 	Eukaryota	Fusarium globosum NRRL 26131	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581680	45348	 	Eukaryota	Sarocladium zeae NRRL45893	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581374	45025	 	Eukaryota	Exophiala dermatitidis 8656	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581445	45102	 	Eukaryota	Penicillium fellutanum ATCC 20841	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581538	45200	 	Eukaryota	Epichloe coenophiala e4163	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581544	45206	 	Eukaryota	Epichloe coenophiala e4309	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581711	45380	 	Eukaryota	Claviceps fusiformis PRL 1980	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581361	45012	 	Eukaryota	Claviceps purpurea 20.1	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581547	45209	 	Eukaryota	Epichloe brachyelytri E4804	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581555	45217	 	Eukaryota	Epichloe aotearoae e899	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581612	45278	 	Eukaryota	Epichloe typhina x Neotyphodium lolii Lp1	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581339	44988	 	Eukaryota	Tolypocladium inflatum ATCC 34921	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581344	44993	 	Eukaryota	Aspergillus terreus ATCC 20542	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581537	45199	 	Eukaryota	Epichloe coenophiala e4163	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581550	45212	 	Eukaryota	Epichloe aotearoae e899	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581626	45292	 	Eukaryota	Nodulisporium sp. ATCC74245	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581719	45388	 	Eukaryota	Malbranchea aurantiaca RRC1813	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581343	44992	 	Eukaryota	Aspergillus terreus ATCC 20542	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581584	45246	 	Eukaryota	Cordyceps militaris HMAS1630	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581597	45262	 	Eukaryota	Aspergillus flavus iso43	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581611	45277	 	Eukaryota	Epichloe typhina x Neotyphodium lolii Lp1	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581405	45061	 	Eukaryota	Monascus pilosus	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581415	45072	 	Eukaryota	Colletotrichum lagenarium 104-T	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581328	44976	 	Eukaryota	Bipolaris zeicola SB111	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581338	44987	 	Eukaryota	Fusarium verticillioides	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581360	45011	 	Eukaryota	Claviceps purpurea 20.1	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581548	45210	 	Eukaryota	Epichloe brachyelytri E4804	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581653	45320	 	Eukaryota	Aspergillus flavus NC3-6	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581775	45444	 	Eukaryota	Aspergillus flavus V5F-13	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581438	45095	 	Eukaryota	Aspergillus niger ATCC 1015	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581536	45198	 	Eukaryota	Epichloe funkii e4096	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581551	45213	 	Eukaryota	Epichloe aotearoae e899	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581600	45265	 	Eukaryota	Fusarium proliferatum ITEM 2287	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581664	45331	 	Eukaryota	Aspergillus rugulosus NRRL 11440	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581334	44983	 	Eukaryota	Aspergillus parasiticus	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581466	45124	 	Eukaryota	Fusarium heterosporum ATCC 74349	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581489	45148	 	Eukaryota	Aspergillus flavus CA28	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581532	45194	 	Eukaryota	Epichloe glyceriae E277	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581562	45224	 	Eukaryota	Epichloe festucae Fl1	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581583	45245	 	Eukaryota	Fusarium fujikuroi HKM 41	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581524	45186	 	Eukaryota	Cordyceps militaris DSM1153	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581533	45195	 	Eukaryota	Epichloe glyceriae E277	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581534	45196	 	Eukaryota	Epichloe glyceriae E277	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581540	45202	 	Eukaryota	Neotyphodium sp. FaTG-4	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581563	45225	 	Eukaryota	Epichloe festucae Fl1	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581541	45203	 	Eukaryota	Neotyphodium sp. FaTG-4	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581595	45258	 	Eukaryota	Aspergillus terreus IMI 16043	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581697	45365	 	Eukaryota	Aspergillus versicolor NRRL35600	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581746	45415	 	Eukaryota	Shiraia sp. Slf14	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581331	44980	 	Eukaryota	Fusarium fujikuroi pks4	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581336	44985	 	Eukaryota	Penicillium griseofulvum DSM 62862	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581367	45018	 	Eukaryota	Beauveria bassiana 992.05	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581434	45091	 	Eukaryota	Aspergillus flavus AF36	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581539	45201	 	Eukaryota	Epichloe coenophiala e4163	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581435	45092	 	Eukaryota	Aspergillus flavus AF70	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581406	45062	 	Eukaryota	Epichloe inebrians	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581446	45103	 	Eukaryota	Glarea lozoyensis ATCC 20868	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581543	45205	 	Eukaryota	Neotyphodium sp. FaTG-4	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581549	45211	 	Eukaryota	Epichloe gansuensis E7080	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581564	45226	 	Eukaryota	Epichloe festucae Fl1	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581590	45252	 	Eukaryota	Penicillium brevicompactum IBT 23078	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581609	45275	 	Eukaryota	Fusarium proliferatum LF061	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581622	45288	 	Eukaryota	Aciculosporium take MAFF-241224	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581674	45342	 	Eukaryota	Aspergillus parasiticus NRRL 2999	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581672	45339	 	Eukaryota	Fusarium anthophilum NRRL 25214	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581681	45349	 	Eukaryota	Fusarium ramigenum NRRL 52208	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581554	45216	 	Eukaryota	Epichloe aotearoae e899	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581565	45227	 	Eukaryota	Fusarium nygamai FRC M-7492	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581596	45259	 	Eukaryota	Fusarium fujikuroi IMI58289.	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581604	45270	 	Eukaryota	Aspergillus flavus K49	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581663	45330	 	Eukaryota	Aspergillus rugulosus NRRL 11440	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581768	45437	 	Eukaryota	Aspergillus flavus TX9-8	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581665	45332	 	Eukaryota	Fusarium phyllophilum strain NRRL 13617	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581709	45378	 	Eukaryota	Penicillium paxilli ATCC 96516	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2582581755	45424	 	Eukaryota	Aspergillus parasiticus SU-1	2023-12-19	Amy Chen	Yes	Marked obsolete per Rekha -- IUI-268	
+2612576533		 	Eukaryota	Mimulus guttatus	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576523		 	Eukaryota	Gossypium raimondii	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576527		 	Eukaryota	Micromonas pusilla CCMP1545	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576531		 	Eukaryota	Physcomitrella patens	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576535		 	Eukaryota	Capsella grandiflora	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576501		 	Eukaryota	Arabidopsis lyrata	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576502		 	Eukaryota	Carica papaya	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576503		 	Eukaryota	Ricinus communis	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576504		 	Eukaryota	Cucumis sativus	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576505		 	Eukaryota	Prunus persica	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576506		 	Eukaryota	Vitis vinifera	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576507		 	Eukaryota	Manihot esculenta	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576508		 	Eukaryota	Citrus sinensis	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576509		 	Eukaryota	Setaria italica	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576510		 	Eukaryota	Arabidopsis thaliana	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576511		 	Eukaryota	Eutrema salsugineum	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576512		 	Eukaryota	Citrus clementina	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576513		 	Eukaryota	Capsella rubella	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576514		 	Eukaryota	Aquilegia coerulea	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576516		 	Eukaryota	Volvox carteri	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576517		 	Eukaryota	Linum usitatissimum	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576518		 	Eukaryota	Eucalyptus grandis	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576519		 	Eukaryota	Oryza sativa	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576520		 	Eukaryota	Solanum tuberosum	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576521		 	Eukaryota	Populus trichocarpa	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576522		 	Eukaryota	Phaseolus vulgaris	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576524		 	Eukaryota	Solanum lycopersicum	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576525		 	Eukaryota	Fragaria vesca	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576528		 	Eukaryota	Micromonas sp. RCC299	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576529		 	Eukaryota	Ostreococcus lucimarinus	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576530		 	Eukaryota	Theobroma cacao	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576532		 	Eukaryota	Sorghum bicolor	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576534		 	Eukaryota	Arabidopsis halleri	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576536		 	Eukaryota	Panicum virgatum	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576537		 	Eukaryota	Panicum hallii	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576538		 	Eukaryota	Glycine max	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576539		 	Eukaryota	Brassica rapa FPsc	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576540		 	Eukaryota	Boechera stricta	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576541		 	Eukaryota	Chlamydomonas reinhardtii	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576542		 	Eukaryota	Brachypodium distachyon	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576543		 	Eukaryota	Zea mays	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576544		 	Eukaryota	Medicago truncatula	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576545		 	Eukaryota	Salix purpurea	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576546		 	Eukaryota	Spirodela polyrhiza	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576547		 	Eukaryota	Amborella trichopoda	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576548		 	Eukaryota	Triticum aestivum	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576549		 	Eukaryota	Selaginella moellendorffii	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576526		 	Eukaryota	Coccomyxa subellipsoidea C-169	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2612576515		 	Eukaryota	Malus domestica	2015-05-02	Krishna Palaniappan	Yes	bad phytozome (scaffold id mismatch found) data batch	
+2761201655	166723	<a href='https://genome.jgi.doe.gov/Aciri1_iso'  >Yes</a>	Eukaryota	Acidomyces richmondensis BFW	2018-02-26	Amy Chen	Yes	marked obsolete per Neha	
+2761201679	166747	<a href='https://genome.jgi.doe.gov/Suilu3'  >Yes</a>	Eukaryota	Suillus luteus UH-Slu-Lm8-n1	2018-02-26	Amy Chen	Yes	marked obsolete per Neha	
