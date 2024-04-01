@@ -4246,6 +4246,8 @@ fun_gen <- summarize_taxonomy(input_fungi, level = 6, report_higher_tax = F, rel
 input_fungi$map_loaded$rich <- specnumber(fun_gen, 
                                           MARGIN = 2)
 max(input_fungi$map_loaded$rich) # 289
+mean(input_fungi$map_loaded$rich) # 47
+se(input_fungi$map_loaded$rich) # 2.2
 
 # Genus Shannon diversity
 input_fungi$map_loaded$shannon <- diversity(fun_gen, 
