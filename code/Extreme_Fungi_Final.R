@@ -896,6 +896,10 @@ png("FinalFigs/Figure1.png", width = 7, height = 5, units = "in", res = 300)
 f1
 dev.off()
 
+pdf("FinalFigs/Figure1.pdf", width = 7, height = 5)
+f1
+dev.off()
+
 
 
 #### __Check IMG-NR ####
@@ -2541,7 +2545,46 @@ bc <- calc_dm(Genus_nz)
 
 # Check some PERMANOVA models to get a sense of R2 values
 set.seed(1150)
-adonis2(bc ~ Environment, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.15, p = 0.001
+adonis2(bc ~ Environment, data = input_fungi_CPM_nz$map_loaded) # F = 15.4, R2 = 0.15, p = 0.001
+
+# Revision - check model with year, assembler, environment
+# Make sure to rename the assemblers below in the "Methods" subsection
+set.seed(1150)
+adonis2(bc ~ Environment + Year + Assembly.Method, data = input_fungi_CPM_nz$map_loaded)
+
+# Also check latitude. For this need to remove NAs
+input_fungi_CPM_nz_lat <- filter_data(input_fungi_CPM_nz,
+                                      filter_cat = "Latitude",
+                                      filter_vals = NA)
+input_fungi_CPM_nz_lat$map_loaded$Year <- as.factor(input_fungi_CPM_nz_lat$map_loaded$Year)
+table(input_fungi_CPM_nz_lat$map_loaded$Year)
+Genus_nz_lat <- summarize_taxonomy(input_fungi_CPM_nz_lat, 
+                                   level = 6, 
+                                   report_higher_tax = F, 
+                                   relative = F)
+bc_lat <- calc_dm(Genus_nz_lat)
+set.seed(1150)
+adonis2(bc_lat ~ Environment + Year + Assembler + Latitude, 
+        data = input_fungi_CPM_nz_lat$map_loaded)
+
+# Check just glacial forefields as an example
+input_fungi_CPM_nz_gla <- filter_data(input_fungi_CPM_nz, 
+                                      filter_cat = "Environment", 
+                                      keep_vals = "Glacial forefield")
+Genus_nz_gla <- summarize_taxonomy(input_fungi_CPM_nz_gla, level = 6, 
+                                   report_higher_tax = F, 
+                                   relative = F)
+table(input_fungi_CPM_nz_gla$map_loaded$Location2)
+input_fungi_CPM_nz_gla$map_loaded <- input_fungi_CPM_nz_gla$map_loaded %>%
+  mutate(Location3 = ifelse(Location2 == "Norway: Midre Lovenbreen glacier foreland, Svalbard",
+                            "Midre Lovenbreen, Svalbard, Norway",
+                            as.character(Location2)))
+table(input_fungi_CPM_nz_gla$map_loaded$Location3)
+bc_gla <- calc_dm(Genus_nz_gla)
+set.seed(1150)
+adonis2(bc_gla ~ Geographic.Location, data = input_fungi_CPM_nz_gla$map_loaded)
+
+# Others
 set.seed(1150)
 adonis2(bc ~ Habitat, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.40, p = 0.001
 set.seed(1150)
@@ -2552,7 +2595,23 @@ set.seed(1150)
 adonis2(bc ~ `Ecosystem.Type`, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.09, p = 0.001
 set.seed(1150)
 adonis2(bc ~ `Specific.Ecosystem`, data = input_fungi_CPM_nz$map_loaded) # R2 = 0.12, p = 0.001
+
+# PERMDISP
 anova(betadisper(bc, input_fungi_CPM_nz$map_loaded$Environment)) # Dispersion not homogeneous
+
+# Revisions - consider dispersion for each sample to be the distance between that sample and the group centroid for each enviornment as calculated by ‘betadisper’.
+pd <- betadisper(bc, input_fungi_CPM_nz$map_loaded$Environment)
+pd_gd <- as.data.frame(pd$group.distances) %>%
+  set_names("GD") %>%
+  arrange(desc(GD)) %>%
+  rownames_to_column(var = "Environment") %>%
+  left_join(., env_prev, by = "Environment")
+ggplot(pd_gd, aes(num_samples, GD)) +
+  geom_point() +
+  theme_bw()
+summary(lm(GD ~ num_samples, data = pd_gd)) # N.S.
+
+# PCoA
 pcoa <- cmdscale(bc, k = nrow(input_fungi_CPM_nz$map_loaded) - 1, eig = T)
 pcoaA1 <- round((eigenvals(pcoa)/sum(eigenvals(pcoa)))[1]*100, digits = 1)
 pcoaA2 <- round((eigenvals(pcoa)/sum(eigenvals(pcoa)))[2]*100, digits = 1)
@@ -3641,6 +3700,14 @@ input_fungi_CPM_nz$map_loaded$Assembler <- dplyr::recode_factor(input_fungi_CPM_
                                    "Velvet + MetaVelvet at multiple Kmers" = "Multiple",
                                    "Velvet + MetaVelvet at multiple Kmers followed by Minimus2 on all assemblies" = "Multiple",
                                    "Velvet, MetaVelvet, Minimus" = "Multiple")
+levels(input_fungi_CPM_nz$map_loaded$Assembler)
+table(input_fungi_CPM_nz$map_loaded$Assembler)
+class(input_fungi_CPM_nz$map_loaded$Assembler)
+input_fungi_CPM_nz$map_loaded <- input_fungi_CPM_nz$map_loaded %>% 
+  mutate_at(.vars = c("Assembler"),
+            .funs = list(~ifelse(.=="", NA, as.character(.)))) %>%
+  mutate(Assembler = as.factor(Assembler)) %>%
+  replace_na(list(Assembler = "Unknown"))
 levels(input_fungi_CPM_nz$map_loaded$Assembler)
 table(input_fungi_CPM_nz$map_loaded$Assembler)
 
